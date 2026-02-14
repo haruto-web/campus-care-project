@@ -74,14 +74,11 @@
                         <a href="{% url 'academics:create_class' %}" class="btn btn-outline-success">
                             <i class="bi bi-plus-circle"></i> Create New Class
                         </a>
-                        <a href="#" class="btn btn-outline-primary">
-                            <i class="bi bi-plus-circle"></i> Create Assignment
-                        </a>
-                        <a href="#" class="btn btn-outline-primary">
-                            <i class="bi bi-check-square"></i> Mark Attendance
-                        </a>
-                        <a href="#" class="btn btn-outline-warning">
+                        <a href="{% url 'wellness:create_concern' %}" class="btn btn-outline-warning">
                             <i class="bi bi-flag"></i> Report Concern
+                        </a>
+                        <a href="{% url 'wellness:view_concerns' %}" class="btn btn-outline-info">
+                            <i class="bi bi-list-check"></i> View My Concerns
                         </a>
                     </div>
                 </div>

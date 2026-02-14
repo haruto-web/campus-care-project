@@ -22,9 +22,14 @@
                     {% endif %}
                     {% if user.role == 'teacher' and class.teacher == user %}
                     <hr>
-                    <a href="{% url 'academics:manage_students' class.id %}" class="btn btn-primary">
-                        <i class="bi bi-people"></i> Manage Students
-                    </a>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'academics:manage_students' class.id %}" class="btn btn-primary">
+                            <i class="bi bi-people"></i> Manage Students
+                        </a>
+                        <a href="{% url 'academics:mark_attendance' class.id %}" class="btn btn-success">
+                            <i class="bi bi-check2-square"></i> Mark Attendance
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -60,21 +65,45 @@
         <!-- Materials -->
         <div class="col-md-6">
             <div class="card mb-3">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Class Materials</h5>
+                    {% if user.role == 'teacher' and class.teacher == user %}
+                    <a href="{% url 'academics:upload_material' class.id %}" class="btn btn-sm btn-success">
+                        <i class="bi bi-upload"></i> Upload
+                    </a>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     {% if materials %}
                         <ul class="list-group">
                         {% for material in materials %}
-                            <li class="list-group-item">
-                                <a href="{{ material.file.url }}" target="_blank">{{ material.title }}</a>
-                                <br><small class="text-muted">{{ material.description }}</small>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <a href="{{ material.file.url }}" target="_blank">
+                                        <i class="bi bi-file-earmark"></i> {{ material.title }}
+                                    </a>
+                                    {% if material.description %}
+                                    <br><small class="text-muted">{{ material.description }}</small>
+                                    {% endif %}
+                                    <br><small class="text-muted">Uploaded: {{ material.uploaded_at|date:"M d, Y" }}</small>
+                                </div>
+                                {% if user.role == 'teacher' and class.teacher == user %}
+                                <a href="{% url 'academics:delete_material' material.id %}" 
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Delete this material?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                {% endif %}
                             </li>
                         {% endfor %}
                         </ul>
                     {% else %}
                         <p class="text-muted">No materials uploaded yet.</p>
+                        {% if user.role == 'teacher' and class.teacher == user %}
+                        <a href="{% url 'academics:upload_material' class.id %}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-upload"></i> Upload First Material
+                        </a>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -112,8 +141,13 @@
             {% endif %}
 
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Assignments</h5>
+                    {% if user.role == 'teacher' and class.teacher == user %}
+                    <a href="{% url 'academics:create_assignment' class.id %}" class="btn btn-sm btn-success">
+                        <i class="bi bi-plus-circle"></i> Create Assignment
+                    </a>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     {% if assignments %}
@@ -134,7 +168,11 @@
                                         <td>{{ assignment.due_date|date:"M d, Y h:i A" }}</td>
                                         <td>{{ assignment.total_points }}</td>
                                         <td>
-                                            {% if user.role == 'student' %}
+                                            {% if user.role == 'teacher' %}
+                                                <a href="{% url 'academics:view_submissions' class.id assignment.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-eye"></i> View Submissions
+                                                </a>
+                                            {% elif user.role == 'student' %}
                                                 {% if assignment in user.submissions.all %}
                                                     <span class="badge bg-success">Submitted</span>
                                                 {% else %}

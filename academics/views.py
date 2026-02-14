@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Class, Announcement, Material
-from .forms import ClassForm
+from .models import Class, Announcement, Material, Assignment, Attendance, Submission
+from .forms import ClassForm, AssignmentForm, MaterialForm
+from datetime import date
 
 @login_required
 def class_detail(request, class_id):
@@ -140,3 +141,149 @@ def remove_student(request, class_id, student_id):
     class_obj.students.remove(student)
     messages.success(request, f'{student.get_full_name()} removed from {class_obj.code}!')
     return redirect('academics:manage_students', class_id=class_id)
+
+@login_required
+def create_assignment(request, class_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    
+    if request.user.role != 'teacher' or class_obj.teacher != request.user:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.class_obj = class_obj
+            assignment.save()
+            messages.success(request, f'Assignment "{assignment.title}" created successfully!')
+            return redirect('academics:class_detail', class_id=class_id)
+    else:
+        form = AssignmentForm()
+    
+    return render(request, 'academics/create_assignment.html', {'form': form, 'class': class_obj})
+
+@login_required
+def mark_attendance(request, class_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    
+    if request.user.role != 'teacher' or class_obj.teacher != request.user:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    students = class_obj.students.all()
+    today = date.today()
+    
+    if request.method == 'POST':
+        for student in students:
+            status = request.POST.get(f'status_{student.id}')
+            if status:
+                Attendance.objects.update_or_create(
+                    class_obj=class_obj,
+                    student=student,
+                    date=today,
+                    defaults={'status': status}
+                )
+        messages.success(request, 'Attendance marked successfully!')
+        return redirect('academics:class_detail', class_id=class_id)
+    
+    # Get today's attendance
+    attendance_records = {}
+    for student in students:
+        try:
+            record = Attendance.objects.get(class_obj=class_obj, student=student, date=today)
+            attendance_records[student.id] = record.status
+        except Attendance.DoesNotExist:
+            attendance_records[student.id] = None
+    
+    context = {
+        'class': class_obj,
+        'students': students,
+        'attendance_records': attendance_records,
+        'today': today,
+    }
+    return render(request, 'academics/mark_attendance.html', context)
+
+@login_required
+def view_submissions(request, class_id, assignment_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    assignment = get_object_or_404(Assignment, id=assignment_id, class_obj=class_obj)
+    
+    if request.user.role != 'teacher' or class_obj.teacher != request.user:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    submissions = assignment.submissions.all()
+    students_submitted = [sub.student.id for sub in submissions]
+    students_not_submitted = class_obj.students.exclude(id__in=students_submitted)
+    
+    context = {
+        'class': class_obj,
+        'assignment': assignment,
+        'submissions': submissions,
+        'students_not_submitted': students_not_submitted,
+    }
+    return render(request, 'academics/view_submissions.html', context)
+
+@login_required
+def grade_submission(request, submission_id):
+    submission = get_object_or_404(Submission, id=submission_id)
+    
+    if request.user.role != 'teacher' or submission.assignment.class_obj.teacher != request.user:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        score = request.POST.get('score')
+        feedback = request.POST.get('feedback', '')
+        
+        submission.score = int(score) if score else None
+        submission.feedback = feedback
+        from django.utils import timezone
+        submission.graded_at = timezone.now()
+        submission.save()
+        
+        messages.success(request, f'Graded {submission.student.get_full_name()}\'s submission!')
+        return redirect('academics:view_submissions', 
+                       class_id=submission.assignment.class_obj.id, 
+                       assignment_id=submission.assignment.id)
+    
+    context = {
+        'submission': submission,
+    }
+    return render(request, 'academics/grade_submission.html', context)
+
+@login_required
+def upload_material(request, class_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    
+    if request.user.role != 'teacher' or class_obj.teacher != request.user:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        form = MaterialForm(request.POST, request.FILES)
+        if form.is_valid():
+            material = form.save(commit=False)
+            material.class_obj = class_obj
+            material.uploaded_by = request.user
+            material.save()
+            messages.success(request, f'Material "{material.title}" uploaded successfully!')
+            return redirect('academics:class_detail', class_id=class_id)
+    else:
+        form = MaterialForm()
+    
+    return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
+
+@login_required
+def delete_material(request, material_id):
+    material = get_object_or_404(Material, id=material_id)
+    
+    if request.user.role != 'teacher' or material.class_obj.teacher != request.user:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    class_id = material.class_obj.id
+    material.delete()
+    messages.success(request, 'Material deleted successfully!')
+    return redirect('academics:class_detail', class_id=class_id)

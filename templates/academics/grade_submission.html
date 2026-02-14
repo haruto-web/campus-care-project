@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Grade Submission{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-pencil-square"></i> Grade Submission</h4>
+                </div>
+                <div class="card-body">
+                    <h5>{{ submission.student.get_full_name }}</h5>
+                    <p class="text-muted">{{ submission.assignment.title }}</p>
+                    <p><strong>Submitted:</strong> {{ submission.submitted_at|date:"M d, Y h:i A" }}</p>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <h6>Submission Content:</h6>
+                        <div class="border p-3 bg-light">
+                            {{ submission.content|linebreaks }}
+                        </div>
+                        {% if submission.file %}
+                        <p class="mt-2">
+                            <strong>File:</strong> 
+                            <a href="{{ submission.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-download"></i> Download File
+                            </a>
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="score" class="form-label">Score (out of {{ submission.assignment.total_points }})</label>
+                            <input type="number" class="form-control" id="score" name="score" 
+                                   min="0" max="{{ submission.assignment.total_points }}" 
+                                   value="{{ submission.score|default:'' }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="feedback" class="form-label">Feedback</label>
+                            <textarea class="form-control" id="feedback" name="feedback" rows="4">{{ submission.feedback }}</textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Save Grade
+                            </button>
+                            <a href="{% url 'academics:view_submissions' submission.assignment.class_obj.id submission.assignment.id %}" 
+                               class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Material{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-file-earmark-arrow-up"></i> Upload Class Material - {{ class.code }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">Material Title *</label>
+                            {{ form.title }}
+                            <small class="text-muted">e.g., "Week 1 Lecture Slides" or "Chapter 3 Notes"</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            <small class="text-muted">Optional: Add details about this material</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.file.id_for_label }}" class="form-label">File *</label>
+                            {{ form.file }}
+                            <small class="text-muted d-block mt-1">
+                                Supported formats: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, ZIP, etc.
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Students will be able to download this file from the class page.
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload"></i> Upload Material
+                            </button>
+                            <a href="{% url 'academics:class_detail' class.id %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

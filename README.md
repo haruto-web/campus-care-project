@@ -49,10 +49,10 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 #### 2.2 Assignment Management
 **Teacher Actions:**
-- ✅ Create assignment (title, description, due date, points) - *via admin panel*
-- ⏳ View submissions
-- ⏳ Grade assignments
-- ⏳ Provide feedback
+- ✅ Create assignment (title, description, due date, points) - *class detail page*
+- ✅ View submissions - *assignments table*
+- ✅ Grade assignments - *submission page*
+- ✅ Provide feedback - *grading interface*
 
 **Student Actions:**
 - ✅ View assignments (upcoming, overdue, completed) - *in dashboard*
@@ -61,7 +61,7 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 #### 2.3 Attendance Tracking
 **Teacher Actions:**
-- ✅ Mark daily attendance (present/absent/late) - *via admin panel*
+- ✅ Mark daily attendance (present/absent/late) - *class detail page*
 - ⏳ View attendance reports per student
 
 **Student Actions:**
@@ -69,7 +69,7 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 #### 2.4 Grade Management
 **Teacher Actions:**
-- ✅ Enter grades for assignments/exams - *via admin panel*
+- ✅ Enter grades for assignments/exams - *grading interface*
 - ⏳ Calculate final grades
 
 **Student Actions:**
@@ -104,14 +104,14 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 #### 3.3 Teacher Concern Reports
 **Teacher Actions:**
-- ✅ Submit concern about student - *model created*
+- ✅ Submit concern about student - *wellness app*
   - ✅ Student name
   - ✅ Concern type (academic, behavioral, emotional, attendance)
   - ✅ Severity (low/medium/high)
   - ✅ Description
   - ✅ Date observed
-- ⏳ Submit concern form (frontend)
-- ⏳ View submitted concerns
+- ✅ Submit concern form (frontend) - *teacher dashboard*
+- ✅ View submitted concerns - *concerns list page*
 
 #### 3.4 At-Risk Student Dashboard
 **Counselor/Admin View:**
@@ -214,14 +214,17 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 - ✅ Register
 - ✅ Dashboard (classes, students needing attention)
 - ✅ My Classes (detail page) - *clickable from dashboard*
-- ✅ Class Detail (roster, assignments, announcements)
+- ✅ Class Detail (roster, assignments, announcements, materials)
 - ✅ Create New Class - *form with all fields*
 - ✅ Manage Students - *add/remove with search*
-- ✅ Post Announcement
-- ⏳ Create/Edit Assignment
-- ⏳ Grade Assignments
-- ⏳ Mark Attendance
-- ⏳ Submit Concern
+- ✅ Post Announcement - *announcement form*
+- ✅ Upload Materials - *material upload form*
+- ✅ Create Assignment - *assignment form*
+- ✅ Mark Attendance - *attendance interface*
+- ✅ View Submissions - *submissions list*
+- ✅ Grade Assignments - *grading interface*
+- ✅ Submit Concern - *concern form*
+- ✅ View Concerns - *concerns list*
 - ⏳ Student Profile View
 - ⏳ Profile
 
@@ -259,30 +262,30 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 ### 🔄 Phase 2: LMS Core (Week 3-4) - IN PROGRESS
 5. ✅ Class management (CRUD) - *teachers can create/manage classes*
 6. ✅ Student enrollment - *teachers can add/remove students with search*
-7. ⏳ Assignment management (CRUD) - *partially done via admin*
-8. ⏳ Grade entry & viewing - *partially done via admin*
-9. ⏳ Attendance tracking - *partially done via admin*
+7. ✅ Assignment management (CRUD) - *teachers can create/grade assignments*
+8. ✅ Grade entry & viewing - *grading interface complete*
+9. ✅ Attendance tracking - *teachers can mark attendance*
 10. ✅ Student & Teacher dashboards
 11. ✅ Announcements system
 12. ✅ Class materials system
 
 ### ⏳ Phase 3: Campus Care Features (Week 5-6)
-10. ⏳ Wellness check-in form & storage - *model done, form needed*
-11. ⏳ Risk assessment algorithm - *model done, automation needed*
-12. ✅ At-risk student dashboard - *basic version done*
-13. ⏳ Student detail page with indicators
-14. ⏳ Teacher concern form - *model done, form needed*
+13. ⏳ Wellness check-in form & storage - *model done, form needed*
+14. ⏳ Risk assessment algorithm - *model done, automation needed*
+15. ✅ At-risk student dashboard - *basic version done*
+16. ⏳ Student detail page with indicators
+17. ✅ Teacher concern form - *complete with view*
 
 ### ⏳ Phase 4: Intervention & Alerts (Week 7)
-15. ⏳ Intervention management - *model done, forms needed*
-16. ⏳ Alert/notification system - *model done, automation needed*
-17. ✅ Counselor dashboard - *basic version done*
+18. ⏳ Intervention management - *model done, forms needed*
+19. ⏳ Alert/notification system - *model done, automation needed*
+20. ✅ Counselor dashboard - *basic version done*
 
 ### ⏳ Phase 5: Polish & Testing (Week 8)
-18. ⏳ UI/UX improvements
-19. ⏳ Reports & analytics
-20. ⏳ Testing & bug fixes
-21. ⏳ Documentation
+21. ⏳ UI/UX improvements
+22. ⏳ Reports & analytics
+23. ⏳ Testing & bug fixes
+24. ⏳ Documentation
 
 ---
 
@@ -292,17 +295,18 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 - ✅ Class enrollment & management - *teachers create & manage*
 - ✅ Student enrollment - *search & add students*
 - ✅ Announcements - *post & view*
-- ✅ Class materials - *upload & download*
+- ✅ Class materials - *teachers upload & students download*
 - ✅ Class schedule - *display*
-- ⏳ Assignment submission & grading - *partial*
-- ✅ Attendance tracking - *basic*
+- ✅ Assignment creation - *teachers create from class page*
+- ✅ Assignment grading - *view submissions & grade*
+- ✅ Attendance tracking - *teachers mark daily*
 - ✅ Grade viewing - *basic*
 
 ### Campus Care Features:
 - ✅ Wellness check-ins - *model created*
 - ✅ Automated risk assessment - *model created*
 - ✅ Early warning alerts - *model created*
-- ✅ Teacher concern reporting - *model created*
+- ✅ Teacher concern reporting - *complete with forms*
 - ✅ Intervention tracking - *model created*
 - ✅ Support staff dashboard - *basic version*
 
@@ -331,7 +335,7 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 ## Current Progress Summary
 
-### ✅ COMPLETED (55%)
+### ✅ COMPLETED (65%)
 - Database models (13 models: Announcement, Material)
 - User authentication (login/register/logout)
 - Role-based dashboards (Student, Teacher, Counselor, Admin)
@@ -341,21 +345,25 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 - Student management (add/remove with search)
 - Class roster display
 - Announcements system (create & view)
-- Class materials system (upload & download)
+- Class materials system (teachers upload/delete)
 - Class schedule display
+- Assignment creation (teachers)
+- Assignment grading interface
+- View submissions page
+- Attendance marking interface
+- Teacher concern reporting (complete)
 - PostgreSQL database migration
 - Media file handling
 - Basic navigation
 - Responsive UI with Bootstrap
 
-### 🔄 IN PROGRESS (15%)
-- Assignment submission system
-- Grade entry forms
-- Attendance marking interface
+### 🔄 IN PROGRESS (10%)
+- Student assignment submission
+- Student wellness check-in form
 
-### ⏳ TODO (30%)
+### ⏳ TODO (25%)
+- Student assignment submission
 - Wellness check-in form
-- Teacher concern form
 - Intervention creation form
 - Student detail page
 - Automated risk calculation
@@ -366,19 +374,19 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 ---
 
-## Next Recommended Steps (Teacher Focus)
+## Next Recommended Steps (Student Focus)
 
-1. **Create Assignment Form** - Allow teachers to create assignments from class page
-2. **Mark Attendance Interface** - Allow teachers to mark attendance for enrolled students
-3. **View Submissions** - Allow teachers to see student submissions
-4. **Grading Interface** - Allow teachers to grade submissions
-5. **Teacher Concern Form** - Allow teachers to report student concerns
+1. **Student Assignment Submission** - Allow students to submit assignments
+2. **Wellness Check-in Form** - Allow students to submit wellness surveys
+3. **View Grades Detail** - Detailed grade view for students
+4. **Student Profile Page** - View and edit profile
+5. **Notification System** - Alert students of new assignments/grades
 
 ---
 
 **Last Updated:** February 14, 2026
-**Overall Progress:** ~55% Complete
-**Status:** Teacher class management complete, focusing on teacher features
+**Overall Progress:** ~65% Complete
+**Status:** Teacher features complete! Moving to student features
 
 ---
 
@@ -390,10 +398,15 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 3. **Student Management System** - Add/remove students with search functionality
 4. **Class Roster Display** - View all enrolled students
 5. **Announcements System** - Teachers can post, students can view
-6. **Class Materials** - Upload and download course materials
+6. **Class Materials** - Teachers upload/delete, students download
 7. **Class Schedule** - Display schedule and room information
-8. **PostgreSQL Migration** - Moved from SQLite to PostgreSQL
-9. **Media File Handling** - Support for file uploads
+8. **Assignment Creation** - Teachers create assignments from class page
+9. **Attendance Marking** - Teachers mark Present/Late/Absent
+10. **View Submissions** - Teachers see all submissions and missing students
+11. **Grading Interface** - Teachers grade with scores and feedback
+12. **Report Concerns** - Teachers report student concerns
+13. **PostgreSQL Migration** - Moved from SQLite to PostgreSQL
+14. **Media File Handling** - Support for file uploads
 
 ### 📁 New Models:
 - `Announcement` (title, content, priority, class/school-wide)
@@ -406,12 +419,27 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 - `/class/<id>/students/add/<student_id>/` - Add student
 - `/class/<id>/students/remove/<student_id>/` - Remove student
 - `/class/<id>/announcement/create/` - Create announcement
+- `/class/<id>/material/upload/` - Upload material
+- `/material/<id>/delete/` - Delete material
+- `/class/<id>/assignment/create/` - Create assignment
+- `/class/<id>/attendance/` - Mark attendance
+- `/class/<id>/assignment/<assignment_id>/submissions/` - View submissions
+- `/submission/<id>/grade/` - Grade submission
+- `/wellness/concern/create/` - Report concern
+- `/wellness/concerns/` - View concerns
 
 ### 📄 New Templates:
 - `academics/create_class.html` - Class creation form
 - `academics/class_detail.html` - Class detail page
 - `academics/manage_students.html` - Student management with search
 - `academics/create_announcement.html` - Announcement form
+- `academics/upload_material.html` - Material upload form
+- `academics/create_assignment.html` - Assignment creation form
+- `academics/mark_attendance.html` - Attendance marking interface
+- `academics/view_submissions.html` - Submissions list
+- `academics/grade_submission.html` - Grading interface
+- `wellness/create_concern.html` - Concern reporting form
+- `wellness/view_concerns.html` - Concerns list
 
 ### 🎯 Teacher Features Complete:
 - ✅ Create classes with full details
@@ -419,5 +447,11 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 - ✅ Remove students from classes
 - ✅ View class roster
 - ✅ Post announcements
-- ✅ View class materials
+- ✅ Upload and delete class materials
+- ✅ Create assignments
+- ✅ Mark attendance (Present/Late/Absent)
+- ✅ View assignment submissions
+- ✅ Grade assignments with feedback
+- ✅ Report student concerns
+- ✅ View submitted concerns
 - ✅ See class schedule

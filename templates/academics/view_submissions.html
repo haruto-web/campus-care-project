@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}View Submissions{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4><i class="bi bi-file-earmark-text"></i> {{ assignment.title }}</h4>
+            <p class="mb-0">Due: {{ assignment.due_date|date:"M d, Y h:i A" }} | Total Points: {{ assignment.total_points }}</p>
+        </div>
+        <div class="card-body">
+            <h5>Submissions ({{ submissions.count }}/{{ class.students.count }})</h5>
+            
+            {% if submissions %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Submitted At</th>
+                            <th>Score</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for submission in submissions %}
+                        <tr>
+                            <td>{{ submission.student.get_full_name }}</td>
+                            <td>{{ submission.submitted_at|date:"M d, Y h:i A" }}</td>
+                            <td>
+                                {% if submission.score %}
+                                    <span class="badge bg-success">{{ submission.score }}/{{ assignment.total_points }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Not Graded</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if submission.graded_at %}
+                                    <span class="badge bg-success">Graded</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'academics:grade_submission' submission.id %}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-pencil"></i> Grade
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No submissions yet.</p>
+            {% endif %}
+
+            {% if students_not_submitted %}
+            <hr>
+            <h5 class="text-danger">Not Submitted ({{ students_not_submitted.count }})</h5>
+            <ul class="list-group">
+                {% for student in students_not_submitted %}
+                <li class="list-group-item">{{ student.get_full_name }} - {{ student.email }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <div class="mt-3">
+                <a href="{% url 'academics:class_detail' class.id %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Class
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
