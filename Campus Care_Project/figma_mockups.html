@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Care - Figma Mockups</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background: #f8f9fa; }
+        .mockup-frame { 
+            width: 1920px; 
+            height: 1080px; 
+            background: white; 
+            margin: 20px auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .navbar-custom { background: #0D6EFD; height: 60px; }
+        .stat-card { border-radius: 8px; padding: 24px; color: white; }
+        .card-custom { border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .badge-custom { padding: 4px 12px; border-radius: 16px; font-size: 12px; }
+        .btn-custom { border-radius: 8px; padding: 12px 24px; }
+    </style>
+</head>
+<body>
+
+<!-- MOCKUP 1: LOGIN SCREEN -->
+<div class="mockup-frame d-flex align-items-center justify-content-center" id="login-mockup">
+    <div class="col-md-4">
+        <div class="card card-custom shadow-lg">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <i class="bi bi-heart-pulse text-primary" style="font-size: 64px;"></i>
+                    <h1 class="mt-3 fw-bold">Campus Care</h1>
+                    <p class="text-muted">Student Support Monitoring System</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-control form-control-lg" placeholder="Enter username">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control form-control-lg" placeholder="Enter password">
+                </div>
+                <button class="btn btn-primary btn-lg w-100 btn-custom">Login</button>
+                <div class="text-center mt-3">
+                    <p class="mb-0">Don't have an account? <a href="#" class="text-decoration-none">Register here</a></p>
+                </div>
+            </div>
+        </div>
+        <div class="card card-custom mt-3">
+            <div class="card-body">
+                <h6 class="fw-bold mb-2">Test Accounts:</h6>
+                <small class="text-muted">
+                    Admin: admin / admin123<br>
+                    Teacher: teacher1 / teacher123<br>
+                    Student: student1 / student123<br>
+                    Counselor: counselor1 / counselor123
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MOCKUP 2: STUDENT DASHBOARD -->
+<div class="mockup-frame" id="student-dashboard-mockup">
+    <nav class="navbar navbar-custom navbar-dark">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fs-4" href="#">
+                <i class="bi bi-heart-pulse"></i> Campus Care
+            </a>
+            <ul class="navbar-nav flex-row gap-4">
+                <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">My Classes</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Assignments</a></li>
+            </ul>
+            <div class="dropdown">
+                <a class="nav-link dropdown-toggle text-white" href="#" role="button">
+                    <i class="bi bi-person-circle"></i> John Doe
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container-fluid p-4">
+        <h2 class="mb-4">Welcome, John Doe!</h2>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card card-custom mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-book"></i> My Classes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">CS101 - Introduction to Python</h6>
+                                    <small class="text-muted">John Smith</small>
+                                </div>
+                                <span class="badge bg-info badge-custom">Fall 2024</span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">CS201 - Web Development</h6>
+                                    <small class="text-muted">John Smith</small>
+                                </div>
+                                <span class="badge bg-info badge-custom">Fall 2024</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card card-custom">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Upcoming Assignments</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between">
+                                <div>
+                                    <h6 class="mb-1">Python Basics Assignment</h6>
+                                    <small class="text-muted">CS101</small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-danger">Due: Feb 20, 2026</small><br>
+                                    <span class="badge bg-secondary badge-custom">100 pts</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between">
+                                <div>
+                                    <h6 class="mb-1">Build a Django App</h6>
+                                    <small class="text-muted">CS201</small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-danger">Due: Feb 27, 2026</small><br>
+                                    <span class="badge bg-secondary badge-custom">150 pts</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card card-custom mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-heart"></i> Wellness Check-in</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <p>How are you feeling today?</p>
+                        <button class="btn btn-success btn-custom">Take Check-in Survey</button>
+                        <hr>
+                        <small class="text-muted">Last check-in: Feb 6, 2026</small>
+                    </div>
+                </div>
+                
+                <div class="card card-custom">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-graph-up"></i> My Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Attendance Rate</span>
+                                <strong>95%</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: 95%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Current GPA</span>
+                                <strong>3.75</strong>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="d-flex justify-content-between">
+                                <span>Missing Assignments</span>
+                                <strong class="text-danger">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MOCKUP 3: COUNSELOR DASHBOARD -->
+<div class="mockup-frame" id="counselor-dashboard-mockup">
+    <nav class="navbar navbar-custom navbar-dark">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fs-4" href="#">
+                <i class="bi bi-heart-pulse"></i> Campus Care
+            </a>
+            <ul class="navbar-nav flex-row gap-4">
+                <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">At-Risk Students</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Interventions</a></li>
+            </ul>
+            <div class="dropdown">
+                <a class="nav-link dropdown-toggle text-white" href="#" role="button">
+                    <i class="bi bi-person-circle"></i> Sarah Johnson
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container-fluid p-4">
+        <h2 class="mb-4">Welcome, Sarah Johnson!</h2>
+        
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card bg-danger">
+                    <h2 class="mb-0">3</h2>
+                    <p class="mb-0">High Risk Students</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-warning">
+                    <h2 class="mb-0">5</h2>
+                    <p class="mb-0">Medium Risk Students</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-info">
+                    <h2 class="mb-0">2</h2>
+                    <p class="mb-0">Pending Interventions</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: #0D6EFD;">
+                    <h2 class="mb-0">7</h2>
+                    <p class="mb-0">Unread Alerts</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card card-custom mb-4">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> High Risk Students</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Risk Score</th>
+                                    <th>GPA</th>
+                                    <th>Attendance</th>
+                                    <th>Missing</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Student Number1</td>
+                                    <td><span class="badge bg-danger">85.5</span></td>
+                                    <td>2.1</td>
+                                    <td>75%</td>
+                                    <td>3</td>
+                                    <td><button class="btn btn-sm btn-primary">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>Student Number3</td>
+                                    <td><span class="badge bg-danger">78.2</span></td>
+                                    <td>2.5</td>
+                                    <td>82%</td>
+                                    <td>2</td>
+                                    <td><button class="btn btn-sm btn-primary">View</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card card-custom mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary btn-custom">
+                                <i class="bi bi-plus-circle"></i> Create Intervention
+                            </button>
+                            <button class="btn btn-outline-info btn-custom">
+                                <i class="bi bi-people"></i> View All Students
+                            </button>
+                            <button class="btn btn-outline-warning btn-custom">
+                                <i class="bi bi-graph-up"></i> Generate Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Instructions for taking screenshots
+    console.log("To create Figma mockups:");
+    console.log("1. Open this file in browser");
+    console.log("2. Take screenshots of each mockup-frame");
+    console.log("3. Import screenshots into Figma");
+    console.log("4. Add interactions and prototype flow");
+</script>
+
+</body>
+</html>

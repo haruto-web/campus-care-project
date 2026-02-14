@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Counselor Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Welcome, {{ user.get_full_name }}!</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h3>{{ high_risk_count }}</h3>
+                    <p class="mb-0">High Risk Students</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h3>{{ medium_risk_count }}</h3>
+                    <p class="mb-0">Medium Risk Students</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h3>{{ pending_interventions }}</h3>
+                    <p class="mb-0">Pending Interventions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h3>{{ unread_alerts }}</h3>
+                    <p class="mb-0">Unread Alerts</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> High Risk Students</h5>
+                </div>
+                <div class="card-body">
+                    {% if high_risk_students %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Risk Score</th>
+                                        <th>GPA</th>
+                                        <th>Attendance</th>
+                                        <th>Missing</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for assessment in high_risk_students %}
+                                    <tr>
+                                        <td>{{ assessment.student.get_full_name }}</td>
+                                        <td><span class="badge bg-danger">{{ assessment.risk_score }}</span></td>
+                                        <td>{{ assessment.gpa|default:"N/A" }}</td>
+                                        <td>{{ assessment.attendance_rate|default:"N/A" }}%</td>
+                                        <td>{{ assessment.missing_assignments }}</td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-primary">View</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-success">No high-risk students at this time.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="bi bi-bell"></i> Recent Alerts</h5>
+                </div>
+                <div class="card-body">
+                    {% if alerts %}
+                        <div class="list-group">
+                        {% for alert in alerts %}
+                            <div class="list-group-item {% if not alert.is_read %}list-group-item-warning{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ alert.get_alert_type_display }}</h6>
+                                        <p class="mb-1">{{ alert.message }}</p>
+                                        <small class="text-muted">{{ alert.student.get_full_name }} - {{ alert.created_at|date:"M d, Y" }}</small>
+                                    </div>
+                                    {% if not alert.is_read %}
+                                    <span class="badge bg-warning">New</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No recent alerts.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="bi bi-plus-circle"></i> Create Intervention
+                        </a>
+                        <a href="#" class="btn btn-outline-info">
+                            <i class="bi bi-people"></i> View All Students
+                        </a>
+                        <a href="#" class="btn btn-outline-warning">
+                            <i class="bi bi-graph-up"></i> Generate Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-calendar3"></i> Upcoming Interventions</h5>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_interventions %}
+                        <div class="list-group">
+                        {% for intervention in upcoming_interventions %}
+                            <div class="list-group-item">
+                                <h6 class="mb-1">{{ intervention.student.get_full_name }}</h6>
+                                <small class="text-muted">{{ intervention.get_intervention_type_display }}</small><br>
+                                <small class="text-primary">{{ intervention.scheduled_date|date:"M d, Y g:i A" }}</small>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No upcoming interventions.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
