@@ -1,0 +1,179 @@
+:root {
+    /* Primary Colors */
+    --primary: #4A90E2;
+    --primary-dark: #357ABD;
+    --primary-light: #6FA8E8;
+    --primary-bg: #E8F2FC;
+    
+    /* Secondary */
+    --secondary: #7B68EE;
+    --secondary-dark: #5D4EC9;
+    --secondary-light: #9B88F3;
+    
+    /* Status Colors */
+    --success: #50C878;
+    --success-dark: #3DA860;
+    --warning: #FFB347;
+    --warning-dark: #E69A2E;
+    --danger: #E74C3C;
+    --danger-dark: #C0392B;
+    --info: #5DADE2;
+    
+    /* Neutrals */
+    --background: #F8F9FA;
+    --surface: #FFFFFF;
+    --text-primary: #2C3E50;
+    --text-secondary: #7F8C8D;
+    --border: #E1E8ED;
+}
+
+/* Override Bootstrap colors */
+.btn-primary {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark) !important;
+    border-color: var(--primary-dark) !important;
+}
+
+.btn-outline-primary {
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+.btn-success {
+    background-color: var(--success) !important;
+    border-color: var(--success) !important;
+}
+
+.btn-success:hover {
+    background-color: var(--success-dark) !important;
+    border-color: var(--success-dark) !important;
+}
+
+.bg-primary {
+    background-color: var(--primary) !important;
+}
+
+.bg-success {
+    background-color: var(--success) !important;
+}
+
+.bg-warning {
+    background-color: var(--warning) !important;
+}
+
+.bg-danger {
+    background-color: var(--danger) !important;
+}
+
+.bg-info {
+    background-color: var(--info) !important;
+}
+
+.text-primary {
+    color: var(--primary) !important;
+}
+
+.text-success {
+    color: var(--success) !important;
+}
+
+.badge.bg-primary {
+    background-color: var(--primary) !important;
+}
+
+.badge.bg-success {
+    background-color: var(--success) !important;
+}
+
+.badge.bg-danger {
+    background-color: var(--danger) !important;
+}
+
+.badge.bg-info {
+    background-color: var(--info) !important;
+}
+
+.badge.bg-warning {
+    background-color: var(--warning) !important;
+}
+
+.navbar-dark {
+    background-color: var(--primary) !important;
+}
+
+.card-header.bg-primary {
+    background-color: var(--primary) !important;
+}
+
+.card-header.bg-success {
+    background-color: var(--success) !important;
+}
+
+.card-header.bg-warning {
+    background-color: var(--warning) !important;
+}
+
+.card-header.bg-danger {
+    background-color: var(--danger) !important;
+}
+
+.progress-bar.bg-success {
+    background-color: var(--success) !important;
+}
+
+.alert-success {
+    background-color: var(--primary-bg);
+    border-color: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+.list-group-item-warning {
+    background-color: #FFF4E5;
+    border-color: var(--warning);
+}
+
+/* Custom styles */
+.stat-card.bg-danger {
+    background-color: var(--danger) !important;
+}
+
+.stat-card.bg-warning {
+    background-color: var(--warning) !important;
+}
+
+.stat-card.bg-info {
+    background-color: var(--info) !important;
+}
+
+.feature-icon {
+    background-color: var(--primary-bg) !important;
+}
+
+.feature-icon i {
+    color: var(--primary) !important;
+}
+
+.hero-subtitle {
+    color: var(--primary) !important;
+}
+
+.cta-section {
+    background-color: var(--primary) !important;
+}
+
+a {
+    color: var(--primary);
+}
+
+a:hover {
+    color: var(--primary-dark);
+}
