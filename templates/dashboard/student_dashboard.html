@@ -21,15 +21,18 @@
                     {% if classes %}
                         <div class="list-group">
                         {% for class in classes %}
-                            <div class="list-group-item">
+                            <a href="{% url 'academics:class_detail' class.id %}" class="list-group-item list-group-item-action">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 class="mb-1">{{ class.code }} - {{ class.name }}</h6>
                                         <small class="text-muted">{{ class.teacher.get_full_name }}</small>
+                                        {% if class.schedule %}
+                                        <br><small class="text-muted"><i class="bi bi-clock"></i> {{ class.schedule }}</small>
+                                        {% endif %}
                                     </div>
                                     <span class="badge bg-info">{{ class.semester }}</span>
                                 </div>
-                            </div>
+                            </a>
                         {% endfor %}
                         </div>
                     {% else %}

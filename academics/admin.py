@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import Class, Assignment, Submission, Attendance, Grade
+from .models import Class, Assignment, Submission, Attendance, Grade, Announcement, Material
 
 @admin.register(Class)
 class ClassAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'teacher', 'semester']
+    list_display = ['code', 'name', 'teacher', 'semester', 'schedule', 'room']
     search_fields = ['code', 'name']
 
 @admin.register(Assignment)
@@ -25,3 +25,13 @@ class AttendanceAdmin(admin.ModelAdmin):
 class GradeAdmin(admin.ModelAdmin):
     list_display = ['student', 'class_obj', 'score', 'max_score', 'date']
     list_filter = ['class_obj', 'date']
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = ['title', 'author', 'class_obj', 'priority', 'is_school_wide', 'created_at']
+    list_filter = ['priority', 'is_school_wide', 'created_at']
+
+@admin.register(Material)
+class MaterialAdmin(admin.ModelAdmin):
+    list_display = ['title', 'class_obj', 'uploaded_by', 'uploaded_at']
+    list_filter = ['class_obj', 'uploaded_at']

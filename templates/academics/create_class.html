@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Class{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-plus-circle"></i> Create New Class</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Class Name *</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.code.id_for_label }}" class="form-label">Class Code *</label>
+                            {{ form.code }}
+                            <small class="text-muted">e.g., CS101</small>
+                            {% if form.code.errors %}
+                                <div class="text-danger">{{ form.code.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.semester.id_for_label }}" class="form-label">Semester *</label>
+                                {{ form.semester }}
+                                <small class="text-muted">e.g., Spring 2026</small>
+                                {% if form.semester.errors %}
+                                    <div class="text-danger">{{ form.semester.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.room.id_for_label }}" class="form-label">Room</label>
+                                {{ form.room }}
+                                {% if form.room.errors %}
+                                    <div class="text-danger">{{ form.room.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.schedule.id_for_label }}" class="form-label">Schedule</label>
+                            {{ form.schedule }}
+                            {% if form.schedule.errors %}
+                                <div class="text-danger">{{ form.schedule.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Create Class
+                            </button>
+                            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

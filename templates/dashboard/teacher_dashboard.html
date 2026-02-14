@@ -21,7 +21,7 @@
                     {% if classes %}
                         <div class="list-group">
                         {% for class in classes %}
-                            <div class="list-group-item">
+                            <a href="{% url 'academics:class_detail' class.id %}" class="list-group-item list-group-item-action">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 class="mb-1">{{ class.code }} - {{ class.name }}</h6>
@@ -29,7 +29,7 @@
                                     </div>
                                     <span class="badge bg-info">{{ class.semester }}</span>
                                 </div>
-                            </div>
+                            </a>
                         {% endfor %}
                         </div>
                     {% else %}
@@ -71,6 +71,9 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
+                        <a href="{% url 'academics:create_class' %}" class="btn btn-outline-success">
+                            <i class="bi bi-plus-circle"></i> Create New Class
+                        </a>
                         <a href="#" class="btn btn-outline-primary">
                             <i class="bi bi-plus-circle"></i> Create Assignment
                         </a>

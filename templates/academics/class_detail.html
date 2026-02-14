@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ class.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>{{ class.code }} - {{ class.name }}</h2>
+            <p class="text-muted">{{ class.description }}</p>
+            
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5>Class Information</h5>
+                    <p><strong>Teacher:</strong> {{ class.teacher.get_full_name }}</p>
+                    <p><strong>Semester:</strong> {{ class.semester }}</p>
+                    {% if class.schedule %}
+                    <p><strong>Schedule:</strong> {{ class.schedule }}</p>
+                    {% endif %}
+                    {% if class.room %}
+                    <p><strong>Room:</strong> {{ class.room }}</p>
+                    {% endif %}
+                    {% if user.role == 'teacher' and class.teacher == user %}
+                    <hr>
+                    <a href="{% url 'academics:manage_students' class.id %}" class="btn btn-primary">
+                        <i class="bi bi-people"></i> Manage Students
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Announcements -->
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Announcements</h5>
+                    {% if user.role == 'teacher' and class.teacher == user %}
+                    <a href="{% url 'academics:create_announcement' class.id %}" class="btn btn-sm btn-primary">Post Announcement</a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if announcements %}
+                        {% for announcement in announcements %}
+                        <div class="alert {% if announcement.priority == 'urgent' %}alert-danger{% else %}alert-info{% endif %} mb-2">
+                            <h6>{{ announcement.title }}</h6>
+                            <p class="mb-1">{{ announcement.content }}</p>
+                            <small class="text-muted">Posted by {{ announcement.author.get_full_name }} on {{ announcement.created_at|date:"M d, Y" }}</small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No announcements yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Materials -->
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Class Materials</h5>
+                </div>
+                <div class="card-body">
+                    {% if materials %}
+                        <ul class="list-group">
+                        {% for material in materials %}
+                            <li class="list-group-item">
+                                <a href="{{ material.file.url }}" target="_blank">{{ material.title }}</a>
+                                <br><small class="text-muted">{{ material.description }}</small>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No materials uploaded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignments -->
+    <div class="row">
+        <div class="col-md-12">
+            {% if user.role == 'teacher' and class.teacher == user %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Class Roster ({{ class.students.count }} students)</h5>
+                </div>
+                <div class="card-body">
+                    {% if class.students.all %}
+                        <div class="row">
+                            {% for student in class.students.all %}
+                            <div class="col-md-4 mb-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-person-circle fs-4 me-2"></i>
+                                    <div>
+                                        <strong>{{ student.get_full_name }}</strong><br>
+                                        <small class="text-muted">{{ student.email }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No students enrolled yet. <a href="{% url 'academics:manage_students' class.id %}">Add students</a></p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Assignments</h5>
+                </div>
+                <div class="card-body">
+                    {% if assignments %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Due Date</th>
+                                        <th>Points</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in assignments %}
+                                    <tr>
+                                        <td>{{ assignment.title }}</td>
+                                        <td>{{ assignment.due_date|date:"M d, Y h:i A" }}</td>
+                                        <td>{{ assignment.total_points }}</td>
+                                        <td>
+                                            {% if user.role == 'student' %}
+                                                {% if assignment in user.submissions.all %}
+                                                    <span class="badge bg-success">Submitted</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No assignments yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

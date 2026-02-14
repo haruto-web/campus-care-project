@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Post Announcement{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Post Announcement - {{ class.code }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Content</label>
+                            <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="normal">Normal</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Announcement</button>
+                        <a href="{% url 'academics:class_detail' class.id %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
