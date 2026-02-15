@@ -287,3 +287,18 @@ def delete_material(request, material_id):
     material.delete()
     messages.success(request, 'Material deleted successfully!')
     return redirect('academics:class_detail', class_id=class_id)
+
+@login_required
+def my_classes(request):
+    if request.user.role == 'teacher':
+        classes = Class.objects.filter(teacher=request.user)
+    elif request.user.role == 'student':
+        classes = request.user.enrolled_classes.all()
+    else:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    context = {
+        'classes': classes,
+    }
+    return render(request, 'academics/my_classes.html', context)

@@ -25,17 +25,17 @@
                     </li>
                     {% if user.role == 'student' %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#">My Classes</a>
+                        <a class="nav-link" href="{% url 'academics:my_classes' %}">My Classes</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#">Assignments</a>
                     </li>
                     {% elif user.role == 'teacher' %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#">My Classes</a>
+                        <a class="nav-link" href="{% url 'academics:my_classes' %}">My Classes</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Students</a>
+                        <a class="nav-link" href="{% url 'students_list' %}">Students</a>
                     </li>
                     {% elif user.role == 'counselor' %}
                     <li class="nav-item">
@@ -52,7 +52,7 @@
                             <i class="bi bi-person-circle"></i> {{ user.get_full_name }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
                         </ul>

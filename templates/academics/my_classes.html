@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}My Classes - Campus Care{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Classes</h2>
+        {% if user.role == 'teacher' %}
+        <a href="{% url 'academics:create_class' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create New Class
+        </a>
+        {% endif %}
+    </div>
+    
+    {% if classes %}
+    <div class="row">
+        {% for class in classes %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ class.code }}</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">{{ class.name }}</h6>
+                    <p class="card-text text-muted mb-2">
+                        <i class="bi bi-person"></i> 
+                        {% if user.role == 'teacher' %}
+                        {{ class.students.count }} student{{ class.students.count|pluralize }}
+                        {% else %}
+                        {{ class.teacher.get_full_name }}
+                        {% endif %}
+                    </p>
+                    {% if class.schedule %}
+                    <p class="card-text text-muted mb-2">
+                        <i class="bi bi-clock"></i> {{ class.schedule }}
+                    </p>
+                    {% endif %}
+                    {% if class.room %}
+                    <p class="card-text text-muted mb-2">
+                        <i class="bi bi-geo-alt"></i> {{ class.room }}
+                    </p>
+                    {% endif %}
+                    <p class="card-text">
+                        <small class="text-muted">{{ class.semester }}</small>
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'academics:class_detail' class.id %}" class="btn btn-sm btn-primary w-100">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> 
+        {% if user.role == 'teacher' %}
+        You haven't created any classes yet. Click "Create New Class" to get started.
+        {% else %}
+        You are not enrolled in any classes yet.
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

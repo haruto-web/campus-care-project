@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ student.get_full_name }} - Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if student.profile_picture %}
+                    <img src="{{ student.profile_picture.url }}" class="rounded-circle mb-3" width="120" height="120" alt="Profile">
+                    {% else %}
+                    <div class="bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 120px; height: 120px; font-size: 48px;">
+                        {{ student.first_name.0 }}{{ student.last_name.0 }}
+                    </div>
+                    {% endif %}
+                    <h5>{{ student.get_full_name }}</h5>
+                    <p class="text-muted mb-2">{{ student.email }}</p>
+                    {% if student.phone %}
+                    <p class="text-muted mb-2"><i class="bi bi-telephone"></i> {{ student.phone }}</p>
+                    {% endif %}
+                    
+                    {% if risk_assessment %}
+                    <div class="mt-3">
+                        {% if risk_assessment.risk_level == 'high' %}
+                        <span class="badge bg-danger fs-6">High Risk</span>
+                        {% elif risk_assessment.risk_level == 'medium' %}
+                        <span class="badge bg-warning fs-6">Medium Risk</span>
+                        {% else %}
+                        <span class="badge bg-success fs-6">Low Risk</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Quick Stats</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>GPA:</strong> 
+                        <span class="float-end">{{ risk_assessment.gpa|default:"N/A" }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Attendance:</strong> 
+                        <span class="float-end">{{ attendance_rate|default:"N/A" }}%</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Missing Assignments:</strong> 
+                        <span class="float-end">{{ risk_assessment.missing_assignments|default:0 }}</span>
+                    </div>
+                    <div>
+                        <strong>Classes Enrolled:</strong> 
+                        <span class="float-end">{{ enrolled_classes.count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Enrolled Classes</h5>
+                </div>
+                <div class="card-body">
+                    {% if enrolled_classes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Teacher</th>
+                                    <th>Schedule</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for class in enrolled_classes %}
+                                <tr>
+                                    <td><strong>{{ class.code }}</strong></td>
+                                    <td>{{ class.name }}</td>
+                                    <td>{{ class.teacher.get_full_name }}</td>
+                                    <td>{{ class.schedule|default:"N/A" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No classes enrolled</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Recent Attendance</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_attendance %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Class</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in recent_attendance %}
+                                        <tr>
+                                            <td>{{ record.date }}</td>
+                                            <td>{{ record.class_obj.code }}</td>
+                                            <td>
+                                                {% if record.status == 'present' %}
+                                                <span class="badge bg-success">Present</span>
+                                                {% elif record.status == 'late' %}
+                                                <span class="badge bg-warning">Late</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">Absent</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No attendance records</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Recent Wellness Check-ins</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if wellness_checkins %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Stress</th>
+                                            <th>Motivation</th>
+                                            <th>Need Help</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for checkin in wellness_checkins %}
+                                        <tr>
+                                            <td>{{ checkin.date }}</td>
+                                            <td>{{ checkin.stress_level }}/5</td>
+                                            <td>{{ checkin.motivation_level }}/5</td>
+                                            <td>
+                                                {% if checkin.need_help %}
+                                                <span class="badge bg-warning">Yes</span>
+                                                {% else %}
+                                                <span class="badge bg-success">No</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No wellness check-ins</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Teacher Concerns</h5>
+                </div>
+                <div class="card-body">
+                    {% if concerns %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Teacher</th>
+                                    <th>Type</th>
+                                    <th>Severity</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for concern in concerns %}
+                                <tr>
+                                    <td>{{ concern.date_observed }}</td>
+                                    <td>{{ concern.teacher.get_full_name }}</td>
+                                    <td><span class="badge bg-info">{{ concern.get_concern_type_display }}</span></td>
+                                    <td>
+                                        {% if concern.severity == 'high' %}
+                                        <span class="badge bg-danger">High</span>
+                                        {% elif concern.severity == 'medium' %}
+                                        <span class="badge bg-warning">Medium</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Low</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ concern.description|truncatewords:15 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No concerns reported</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Interventions</h5>
+                </div>
+                <div class="card-body">
+                    {% if interventions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for intervention in interventions %}
+                                <tr>
+                                    <td>{{ intervention.scheduled_date }}</td>
+                                    <td><span class="badge bg-primary">{{ intervention.get_intervention_type_display }}</span></td>
+                                    <td>
+                                        {% if intervention.status == 'completed' %}
+                                        <span class="badge bg-success">Completed</span>
+                                        {% elif intervention.status == 'scheduled' %}
+                                        <span class="badge bg-info">Scheduled</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Cancelled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ intervention.description|truncatewords:15 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No interventions recorded</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

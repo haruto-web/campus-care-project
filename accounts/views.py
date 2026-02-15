@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -190,3 +190,129 @@ def counselor_dashboard(request):
 
 def admin_dashboard(request):
     return counselor_dashboard(request)
+
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        request.user.first_name = request.POST.get('first_name')
+        request.user.last_name = request.POST.get('last_name')
+        request.user.email = request.POST.get('email')
+        request.user.phone = request.POST.get('phone', '')
+        
+        if request.FILES.get('profile_picture'):
+            request.user.profile_picture = request.FILES['profile_picture']
+        
+        request.user.save()
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('profile')
+    
+    return render(request, 'accounts/profile.html')
+
+@login_required
+def student_profile_view(request, student_id):
+    student = get_object_or_404(User, id=student_id, role='student')
+    
+    # Check permission - only teachers, counselors, and admins can view
+    if request.user.role not in ['teacher', 'counselor', 'admin']:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    # Get enrolled classes
+    enrolled_classes = student.enrolled_classes.all()
+    
+    # Get risk assessment
+    risk_assessment = RiskAssessment.objects.filter(student=student).order_by('-date').first()
+    
+    # Calculate attendance rate
+    attendance_records = Attendance.objects.filter(student=student)
+    if attendance_records.exists():
+        attendance_rate = round((attendance_records.filter(status='present').count() / attendance_records.count()) * 100, 1)
+    else:
+        attendance_rate = None
+    
+    # Get recent attendance (last 10)
+    recent_attendance = Attendance.objects.filter(student=student).order_by('-date')[:10]
+    
+    # Get wellness check-ins (last 5)
+    wellness_checkins = WellnessCheckIn.objects.filter(student=student).order_by('-date')[:5]
+    
+    # Get concerns
+    from wellness.models import TeacherConcern
+    concerns = TeacherConcern.objects.filter(student=student).order_by('-date_observed')[:10]
+    
+    # Get interventions
+    interventions = Intervention.objects.filter(student=student).order_by('-scheduled_date')[:10]
+    
+    context = {
+        'student': student,
+        'enrolled_classes': enrolled_classes,
+        'risk_assessment': risk_assessment,
+        'attendance_rate': attendance_rate,
+        'recent_attendance': recent_attendance,
+        'wellness_checkins': wellness_checkins,
+        'concerns': concerns,
+        'interventions': interventions,
+    }
+    return render(request, 'accounts/student_profile.html', context)
+
+@login_required
+def students_list_view(request):
+    # Only teachers can access this
+    if request.user.role != 'teacher':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    # Get teacher's classes
+    my_classes = Class.objects.filter(teacher=request.user)
+    
+    # Get all students from teacher's classes
+    students = set()
+    for cls in my_classes:
+        students.update(cls.students.all())
+    
+    # Apply filters
+    search_query = request.GET.get('search', '')
+    class_filter = request.GET.get('class_filter', '')
+    
+    if class_filter:
+        filtered_class = Class.objects.filter(id=class_filter, teacher=request.user).first()
+        if filtered_class:
+            students = set(filtered_class.students.all())
+    
+    if search_query:
+        students = [s for s in students if 
+                   search_query.lower() in s.first_name.lower() or 
+                   search_query.lower() in s.last_name.lower() or 
+                   search_query.lower() in s.email.lower() or 
+                   search_query.lower() in s.username.lower()]
+    
+    # Prepare student data with stats
+    students_data = []
+    for student in students:
+        risk_assessment = RiskAssessment.objects.filter(student=student).order_by('-date').first()
+        attendance_records = Attendance.objects.filter(student=student)
+        
+        if attendance_records.exists():
+            attendance_rate = round((attendance_records.filter(status='present').count() / attendance_records.count()) * 100, 1)
+        else:
+            attendance_rate = None
+        
+        students_data.append({
+            'student': student,
+            'classes_count': student.enrolled_classes.count(),
+            'gpa': risk_assessment.gpa if risk_assessment else None,
+            'attendance_rate': attendance_rate,
+            'risk_level': risk_assessment.risk_level if risk_assessment else None,
+        })
+    
+    # Sort by risk level (high first)
+    risk_order = {'high': 0, 'medium': 1, 'low': 2, None: 3}
+    students_data.sort(key=lambda x: risk_order.get(x['risk_level'], 3))
+    
+    context = {
+        'students': students_data,
+        'my_classes': my_classes,
+        'search_query': search_query,
+        'class_filter': class_filter,
+    }
+    return render(request, 'accounts/students_list.html', context)

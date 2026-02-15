@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}My Students - Campus Care{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Students</h2>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="mb-3">
+                <form method="get" class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="search" placeholder="Search by name, email, or username..." value="{{ search_query }}">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" name="class_filter">
+                            <option value="">All Classes</option>
+                            {% for class in my_classes %}
+                            <option value="{{ class.id }}" {% if class_filter == class.id|stringformat:"s" %}selected{% endif %}>{{ class.code }} - {{ class.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">Search</button>
+                    </div>
+                </form>
+            </div>
+            
+            {% if students %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Classes</th>
+                            <th>GPA</th>
+                            <th>Attendance</th>
+                            <th>Risk Level</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student_data in students %}
+                        <tr>
+                            <td>
+                                <strong>{{ student_data.student.get_full_name }}</strong>
+                            </td>
+                            <td>{{ student_data.student.email }}</td>
+                            <td>{{ student_data.classes_count }}</td>
+                            <td>{{ student_data.gpa|default:"N/A" }}</td>
+                            <td>{{ student_data.attendance_rate|default:"N/A" }}%</td>
+                            <td>
+                                {% if student_data.risk_level == 'high' %}
+                                <span class="badge bg-danger">High</span>
+                                {% elif student_data.risk_level == 'medium' %}
+                                <span class="badge bg-warning">Medium</span>
+                                {% elif student_data.risk_level == 'low' %}
+                                <span class="badge bg-success">Low</span>
+                                {% else %}
+                                <span class="badge bg-secondary">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'student_profile' student_data.student.id %}" class="btn btn-sm btn-primary">View Profile</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No students found. Students will appear here once you add them to your classes.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
