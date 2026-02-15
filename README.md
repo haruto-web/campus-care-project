@@ -127,23 +127,23 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 #### 3.5 Student Detail/Profile Page
 **Counselor/Teacher View:**
-- ⏳ Student info (name, email, classes, photo)
-- ⏳ Risk level indicator (color-coded)
-- ⏳ Academic performance:
-  - ⏳ Current GPA
+- ✅ Student info (name, email, classes, photo)
+- ✅ Risk level indicator (color-coded)
+- ✅ Academic performance:
+  - ✅ Current GPA
   - ⏳ Grade trends (chart)
-  - ⏳ Missing assignments list
-- ⏳ Attendance:
-  - ⏳ Attendance rate
-  - ⏳ Recent absences
-- ⏳ Wellness data:
+  - ✅ Missing assignments count
+- ✅ Attendance:
+  - ✅ Attendance rate
+  - ✅ Recent absences
+- ✅ Wellness data:
   - ⏳ Check-in history (chart)
-  - ⏳ Recent responses
-- ⏳ Concerns:
-  - ⏳ Teacher-submitted concerns
-- ⏳ Interventions:
-  - ⏳ Past and current interventions
-  - ⏳ Notes from counselors
+  - ✅ Recent responses
+- ✅ Concerns:
+  - ✅ Teacher-submitted concerns
+- ✅ Interventions:
+  - ✅ Past and current interventions
+  - ✅ Status and descriptions
 
 #### 3.6 Intervention Management
 **Counselor Actions:**
@@ -225,8 +225,8 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 - ✅ Grade Assignments - *grading interface*
 - ✅ Submit Concern - *concern form*
 - ✅ View Concerns - *concerns list*
-- ⏳ Student Profile View
-- ⏳ Profile
+- ✅ Student Profile View - *comprehensive student details*
+- ✅ Profile - *view and edit own profile*
 
 ### Counselor Pages
 - ✅ Login
@@ -335,8 +335,8 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 ## Current Progress Summary
 
-### ✅ COMPLETED (65%)
-- Database models (13 models: Announcement, Material)
+### ✅ COMPLETED (70%)
+- Database models (13 models: Announcement, Material, TeacherConcern)
 - User authentication (login/register/logout)
 - Role-based dashboards (Student, Teacher, Counselor, Admin)
 - Admin panel for data management
@@ -352,12 +352,17 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 - View submissions page
 - Attendance marking interface
 - Teacher concern reporting (complete)
+- Teacher profile page (view/edit)
+- Student profile view for teachers (comprehensive)
+- Students list page with search/filter
+- My Classes page (teachers & students)
+- Working navbar navigation
 - PostgreSQL database migration
 - Media file handling
 - Basic navigation
 - Responsive UI with Bootstrap
 
-### 🔄 IN PROGRESS (10%)
+### 🔄 IN PROGRESS (5%)
 - Student assignment submission
 - Student wellness check-in form
 
@@ -365,12 +370,12 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 - Student assignment submission
 - Wellness check-in form
 - Intervention creation form
-- Student detail page
 - Automated risk calculation
 - Alert automation
 - Announcement read status
 - Reports & analytics
 - Charts & visualizations
+- Password reset functionality
 
 ---
 
@@ -384,13 +389,69 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 ---
 
-**Last Updated:** February 14, 2026
-**Overall Progress:** ~65% Complete
-**Status:** Teacher features complete! Moving to student features
+**Last Updated:** February 15, 2026
+**Overall Progress:** ~70% Complete
+**Status:** All teacher features 100% complete! Moving to student features
 
 ---
 
-## Recent Updates (Feb 14, 2026)
+## Recent Updates (Feb 15, 2026)
+
+### ✅ New Features Added:
+1. **Teacher Profile Page** - View and edit profile information, upload profile picture
+2. **Student Profile View** - Comprehensive student details for teachers/counselors
+   - Risk level indicator with color coding
+   - Academic stats (GPA, attendance rate, missing assignments)
+   - Enrolled classes table
+   - Recent attendance records (last 10)
+   - Recent wellness check-ins (last 5)
+   - Teacher concerns history (last 10)
+   - Interventions tracking (last 10)
+3. **Students List Page** - View all students with search and filter
+   - Search by name, email, or username
+   - Filter by class
+   - Display key metrics for each student
+   - Sorted by risk level (high-risk first)
+4. **My Classes Page** - Dedicated page for viewing all classes
+   - Grid layout with class cards
+   - Quick access to class details
+   - Works for both teachers and students
+5. **Working Navbar Navigation** - All links functional
+   - Dashboard, My Classes, Students (teachers), Profile
+   - Role-based navigation items
+
+### 🔗 New URLs:
+- `/profile/` - User profile page
+- `/students/` - Students list (teachers only)
+- `/student/<id>/` - Student profile view
+- `/class/my-classes/` - My Classes page
+
+### 📄 New Templates:
+- `accounts/profile.html` - User profile page
+- `accounts/student_profile.html` - Detailed student view
+- `accounts/students_list.html` - Students list with search
+- `academics/my_classes.html` - My Classes page
+
+### 🎯 All Teacher Features Complete:
+- ✅ Create and manage classes
+- ✅ Add/remove students with search
+- ✅ View class roster
+- ✅ Post announcements
+- ✅ Upload and delete materials
+- ✅ Create assignments
+- ✅ Mark attendance
+- ✅ View submissions
+- ✅ Grade assignments with feedback
+- ✅ Report student concerns
+- ✅ View submitted concerns
+- ✅ View comprehensive student profiles
+- ✅ Search and filter students
+- ✅ Edit own profile
+- ✅ Navigate between all pages
+
+---
+
+## Previous Updates (Feb 14, 2026)
 
 ### ✅ New Features Added:
 1. **Class Detail Pages** - Full view for students and teachers
