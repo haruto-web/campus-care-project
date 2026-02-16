@@ -39,10 +39,16 @@
                     </li>
                     {% elif user.role == 'counselor' %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#">At-Risk Students</a>
+                        <a class="nav-link" href="{% url 'wellness:at_risk_students' %}">At-Risk Students</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Interventions</a>
+                        <a class="nav-link" href="{% url 'wellness:interventions_list' %}">Interventions</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'wellness:alerts_list' %}">Alerts</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'wellness:reports' %}">Reports</a>
                     </li>
                     {% endif %}
                 </ul>

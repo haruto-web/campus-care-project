@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Update Intervention - Campus Care{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-pencil-square"></i> Update Intervention</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <strong>Student:</strong> {{ intervention.student.get_full_name }}<br>
+                        <strong>Created:</strong> {{ intervention.created_at|date:"M d, Y g:i A" }}
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Student *</label>
+                            {{ form.student }}
+                            {% if form.student.errors %}
+                            <div class="text-danger">{{ form.student.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Intervention Type *</label>
+                            {{ form.intervention_type }}
+                            {% if form.intervention_type.errors %}
+                            <div class="text-danger">{{ form.intervention_type.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Description *</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Scheduled Date & Time *</label>
+                            {{ form.scheduled_date }}
+                            {% if form.scheduled_date.errors %}
+                            <div class="text-danger">{{ form.scheduled_date.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Status *</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                            <div class="text-danger">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                            <div class="text-danger">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Outcome</label>
+                            {{ form.outcome }}
+                            <small class="form-text text-muted">Document the results and any follow-up actions needed</small>
+                            {% if form.outcome.errors %}
+                            <div class="text-danger">{{ form.outcome.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Update Intervention
+                            </button>
+                            <a href="{% url 'wellness:interventions_list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

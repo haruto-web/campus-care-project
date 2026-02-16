@@ -75,7 +75,7 @@
                                         <td>{{ assessment.attendance_rate|default:"N/A" }}%</td>
                                         <td>{{ assessment.missing_assignments }}</td>
                                         <td>
-                                            <a href="#" class="btn btn-sm btn-primary">View</a>
+                                            <a href="{% url 'student_profile' assessment.student.id %}" class="btn btn-sm btn-primary">View</a>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -124,13 +124,13 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="#" class="btn btn-outline-primary">
+                        <a href="{% url 'wellness:create_intervention' %}" class="btn btn-outline-primary">
                             <i class="bi bi-plus-circle"></i> Create Intervention
                         </a>
-                        <a href="#" class="btn btn-outline-info">
+                        <a href="{% url 'wellness:at_risk_students' %}" class="btn btn-outline-info">
                             <i class="bi bi-people"></i> View All Students
                         </a>
-                        <a href="#" class="btn btn-outline-warning">
+                        <a href="{% url 'wellness:generate_report' %}" class="btn btn-outline-warning">
                             <i class="bi bi-graph-up"></i> Generate Report
                         </a>
                     </div>

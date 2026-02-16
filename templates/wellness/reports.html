@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports & Analytics - Campus Care{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-graph-up"></i> Reports & Analytics</h2>
+            <p class="text-muted">System-wide statistics and insights</p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h3>{{ high_risk_count }}</h3>
+                    <p class="mb-0">High Risk Students</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h3>{{ medium_risk_count }}</h3>
+                    <p class="mb-0">Medium Risk Students</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3>{{ low_risk_count }}</h3>
+                    <p class="mb-0">Low Risk Students</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3>{{ total_students }}</h3>
+                    <p class="mb-0">Total Students</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Intervention Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Intervention Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h4 class="text-primary">{{ scheduled_interventions }}</h4>
+                            <small class="text-muted">Scheduled</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-success">{{ completed_interventions }}</h4>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-secondary">{{ cancelled_interventions }}</h4>
+                            <small class="text-muted">Cancelled</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <p class="mb-0"><strong>Total Interventions:</strong> {{ total_interventions }}</p>
+                    <p class="mb-0"><strong>Completion Rate:</strong> {{ completion_rate }}%</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Alert Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-danger">{{ unresolved_alerts }}</h4>
+                            <small class="text-muted">Unresolved</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">{{ resolved_alerts }}</h4>
+                            <small class="text-muted">Resolved</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <p class="mb-0"><strong>Total Alerts:</strong> {{ total_alerts }}</p>
+                    <p class="mb-0"><strong>Resolution Rate:</strong> {{ resolution_rate }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts by Type -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Alerts by Type</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tbody>
+                            {% for alert_type in alerts_by_type %}
+                            <tr>
+                                <td>{{ alert_type.type_display }}</td>
+                                <td class="text-end"><strong>{{ alert_type.count }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Interventions by Type</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tbody>
+                            {% for intervention_type in interventions_by_type %}
+                            <tr>
+                                <td>{{ intervention_type.type_display }}</td>
+                                <td class="text-end"><strong>{{ intervention_type.count }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Academic Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Academic Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h4>{{ avg_gpa }}</h4>
+                            <small class="text-muted">Average GPA</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4>{{ avg_attendance }}%</h4>
+                            <small class="text-muted">Average Attendance</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4>{{ total_concerns }}</h4>
+                            <small class="text-muted">Teacher Concerns</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4>{{ total_checkins }}</h4>
+                            <small class="text-muted">Wellness Check-ins</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Concerns (Last 7 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Type</th>
+                                <th>Severity</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for concern in recent_concerns %}
+                            <tr>
+                                <td><a href="{% url 'student_profile' concern.student.id %}">{{ concern.student.get_full_name }}</a></td>
+                                <td><span class="badge bg-info">{{ concern.get_concern_type_display }}</span></td>
+                                <td>
+                                    {% if concern.severity == 'high' %}
+                                    <span class="badge bg-danger">High</span>
+                                    {% elif concern.severity == 'medium' %}
+                                    <span class="badge bg-warning text-dark">Medium</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Low</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ concern.date_observed|date:"M d" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No recent concerns</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Upcoming Interventions</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for intervention in upcoming_interventions %}
+                            <tr>
+                                <td><a href="{% url 'student_profile' intervention.student.id %}">{{ intervention.student.get_full_name }}</a></td>
+                                <td><span class="badge bg-primary">{{ intervention.get_intervention_type_display }}</span></td>
+                                <td>{{ intervention.scheduled_date|date:"M d, g:i A" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">No upcoming interventions</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

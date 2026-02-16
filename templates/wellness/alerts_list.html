@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Alerts - Campus Care{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-bell-fill"></i> Alerts & Notifications</h2>
+            <p class="text-muted">Monitor system alerts and student concerns</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Alert Type</label>
+                    <select name="type" class="form-select">
+                        <option value="">All Types</option>
+                        <option value="high_risk" {% if alert_type == 'high_risk' %}selected{% endif %}>High Risk Student</option>
+                        <option value="missing_assignments" {% if alert_type == 'missing_assignments' %}selected{% endif %}>Missing Assignments</option>
+                        <option value="low_attendance" {% if alert_type == 'low_attendance' %}selected{% endif %}>Low Attendance</option>
+                        <option value="wellness_concern" {% if alert_type == 'wellness_concern' %}selected{% endif %}>Wellness Concern</option>
+                        <option value="teacher_concern" {% if alert_type == 'teacher_concern' %}selected{% endif %}>Teacher Concern</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Show Resolved</label>
+                    <select name="resolved" class="form-select">
+                        <option value="">No</option>
+                        <option value="true" {% if show_resolved == 'true' %}selected{% endif %}>Yes</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Alerts List -->
+    <div class="row">
+        {% for alert in alerts %}
+        <div class="col-12 mb-3">
+            <div class="card {% if not alert.is_read %}border-primary{% endif %} {% if alert.resolved %}bg-light{% endif %}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-1 text-center">
+                            {% if alert.alert_type == 'high_risk' %}
+                            <i class="bi bi-exclamation-triangle-fill text-danger fs-2"></i>
+                            {% elif alert.alert_type == 'missing_assignments' %}
+                            <i class="bi bi-file-earmark-x text-warning fs-2"></i>
+                            {% elif alert.alert_type == 'low_attendance' %}
+                            <i class="bi bi-calendar-x text-warning fs-2"></i>
+                            {% elif alert.alert_type == 'wellness_concern' %}
+                            <i class="bi bi-heart-pulse text-danger fs-2"></i>
+                            {% else %}
+                            <i class="bi bi-chat-left-text text-info fs-2"></i>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-7">
+                            <h5 class="mb-1">
+                                {{ alert.get_alert_type_display }}
+                                {% if not alert.is_read %}
+                                <span class="badge bg-primary">New</span>
+                                {% endif %}
+                                {% if alert.resolved %}
+                                <span class="badge bg-success">Resolved</span>
+                                {% endif %}
+                            </h5>
+                            <p class="mb-1">{{ alert.message }}</p>
+                            <small class="text-muted">
+                                <strong>Student:</strong> 
+                                <a href="{% url 'student_profile' alert.student.id %}">{{ alert.student.get_full_name }}</a>
+                                | {{ alert.created_at|date:"M d, Y g:i A" }}
+                            </small>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if not alert.resolved %}
+                            <div class="btn-group" role="group">
+                                {% if not alert.is_read %}
+                                <a href="{% url 'wellness:mark_alert_read' alert.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-check"></i> Mark Read
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'wellness:resolve_alert' alert.id %}" class="btn btn-sm btn-success">
+                                    <i class="bi bi-check-circle"></i> Resolve
+                                </a>
+                                <a href="{% url 'student_profile' alert.student.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-person"></i> View Student
+                                </a>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">Resolved</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No alerts found.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
