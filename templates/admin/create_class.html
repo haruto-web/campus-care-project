@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Class - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-plus-circle"></i> Create Class for Teacher</h2>
+            <p class="text-muted">Assign a new class to a teacher</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="teacher" class="form-label">Select Teacher</label>
+                            <select name="teacher" id="teacher" class="form-select" required>
+                                <option value="">Choose a teacher...</option>
+                                {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}">{{ teacher.get_full_name }} ({{ teacher.email }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Class Name</label>
+                            {{ form.name }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.code.id_for_label }}" class="form-label">Class Code</label>
+                            {{ form.code }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.semester.id_for_label }}" class="form-label">Semester</label>
+                                {{ form.semester }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.room.id_for_label }}" class="form-label">Room</label>
+                                {{ form.room }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.schedule.id_for_label }}" class="form-label">Schedule</label>
+                            {{ form.schedule }}
+                            <small class="form-text text-muted">e.g., MWF 9:00-10:00 AM</small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Create Class
+                            </button>
+                            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

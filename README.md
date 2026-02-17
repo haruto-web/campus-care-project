@@ -345,6 +345,106 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 ---
 
+## Upcoming Feature Enhancements
+
+### 🎓 TEACHER ENHANCEMENTS
+
+#### Student Navigation
+- ⏳ **Year Level Filter** - Add year level filter in student view page for easier navigation
+
+#### Classes Navigation
+- ⏳ **Year Level/Section Filter** - Add filter for year level and section to navigate the interface smoothly
+
+#### Student Management
+- ⏳ **Drop Student Feature** - Change "remove" function to "drop student" feature in My Classes → Subject → Manage Students
+  - Implement proper drop workflow
+  - Add confirmation dialog
+  - Track drop history
+
+---
+
+### 🧠 COUNSELOR ENHANCEMENTS
+
+#### Dashboard & Analytics
+- ⏳ **Statistics Data Interpretation** - Add visual data interpretation for counselor insights
+- ⏳ **Warning Level System** - Add warning level for unnoticed violation/concern notification messages
+  - Implement severity-based warnings
+  - Highlight critical unresolved concerns
+
+#### At-Risk Students
+- ⏳ **Year Level Filter** - Add year level filter in at-risk students list for better organization
+
+#### Interventions
+- ⏳ **Year Level Filter** - Add year level filter in interventions list
+
+#### Alerts & Notifications
+- ⏳ **Color-Coded Severity** - Add color coding to distinguish severity levels
+  - Critical: Red
+  - High: Orange
+  - Medium: Yellow
+  - Low: Blue
+- ⏳ **Priority Filter** - Add filter based on priority level
+
+#### Reports & Analytics
+- ⏳ **Analytical Graphs** - Add data visualization graphs
+  - Bar graphs for risk distribution
+  - Pie charts for intervention types
+  - Line graphs for trends over time
+- ⏳ **Remove Average GPA** - Remove average GPA from academic overview section
+- ⏳ **Age Range Analysis** - Add age range of most problematic students
+  - Identify age groups with highest risk
+  - Display age distribution charts
+
+---
+
+### 👨‍💼 ADMIN ENHANCEMENTS
+
+#### Dashboard Analytics
+- ⏳ **Statistics Data Interpretation** - Add comprehensive data visualization
+  - Bar graphs for user distribution
+  - Pie graphs for class enrollment
+  - Line graphs for system usage trends
+
+#### Teacher Management
+- ⏳ **Visit Teacher Dashboard** - Admin can view teacher dashboards and profiles
+  - Access teacher's view
+  - Monitor teacher activities
+
+#### Class Management
+- ⏳ **Create Class for Teachers** - Admin can create classes on behalf of teachers
+  - Assign teacher to class
+  - Set up class details
+
+#### Student Enrollment
+- ⏳ **Assign Students to Subjects** - Admin can enroll students in classes/subjects
+  - Bulk enrollment feature
+  - Individual student assignment
+
+---
+
+### 🎒 STUDENT ENHANCEMENTS
+
+#### Dashboard
+- ⏳ **Remove "My Stats"** - Remove "My Stats" section from student dashboard
+- ⏳ **One-Page Dashboard** - Make dashboard a single-page view
+- ⏳ **Combine Announcements** - Integrate announcements with checkbox functionality
+  - Mark announcements as read
+  - Select multiple announcements
+
+#### Announcements & Materials
+- ⏳ **Separate Pages** - Create separate pages for Announcements and Class Materials
+- ⏳ **Priority Filter** - Add filter by priority (urgent/normal)
+- ⏳ **Date Filter** - Add filter by date range
+
+#### Assignments
+- ⏳ **Assignment Page Implementation** - Create dedicated assignment page
+  - View all assignments across classes
+  - Filter by status (upcoming/overdue/completed)
+  - Submit assignments
+  - View grades and feedback
+
+---
+
 ## Recent Updates (Feb 15, 2026 - Final Counselor Features)
 
 ### ✅ New Features Added:

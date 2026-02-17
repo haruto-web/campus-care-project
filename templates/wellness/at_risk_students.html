@@ -15,17 +15,27 @@
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Search Student</label>
                     <input type="text" name="search" class="form-control" placeholder="Name or email..." value="{{ search_query }}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Risk Level</label>
                     <select name="risk_level" class="form-select">
                         <option value="">All Levels</option>
                         <option value="high" {% if risk_filter == 'high' %}selected{% endif %}>High Risk</option>
                         <option value="medium" {% if risk_filter == 'medium' %}selected{% endif %}>Medium Risk</option>
                         <option value="low" {% if risk_filter == 'low' %}selected{% endif %}>Low Risk</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Year Level</label>
+                    <select name="year_level" class="form-select">
+                        <option value="">All Grades</option>
+                        <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
+                        <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
+                        <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
+                        <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">

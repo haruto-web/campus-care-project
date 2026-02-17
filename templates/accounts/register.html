@@ -24,11 +24,22 @@
                         
                         <div class="mb-3">
                             <label for="role" class="form-label">I am a:</label>
-                            <select class="form-select" id="role" name="role" required>
+                            <select class="form-select" id="role" name="role" required onchange="toggleYearLevel()">
                                 <option value="">Select your role</option>
                                 <option value="student">Student</option>
                                 <option value="teacher">Teacher</option>
                                 <option value="counselor">Counselor</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3" id="year_level_field" style="display: none;">
+                            <label for="year_level" class="form-label">Grade Level</label>
+                            <select class="form-select" id="year_level" name="year_level">
+                                <option value="">Select grade level</option>
+                                <option value="7">Grade 7</option>
+                                <option value="8">Grade 8</option>
+                                <option value="9">Grade 9</option>
+                                <option value="10">Grade 10</option>
                             </select>
                         </div>
                         
@@ -41,6 +52,15 @@
                                 <label for="last_name" class="form-label">Last Name</label>
                                 <input type="text" class="form-control" id="last_name" name="last_name" required>
                             </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="gender" class="form-label">Gender</label>
+                            <select class="form-select" id="gender" name="gender" required>
+                                <option value="">Select gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
                         </div>
                         
                         <div class="mb-3">
@@ -79,4 +99,21 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleYearLevel() {
+    const role = document.getElementById('role').value;
+    const yearLevelField = document.getElementById('year_level_field');
+    const yearLevelSelect = document.getElementById('year_level');
+    
+    if (role === 'student') {
+        yearLevelField.style.display = 'block';
+        yearLevelSelect.required = true;
+    } else {
+        yearLevelField.style.display = 'none';
+        yearLevelSelect.required = false;
+        yearLevelSelect.value = '';
+    }
+}
+</script>
 {% endblock %}

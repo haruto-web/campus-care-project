@@ -29,6 +29,16 @@
                         <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
                     </select>
                 </div>
+                <div class="col-md-2">
+                    <label class="form-label">Year Level</label>
+                    <select name="year_level" class="form-select">
+                        <option value="">All Grades</option>
+                        <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
+                        <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
+                        <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
+                        <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
+                    </select>
+                </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">Filter</button>
                 </div>

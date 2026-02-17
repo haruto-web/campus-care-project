@@ -64,6 +64,7 @@ def at_risk_students_list(request):
     # Apply filters
     risk_filter = request.GET.get('risk_level', '')
     search_query = request.GET.get('search', '')
+    year_level_filter = request.GET.get('year_level', '')
     
     if risk_filter:
         risk_assessments = risk_assessments.filter(risk_level=risk_filter)
@@ -74,6 +75,9 @@ def at_risk_students_list(request):
             Q(student__last_name__icontains=search_query) |
             Q(student__email__icontains=search_query)
         )
+    
+    if year_level_filter:
+        risk_assessments = risk_assessments.filter(student__year_level=year_level_filter)
     
     # Prepare student data
     students_data = []
@@ -91,6 +95,7 @@ def at_risk_students_list(request):
         'students': students_data,
         'risk_filter': risk_filter,
         'search_query': search_query,
+        'year_level_filter': year_level_filter,
     }
     return render(request, 'wellness/at_risk_students.html', context)
 
@@ -129,12 +134,18 @@ def interventions_list(request):
     
     # Apply filters
     status_filter = request.GET.get('status', '')
+    year_level_filter = request.GET.get('year_level', '')
+    
     if status_filter:
         interventions = interventions.filter(status=status_filter)
+    
+    if year_level_filter:
+        interventions = interventions.filter(student__year_level=year_level_filter)
     
     context = {
         'interventions': interventions,
         'status_filter': status_filter,
+        'year_level_filter': year_level_filter,
     }
     return render(request, 'wellness/interventions_list.html', context)
 
@@ -173,6 +184,7 @@ def alerts_list(request):
     # Apply filters
     alert_type = request.GET.get('type', '')
     show_resolved = request.GET.get('resolved', '')
+    severity_filter = request.GET.get('severity', '')
     
     if alert_type:
         alerts = alerts.filter(alert_type=alert_type)
@@ -180,10 +192,20 @@ def alerts_list(request):
     if show_resolved != 'true':
         alerts = alerts.filter(resolved=False)
     
+    if severity_filter:
+        alerts = alerts.filter(severity=severity_filter)
+    
+    # Count unread critical/high severity alerts for warning
+    critical_unread = Alert.objects.filter(severity='critical', is_read=False, resolved=False).count()
+    high_unread = Alert.objects.filter(severity='high', is_read=False, resolved=False).count()
+    
     context = {
         'alerts': alerts,
         'alert_type': alert_type,
         'show_resolved': show_resolved,
+        'severity_filter': severity_filter,
+        'critical_unread': critical_unread,
+        'high_unread': high_unread,
     }
     return render(request, 'wellness/alerts_list.html', context)
 
@@ -251,15 +273,45 @@ def reports_view(request):
         if count > 0:
             interventions_by_type.append({'type_display': choice[1], 'count': count})
     
-    # Academic statistics
+    # Academic statistics (removed avg_gpa)
     latest_assessments = RiskAssessment.objects.filter(
         id__in=RiskAssessment.objects.values('student').annotate(latest=Count('id')).values('latest')
     )
-    avg_gpa = latest_assessments.aggregate(Avg('gpa'))['gpa__avg']
     avg_attendance = latest_assessments.aggregate(Avg('attendance_rate'))['attendance_rate__avg']
     
     total_concerns = TeacherConcern.objects.count()
     total_checkins = WellnessCheckIn.objects.count()
+    
+    # Age range analysis for high-risk students
+    high_risk_students = User.objects.filter(
+        risk_assessments__risk_level='high',
+        date_of_birth__isnull=False
+    ).distinct()
+    
+    age_ranges = {
+        '15-17': 0,
+        '18-20': 0,
+        '21-23': 0,
+        '24+': 0
+    }
+    
+    for student in high_risk_students:
+        age = student.get_age()
+        if age:
+            if 15 <= age <= 17:
+                age_ranges['15-17'] += 1
+            elif 18 <= age <= 20:
+                age_ranges['18-20'] += 1
+            elif 21 <= age <= 23:
+                age_ranges['21-23'] += 1
+            elif age >= 24:
+                age_ranges['24+'] += 1
+    
+    # Find most problematic age range
+    most_problematic_age = max(age_ranges, key=age_ranges.get) if any(age_ranges.values()) else None
+    
+    # Prepare age range data for chart
+    age_range_values = [age_ranges['15-17'], age_ranges['18-20'], age_ranges['21-23'], age_ranges['24+']]
     
     # Recent activity
     seven_days_ago = datetime.now() - timedelta(days=7)
@@ -271,6 +323,17 @@ def reports_view(request):
         status='scheduled',
         scheduled_date__gte=datetime.now()
     ).order_by('scheduled_date')[:10]
+    
+    # Data for charts
+    risk_distribution_data = {
+        'labels': ['High Risk', 'Medium Risk', 'Low Risk'],
+        'data': [high_risk_count, medium_risk_count, low_risk_count]
+    }
+    
+    intervention_status_data = {
+        'labels': ['Scheduled', 'Completed', 'Cancelled'],
+        'data': [scheduled_interventions, completed_interventions, cancelled_interventions]
+    }
     
     context = {
         'high_risk_count': high_risk_count,
@@ -288,12 +351,16 @@ def reports_view(request):
         'resolution_rate': resolution_rate,
         'alerts_by_type': alerts_by_type,
         'interventions_by_type': interventions_by_type,
-        'avg_gpa': round(avg_gpa, 2) if avg_gpa else 'N/A',
         'avg_attendance': round(avg_attendance, 1) if avg_attendance else 'N/A',
         'total_concerns': total_concerns,
         'total_checkins': total_checkins,
         'recent_concerns': recent_concerns,
         'upcoming_interventions': upcoming_interventions,
+        'age_ranges': age_ranges,
+        'age_range_values': age_range_values,
+        'most_problematic_age': most_problematic_age,
+        'risk_distribution_data': risk_distribution_data,
+        'intervention_status_data': intervention_status_data,
     }
     return render(request, 'wellness/reports.html', context)
 

@@ -7,7 +7,7 @@
     <div class="row mb-4">
         <div class="col">
             <h2><i class="bi bi-graph-up"></i> Reports & Analytics</h2>
-            <p class="text-muted">System-wide statistics and insights</p>
+            <p class="text-muted">System-wide statistics and insights with visual data interpretation</p>
         </div>
     </div>
 
@@ -47,7 +47,32 @@
         </div>
     </div>
 
-    <!-- Intervention Statistics -->
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart-fill"></i> Risk Level Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="riskDistributionChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart-fill"></i> Intervention Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="interventionStatusChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Intervention & Alert Statistics -->
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="card">
@@ -100,24 +125,15 @@
         </div>
     </div>
 
-    <!-- Alerts by Type -->
+    <!-- Charts Row 2 -->
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Alerts by Type</h5>
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Alerts by Type</h5>
                 </div>
                 <div class="card-body">
-                    <table class="table table-sm">
-                        <tbody>
-                            {% for alert_type in alerts_by_type %}
-                            <tr>
-                                <td>{{ alert_type.type_display }}</td>
-                                <td class="text-end"><strong>{{ alert_type.count }}</strong></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    <canvas id="alertsTypeChart" height="200"></canvas>
                 </div>
             </div>
         </div>
@@ -125,46 +141,50 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Interventions by Type</h5>
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Interventions by Type</h5>
                 </div>
                 <div class="card-body">
-                    <table class="table table-sm">
-                        <tbody>
-                            {% for intervention_type in interventions_by_type %}
-                            <tr>
-                                <td>{{ intervention_type.type_display }}</td>
-                                <td class="text-end"><strong>{{ intervention_type.count }}</strong></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    <canvas id="interventionsTypeChart" height="200"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Academic Statistics -->
+    <!-- Age Range Analysis -->
     <div class="row mb-4">
-        <div class="col-md-12">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-people-fill"></i> Age Range of High-Risk Students</h5>
+                </div>
+                <div class="card-body">
+                    {% if most_problematic_age %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>Most Problematic Age Range:</strong> {{ most_problematic_age }} years old
+                    </div>
+                    {% endif %}
+                    <canvas id="ageRangeChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">Academic Overview</h5>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
-                        <div class="col-md-3">
-                            <h4>{{ avg_gpa }}</h4>
-                            <small class="text-muted">Average GPA</small>
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <h4>{{ avg_attendance }}%</h4>
                             <small class="text-muted">Average Attendance</small>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <h4>{{ total_concerns }}</h4>
                             <small class="text-muted">Teacher Concerns</small>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <h4>{{ total_checkins }}</h4>
                             <small class="text-muted">Wellness Check-ins</small>
                         </div>
@@ -251,4 +271,140 @@
         </div>
     </div>
 </div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Risk Distribution Pie Chart
+const riskCtx = document.getElementById('riskDistributionChart').getContext('2d');
+new Chart(riskCtx, {
+    type: 'pie',
+    data: {
+        labels: {{ risk_distribution_data.labels|safe }},
+        datasets: [{
+            data: {{ risk_distribution_data.data|safe }},
+            backgroundColor: ['#dc3545', '#ffc107', '#28a745']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Intervention Status Bar Chart
+const interventionCtx = document.getElementById('interventionStatusChart').getContext('2d');
+new Chart(interventionCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ intervention_status_data.labels|safe }},
+        datasets: [{
+            label: 'Interventions',
+            data: {{ intervention_status_data.data|safe }},
+            backgroundColor: ['#0d6efd', '#28a745', '#6c757d']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Alerts by Type Bar Chart
+const alertsTypeCtx = document.getElementById('alertsTypeChart').getContext('2d');
+new Chart(alertsTypeCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for alert in alerts_by_type %}'{{ alert.type_display }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Count',
+            data: [{% for alert in alerts_by_type %}{{ alert.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: '#dc3545'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Interventions by Type Bar Chart
+const interventionsTypeCtx = document.getElementById('interventionsTypeChart').getContext('2d');
+new Chart(interventionsTypeCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for intervention in interventions_by_type %}'{{ intervention.type_display }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Count',
+            data: [{% for intervention in interventions_by_type %}{{ intervention.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: '#0d6efd'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Age Range Bar Chart
+const ageRangeCtx = document.getElementById('ageRangeChart').getContext('2d');
+new Chart(ageRangeCtx, {
+    type: 'bar',
+    data: {
+        labels: ['15-17', '18-20', '21-23', '24+'],
+        datasets: [{
+            label: 'High-Risk Students',
+            data: {{ age_range_values|safe }},
+            backgroundColor: '#ffc107'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+</script>
 {% endblock %}

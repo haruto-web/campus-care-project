@@ -11,6 +11,19 @@
         </div>
     </div>
 
+    <!-- Warning Banner -->
+    {% if critical_unread > 0 or high_unread > 0 %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <strong>Warning!</strong> You have 
+        {% if critical_unread > 0 %}<strong>{{ critical_unread }} critical</strong>{% endif %}
+        {% if critical_unread > 0 and high_unread > 0 %} and {% endif %}
+        {% if high_unread > 0 %}<strong>{{ high_unread }} high severity</strong>{% endif %}
+        unread alert(s) that require immediate attention.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
     <!-- Filters -->
     <div class="card mb-4">
         <div class="card-body">
@@ -26,7 +39,17 @@
                         <option value="teacher_concern" {% if alert_type == 'teacher_concern' %}selected{% endif %}>Teacher Concern</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label class="form-label">Severity</label>
+                    <select name="severity" class="form-select">
+                        <option value="">All Severity</option>
+                        <option value="critical" {% if severity_filter == 'critical' %}selected{% endif %}>Critical</option>
+                        <option value="high" {% if severity_filter == 'high' %}selected{% endif %}>High</option>
+                        <option value="medium" {% if severity_filter == 'medium' %}selected{% endif %}>Medium</option>
+                        <option value="low" {% if severity_filter == 'low' %}selected{% endif %}>Low</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <label class="form-label">Show Resolved</label>
                     <select name="resolved" class="form-select">
                         <option value="">No</option>
@@ -44,25 +67,24 @@
     <div class="row">
         {% for alert in alerts %}
         <div class="col-12 mb-3">
-            <div class="card {% if not alert.is_read %}border-primary{% endif %} {% if alert.resolved %}bg-light{% endif %}">
+            <div class="card border-{{ alert.get_severity_color }} {% if not alert.is_read %}border-3{% endif %} {% if alert.resolved %}bg-light{% endif %}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-md-1 text-center">
-                            {% if alert.alert_type == 'high_risk' %}
-                            <i class="bi bi-exclamation-triangle-fill text-danger fs-2"></i>
-                            {% elif alert.alert_type == 'missing_assignments' %}
-                            <i class="bi bi-file-earmark-x text-warning fs-2"></i>
-                            {% elif alert.alert_type == 'low_attendance' %}
-                            <i class="bi bi-calendar-x text-warning fs-2"></i>
-                            {% elif alert.alert_type == 'wellness_concern' %}
-                            <i class="bi bi-heart-pulse text-danger fs-2"></i>
+                            {% if alert.severity == 'critical' %}
+                            <i class="bi bi-exclamation-octagon-fill text-danger fs-2"></i>
+                            {% elif alert.severity == 'high' %}
+                            <i class="bi bi-exclamation-triangle-fill text-warning fs-2"></i>
+                            {% elif alert.severity == 'medium' %}
+                            <i class="bi bi-info-circle-fill text-info fs-2"></i>
                             {% else %}
-                            <i class="bi bi-chat-left-text text-info fs-2"></i>
+                            <i class="bi bi-info-circle text-secondary fs-2"></i>
                             {% endif %}
                         </div>
                         <div class="col-md-7">
                             <h5 class="mb-1">
                                 {{ alert.get_alert_type_display }}
+                                <span class="badge bg-{{ alert.get_severity_color }}">{{ alert.get_severity_display }}</span>
                                 {% if not alert.is_read %}
                                 <span class="badge bg-primary">New</span>
                                 {% endif %}

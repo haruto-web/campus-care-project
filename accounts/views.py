@@ -26,6 +26,8 @@ def register_view(request):
         last_name = request.POST.get('last_name')
         role = request.POST.get('role')
         phone = request.POST.get('phone', '')
+        year_level = request.POST.get('year_level', '')
+        gender = request.POST.get('gender', '')
         
         if password != password2:
             messages.error(request, 'Passwords do not match')
@@ -48,6 +50,16 @@ def register_view(request):
             role=role,
             phone=phone
         )
+        
+        # Set year_level only for students
+        if role == 'student' and year_level:
+            user.year_level = year_level
+        
+        # Set gender
+        if gender:
+            user.gender = gender
+        
+        user.save()
         
         messages.success(request, 'Account created successfully! Please login.')
         return redirect('login')
@@ -189,7 +201,67 @@ def counselor_dashboard(request):
     return render(request, 'dashboard/counselor_dashboard.html', context)
 
 def admin_dashboard(request):
-    return counselor_dashboard(request)
+    from django.db.models import Count
+    from datetime import datetime, timedelta
+    
+    # User statistics
+    total_users = User.objects.count()
+    total_students = User.objects.filter(role='student').count()
+    total_teachers = User.objects.filter(role='teacher').count()
+    total_counselors = User.objects.filter(role='counselor').count()
+    total_admins = User.objects.filter(role='admin').count()
+    
+    # Class statistics
+    total_classes = Class.objects.count()
+    total_assignments = Assignment.objects.count()
+    
+    # Top classes by enrollment
+    top_classes = Class.objects.annotate(student_count=Count('students')).order_by('-student_count')[:5]
+    
+    # Risk statistics
+    high_risk_count = RiskAssessment.objects.filter(risk_level='high').values('student').distinct().count()
+    medium_risk_count = RiskAssessment.objects.filter(risk_level='medium').values('student').distinct().count()
+    low_risk_count = RiskAssessment.objects.filter(risk_level='low').values('student').distinct().count()
+    
+    # High risk students
+    high_risk_students = RiskAssessment.objects.filter(risk_level='high').select_related('student').order_by('-risk_score')[:10]
+    
+    # Alerts and interventions
+    unresolved_alerts = Alert.objects.filter(resolved=False).count()
+    pending_interventions = Intervention.objects.filter(status='scheduled').count()
+    recent_alerts = Alert.objects.select_related('student').order_by('-created_at')[:5]
+    
+    # Activity data (last 30 days)
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+    activity_labels = []
+    activity_data = []
+    
+    for i in range(6):
+        date = datetime.now() - timedelta(days=i*5)
+        activity_labels.insert(0, date.strftime('%b %d'))
+        count = User.objects.filter(date_joined__gte=date - timedelta(days=5), date_joined__lt=date).count()
+        activity_data.insert(0, count)
+    
+    context = {
+        'total_users': total_users,
+        'total_students': total_students,
+        'total_teachers': total_teachers,
+        'total_counselors': total_counselors,
+        'total_admins': total_admins,
+        'total_classes': total_classes,
+        'total_assignments': total_assignments,
+        'top_classes': top_classes,
+        'high_risk_count': high_risk_count,
+        'medium_risk_count': medium_risk_count,
+        'low_risk_count': low_risk_count,
+        'high_risk_students': high_risk_students,
+        'unresolved_alerts': unresolved_alerts,
+        'pending_interventions': pending_interventions,
+        'recent_alerts': recent_alerts,
+        'activity_labels': activity_labels,
+        'activity_data': activity_data,
+    }
+    return render(request, 'dashboard/admin_dashboard.html', context)
 
 @login_required
 def profile_view(request):

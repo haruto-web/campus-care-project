@@ -94,8 +94,15 @@ class Alert(models.Model):
         ('wellness_concern', 'Wellness Concern'),
         ('teacher_concern', 'Teacher Concern'),
     ]
+    SEVERITY_LEVELS = [
+        ('critical', 'Critical'),
+        ('high', 'High'),
+        ('medium', 'Medium'),
+        ('low', 'Low'),
+    ]
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='alerts')
     alert_type = models.CharField(max_length=30, choices=ALERT_TYPES)
+    severity = models.CharField(max_length=10, choices=SEVERITY_LEVELS, default='medium')
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
@@ -106,3 +113,12 @@ class Alert(models.Model):
     
     def __str__(self):
         return f"{self.alert_type} - {self.student.username}"
+    
+    def get_severity_color(self):
+        colors = {
+            'critical': 'danger',
+            'high': 'warning',
+            'medium': 'info',
+            'low': 'secondary'
+        }
+        return colors.get(self.severity, 'secondary')
