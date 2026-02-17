@@ -1,103 +1,116 @@
-{% extends 'base.html' %}
+{% extends 'counselor_base.html' %}
 
-{% block title %}Interventions - Campus Care{% endblock %}
+{% block page_title %}Interventions{% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col">
-            <h2><i class="bi bi-clipboard-check"></i> Interventions</h2>
-            <p class="text-muted">Manage student interventions and support plans</p>
-        </div>
-        <div class="col-auto">
-            <a href="{% url 'wellness:create_intervention' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Create Intervention
-            </a>
-        </div>
-    </div>
+{% block page_css %}
+<style>
+    .card {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+    }
+    
+    .table {
+        margin: 0;
+    }
+    
+    .table th {
+        border-bottom: 2px solid #e2e8f0;
+        color: #718096;
+        font-weight: 500;
+        font-size: 13px;
+        padding: 12px;
+    }
+    
+    .table td {
+        padding: 15px 12px;
+        border-bottom: 1px solid #f7fafc;
+        vertical-align: middle;
+    }
+    
+    .table tr:hover {
+        background: #f7fafc;
+    }
+</style>
+{% endblock %}
 
-    <!-- Filters -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="">All Status</option>
-                        <option value="scheduled" {% if status_filter == 'scheduled' %}selected{% endif %}>Scheduled</option>
-                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
-                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Year Level</label>
-                    <select name="year_level" class="form-select">
-                        <option value="">All Grades</option>
-                        <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
-                        <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
-                        <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
-                        <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
-                    </select>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">Filter</button>
-                </div>
-            </form>
-        </div>
-    </div>
+{% block page_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div></div>
+    <a href="{% url 'wellness:create_intervention' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Create Intervention
+    </a>
+</div>
 
-    <!-- Interventions Table -->
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Type</th>
-                            <th>Scheduled Date</th>
-                            <th>Status</th>
-                            <th>Counselor</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for intervention in interventions %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'student_profile' intervention.student.id %}" class="text-decoration-none">
-                                    {{ intervention.student.get_full_name }}
-                                </a>
-                            </td>
-                            <td>
-                                <span class="badge bg-info">{{ intervention.get_intervention_type_display }}</span>
-                            </td>
-                            <td>{{ intervention.scheduled_date|date:"M d, Y g:i A" }}</td>
-                            <td>
-                                {% if intervention.status == 'scheduled' %}
-                                <span class="badge bg-primary">Scheduled</span>
-                                {% elif intervention.status == 'completed' %}
-                                <span class="badge bg-success">Completed</span>
-                                {% else %}
-                                <span class="badge bg-secondary">Cancelled</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ intervention.counselor.get_full_name }}</td>
-                            <td>
-                                <a href="{% url 'wellness:update_intervention' intervention.id %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted">No interventions found.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+<div class="card mb-3">
+    <form method="get" class="row g-3">
+        <div class="col-md-3">
+            <select name="status" class="form-select">
+                <option value="">All Status</option>
+                <option value="scheduled" {% if status_filter == 'scheduled' %}selected{% endif %}>Scheduled</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
         </div>
+        <div class="col-md-2">
+            <select name="year_level" class="form-select">
+                <option value="">All Grades</option>
+                <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
+                <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
+                <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
+                <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Type</th>
+                    <th>Scheduled Date</th>
+                    <th>Status</th>
+                    <th>Counselor</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for intervention in interventions %}
+                <tr>
+                    <td><a href="{% url 'student_profile' intervention.student.id %}" style="text-decoration: none; color: #2d3748; font-weight: 500;">{{ intervention.student.get_full_name }}</a></td>
+                    <td><span class="badge" style="background: #bee3f8; color: #2c5282;">{{ intervention.get_intervention_type_display }}</span></td>
+                    <td style="color: #718096; font-size: 13px;">{{ intervention.scheduled_date|date:"M d, Y g:i A" }}</td>
+                    <td>
+                        {% if intervention.status == 'scheduled' %}
+                        <span class="badge" style="background: #bee3f8; color: #2c5282;">Scheduled</span>
+                        {% elif intervention.status == 'completed' %}
+                        <span class="badge" style="background: #c6f6d5; color: #276749;">Completed</span>
+                        {% else %}
+                        <span class="badge" style="background: #e2e8f0; color: #4a5568;">Cancelled</span>
+                        {% endif %}
+                    </td>
+                    <td style="color: #718096; font-size: 13px;">{{ intervention.counselor.get_full_name }}</td>
+                    <td>
+                        <a href="{% url 'wellness:update_intervention' intervention.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #718096; padding: 40px;">No interventions found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

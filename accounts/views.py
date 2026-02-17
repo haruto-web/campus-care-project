@@ -278,7 +278,11 @@ def profile_view(request):
         messages.success(request, 'Profile updated successfully!')
         return redirect('profile')
     
-    return render(request, 'accounts/profile.html')
+    # Use different template based on role
+    if request.user.role in ['counselor', 'admin']:
+        return render(request, 'accounts/profile_counselor.html')
+    else:
+        return render(request, 'accounts/profile.html')
 
 @login_required
 def student_profile_view(request, student_id):

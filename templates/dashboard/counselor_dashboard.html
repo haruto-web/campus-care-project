@@ -348,15 +348,13 @@
         <div class="top-header">
             <h5>Counselor Dashboard</h5>
             <div class="header-icons">
-                <i class="bi bi-bell"></i>
-                <i class="bi bi-chat-dots"></i>
                 <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ user.get_full_name }}&background=4fd1c5&color=fff{% endif %}" alt="Profile">
             </div>
         </div>
         
         <div class="content-area">
             <div class="greeting-card">
-                <h2>Good {% now "A" %}{% if "AM" in now %}Morning{% else %}{% if "PM" in now and now|date:"H"|add:"0" < 18 %}Afternoon{% else %}Evening{% endif %}{% endif %}, {{ user.first_name }}</h2>
+                <h2>Good {% now "H" as hour %}{% if hour|add:"0" < 12 %}Morning{% elif hour|add:"0" < 18 %}Afternoon{% else %}Evening{% endif %}, {{ user.first_name }}</h2>
                 <p>Here's your daily overview</p>
             </div>
             

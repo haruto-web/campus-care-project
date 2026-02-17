@@ -1,110 +1,126 @@
-{% extends 'base.html' %}
+{% extends 'counselor_base.html' %}
 
-{% block title %}At-Risk Students - Campus Care{% endblock %}
+{% block page_title %}At-Risk Students{% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col">
-            <h2><i class="bi bi-exclamation-triangle-fill text-warning"></i> At-Risk Students</h2>
-            <p class="text-muted">Monitor and support students who need attention</p>
+{% block page_css %}
+<style>
+    .filter-card {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    
+    .student-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border-left: 4px solid;
+    }
+    
+    .student-card.high { border-left-color: #fc8181; }
+    .student-card.medium { border-left-color: #f6ad55; }
+    .student-card.low { border-left-color: #68d391; }
+    
+    .risk-badge {
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .risk-badge.high { background: #fed7d7; color: #c53030; }
+    .risk-badge.medium { background: #feebc8; color: #c05621; }
+    .risk-badge.low { background: #c6f6d5; color: #276749; }
+    
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="filter-card">
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            <input type="text" name="search" class="form-control" placeholder="Search student..." value="{{ search_query }}">
         </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Search Student</label>
-                    <input type="text" name="search" class="form-control" placeholder="Name or email..." value="{{ search_query }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Risk Level</label>
-                    <select name="risk_level" class="form-select">
-                        <option value="">All Levels</option>
-                        <option value="high" {% if risk_filter == 'high' %}selected{% endif %}>High Risk</option>
-                        <option value="medium" {% if risk_filter == 'medium' %}selected{% endif %}>Medium Risk</option>
-                        <option value="low" {% if risk_filter == 'low' %}selected{% endif %}>Low Risk</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Year Level</label>
-                    <select name="year_level" class="form-select">
-                        <option value="">All Grades</option>
-                        <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
-                        <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
-                        <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
-                        <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
-                    </select>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">Filter</button>
-                </div>
-            </form>
+        <div class="col-md-2">
+            <select name="risk_level" class="form-select">
+                <option value="">All Levels</option>
+                <option value="high" {% if risk_filter == 'high' %}selected{% endif %}>High Risk</option>
+                <option value="medium" {% if risk_filter == 'medium' %}selected{% endif %}>Medium Risk</option>
+                <option value="low" {% if risk_filter == 'low' %}selected{% endif %}>Low Risk</option>
+            </select>
         </div>
-    </div>
+        <div class="col-md-2">
+            <select name="year_level" class="form-select">
+                <option value="">All Grades</option>
+                <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
+                <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
+                <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
+                <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+</div>
 
-    <!-- Students List -->
-    <div class="row">
-        {% for data in students %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 {% if data.risk_level == 'high' %}border-danger{% elif data.risk_level == 'medium' %}border-warning{% else %}border-success{% endif %}">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        {% if data.student.profile_picture %}
-                        <img src="{{ data.student.profile_picture.url }}" class="rounded-circle me-3" width="60" height="60" style="object-fit: cover;">
-                        {% else %}
-                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
-                            <i class="bi bi-person-fill fs-3"></i>
-                        </div>
-                        {% endif %}
-                        <div>
-                            <h5 class="mb-0">{{ data.student.get_full_name }}</h5>
-                            <small class="text-muted">{{ data.student.email }}</small>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <span class="badge {% if data.risk_level == 'high' %}bg-danger{% elif data.risk_level == 'medium' %}bg-warning text-dark{% else %}bg-success{% endif %} fs-6">
-                            {{ data.risk_level|upper }} RISK
-                        </span>
-                        <span class="badge bg-secondary">Score: {{ data.risk_score }}</span>
-                    </div>
-
-                    <div class="row text-center mb-3">
-                        <div class="col-4">
-                            <small class="text-muted d-block">GPA</small>
-                            <strong>{{ data.gpa|default:"N/A" }}</strong>
-                        </div>
-                        <div class="col-4">
-                            <small class="text-muted d-block">Attendance</small>
-                            <strong>{{ data.attendance_rate|default:"N/A" }}%</strong>
-                        </div>
-                        <div class="col-4">
-                            <small class="text-muted d-block">Missing</small>
-                            <strong>{{ data.missing_assignments }}</strong>
-                        </div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'student_profile' data.student.id %}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-person-lines-fill"></i> View Profile
-                        </a>
-                        <a href="{% url 'wellness:create_intervention_for_student' data.student.id %}" class="btn btn-sm btn-primary">
-                            <i class="bi bi-plus-circle"></i> Create Intervention
-                        </a>
-                    </div>
+<div class="row">
+    {% for data in students %}
+    <div class="col-md-6 col-lg-4 mb-3">
+        <div class="student-card {{ data.risk_level|lower }}">
+            <div class="d-flex align-items-center mb-3">
+                <img src="{% if data.student.profile_picture %}{{ data.student.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ data.student.get_full_name }}&background=4fd1c5&color=fff{% endif %}" 
+                     style="width: 50px; height: 50px; border-radius: 50%; margin-right: 12px;">
+                <div>
+                    <h6 style="margin: 0; color: #2d3748;">{{ data.student.get_full_name }}</h6>
+                    <small style="color: #718096;">{{ data.student.email }}</small>
                 </div>
             </div>
-        </div>
-        {% empty %}
-        <div class="col-12">
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle"></i> No at-risk students found.
+            
+            <div class="mb-3">
+                <span class="risk-badge {{ data.risk_level|lower }}">{{ data.risk_level|upper }} RISK</span>
+                <span class="risk-badge" style="background: #edf2f7; color: #2d3748;">Score: {{ data.risk_score }}</span>
+            </div>
+            
+            <div class="row text-center mb-3" style="font-size: 13px;">
+                <div class="col-4">
+                    <div style="color: #718096;">GPA</div>
+                    <strong style="color: #2d3748;">{{ data.gpa|default:"N/A" }}</strong>
+                </div>
+                <div class="col-4">
+                    <div style="color: #718096;">Attendance</div>
+                    <strong style="color: #2d3748;">{{ data.attendance_rate|default:"N/A" }}%</strong>
+                </div>
+                <div class="col-4">
+                    <div style="color: #718096;">Missing</div>
+                    <strong style="color: #2d3748;">{{ data.missing_assignments }}</strong>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <a href="{% url 'student_profile' data.student.id %}" class="btn btn-sm btn-outline-primary">View Profile</a>
+                <a href="{% url 'wellness:create_intervention_for_student' data.student.id %}" class="btn btn-sm btn-primary">Create Intervention</a>
             </div>
         </div>
-        {% endfor %}
     </div>
+    {% empty %}
+    <div class="col-12">
+        <div style="background: white; padding: 40px; border-radius: 15px; text-align: center; color: #718096;">
+            No at-risk students found.
+        </div>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}

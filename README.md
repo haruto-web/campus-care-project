@@ -3,9 +3,9 @@
 ## System Overview
 Campus Care is an LMS with integrated student support monitoring that tracks academic performance, attendance, and wellness to identify at-risk students early.
 
-**Last Updated:** February 15, 2026  
-**Overall Progress:** ~85% Complete  
-**Status:** All teacher features 100% complete! All counselor features 100% complete! Moving to student features
+**Last Updated:** February 16, 2026  
+**Overall Progress:** ~87% Complete  
+**Status:** All teacher features 100% complete! All counselor features 100% complete! Admin & Counselor UI redesigned! Moving to student features
 
 ---
 
@@ -107,19 +107,19 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 ### Counselor Pages
 - ✅ Login/Register
-- ✅ Dashboard (at-risk students overview)
-- ✅ At-Risk Students List (detailed)
+- ✅ Dashboard (modern UI with sidebar, time-based greeting, statistics)
+- ✅ At-Risk Students List (card-based layout with filters)
 - ✅ Student Detail/Profile
 - ✅ Create Intervention
-- ✅ Interventions List
+- ✅ Interventions List (clean table view with filters)
 - ✅ Update Intervention
-- ✅ Alerts/Notifications
-- ✅ Reports (analytics)
-- ✅ Profile
+- ✅ Alerts/Notifications (color-coded severity cards)
+- ✅ Reports (analytics with Chart.js visualizations)
+- ✅ Profile (modern card-based design)
 
 ---
 
-## 3. ADMIN FEATURES (60% Complete)
+## 3. ADMIN FEATURES (70% Complete)
 
 ### ✅ User Management
 - ✅ Add/edit/delete users (via admin panel)
@@ -131,22 +131,25 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 - ✅ Manage class data
 
 ### ✅ System Monitoring
-- ✅ Dashboard with system statistics
+- ✅ Modern dashboard with sidebar navigation
+- ✅ System statistics with data visualization
 - ✅ At-risk students view (via admin panel)
 - ✅ View wellness check-in history
+- ✅ Chart.js integration (pie, bar, line charts)
 
 ### ⏳ System Configuration
 - ⏳ System settings
-- ⏳ Reports and analytics
+- ⏳ Advanced reports and analytics
 
 ### Admin Pages
 - ✅ Login
-- ✅ Dashboard (system overview)
+- ✅ Dashboard (modern UI with sidebar, charts, statistics)
 - ✅ User Management (admin panel)
 - ✅ Class Management (admin panel)
 - ✅ At-Risk Students (admin panel)
+- ✅ Profile (view and edit)
 - ⏳ System Settings
-- ⏳ Reports
+- ⏳ Advanced Reports
 
 ---
 
@@ -279,8 +282,9 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 ### Frontend:
 - ✅ Django Templates
 - ✅ Bootstrap 5 (responsive UI)
-- ⏳ Chart.js (data visualization)
-- ⏳ JavaScript (interactivity)
+- ✅ Chart.js (data visualization for admin/counselor dashboards)
+- ✅ JavaScript (interactivity)
+- ✅ Bootstrap Icons
 
 ### Additional:
 - ✅ Django Messages (notifications)
@@ -445,7 +449,87 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 
 ---
 
-## Recent Updates (Feb 15, 2026 - Final Counselor Features)
+## Recent Updates (Feb 16, 2026 - UI Redesign)
+
+### ✅ New Features Added:
+1. **Admin Dashboard UI Redesign** - Modern sidebar-based interface
+   - Teal gradient sidebar navigation (220px width)
+   - White top header with profile picture
+   - 4 stat cards (users, classes, students, high-risk)
+   - Chart.js visualizations (pie, bar, line charts)
+   - User distribution pie chart
+   - Class enrollment bar chart
+   - System activity line chart
+   - Risk trends bar chart
+   - High-risk students table
+   - Recent alerts feed
+
+2. **Counselor Dashboard UI Redesign** - Matching modern interface
+   - Consistent teal sidebar navigation
+   - Time-based greeting (Good Morning/Afternoon/Evening)
+   - 4 stat boxes (high/medium risk, pending interventions, unread alerts)
+   - High-risk students cards with profile pictures
+   - Recent alerts section
+   - Quick actions panel
+   - Upcoming interventions
+
+3. **Counselor Pages UI Update** - Consistent modern design
+   - At-Risk Students: Card-based layout with color-coded borders
+   - Interventions: Clean table view with status filters
+   - Alerts: Color-coded severity cards (critical/high/medium/low)
+   - Reports: Gradient stat cards with Chart.js visualizations
+   - All pages use sidebar navigation (no top navbar)
+
+4. **Profile Page Enhancement** - Role-based templates
+   - Separate modern profile for counselors/admins
+   - Traditional profile for teachers/students
+   - Logout button added to all profiles
+   - Centered card design with gradient placeholders
+   - Teal-themed form inputs
+
+5. **URL Structure Fix** - Resolved conflicts
+   - Changed admin feature URLs from `/admin/` to `/manage/`
+   - Prevents conflicts with Django's built-in admin panel
+   - Updated all admin-related URLs and links
+
+### 📄 New Templates:
+- `base_minimal.html` - Minimal base without navbar
+- `counselor_base.html` - Reusable counselor layout with sidebar
+- `accounts/profile_counselor.html` - Modern profile for counselors/admins
+- Updated `dashboard/admin_dashboard.html` - Modern sidebar design
+- Updated `dashboard/counselor_dashboard.html` - Modern sidebar design
+- Updated `wellness/at_risk_students.html` - Card-based layout
+- Updated `wellness/interventions_list.html` - Clean table view
+- Updated `wellness/alerts_list.html` - Color-coded cards
+- Updated `wellness/reports.html` - Chart.js visualizations
+
+### 🎨 Design System:
+- **Color Scheme**: Teal/mint (#4fd1c5, #38b2ac)
+- **Sidebar**: 220px width, rgba(56, 178, 172, 0.95) background
+- **Cards**: White background, 15px border-radius, subtle shadow
+- **Risk Colors**: High=red (#fc8181), Medium=orange (#f6ad55), Low=green (#68d391)
+- **Typography**: Clean, modern font hierarchy
+- **Icons**: Bootstrap Icons throughout
+
+### 🔗 Updated URLs:
+- `/manage/teachers/` - View teachers (was `/admin/teachers/`)
+- `/manage/create-class/` - Create class for teacher (was `/admin/create-class/`)
+- `/manage/assign-students/` - Assign students (was `/admin/assign-students/`)
+
+### 🎯 UI/UX Improvements Complete:
+- ✅ Modern sidebar navigation for admin/counselor
+- ✅ Consistent teal color scheme
+- ✅ Chart.js data visualizations
+- ✅ Card-based layouts
+- ✅ Color-coded risk indicators
+- ✅ Time-based greetings
+- ✅ Profile picture integration
+- ✅ Responsive design
+- ✅ Clean, professional interface
+
+---
+
+## Previous Updates (Feb 15, 2026 - Final Counselor Features)
 
 ### ✅ New Features Added:
 1. **Reports & Analytics Dashboard** - Comprehensive system statistics

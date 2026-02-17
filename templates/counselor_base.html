@@ -1,0 +1,157 @@
+{% extends 'base_minimal.html' %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%);
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .counselor-container {
+        display: flex;
+        min-height: 100vh;
+    }
+    
+    .sidebar {
+        width: 220px;
+        background: rgba(56, 178, 172, 0.95);
+        padding: 0;
+        color: white;
+    }
+    
+    .sidebar-logo {
+        padding: 25px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar-logo h4 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 18px;
+    }
+    
+    .sidebar-menu {
+        list-style: none;
+        padding: 20px 0;
+        margin: 0;
+    }
+    
+    .sidebar-menu li {
+        margin: 0;
+    }
+    
+    .sidebar-menu a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: all 0.3s;
+        font-size: 14px;
+    }
+    
+    .sidebar-menu a:hover,
+    .sidebar-menu a.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        border-left: 3px solid white;
+    }
+    
+    .sidebar-menu i {
+        font-size: 18px;
+        width: 20px;
+    }
+    
+    .main-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+    
+    .top-header {
+        background: white;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .top-header h5 {
+        margin: 0;
+        color: #2d3748;
+        font-size: 18px;
+        font-weight: 600;
+    }
+    
+    .header-icons {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+    
+    .header-icons i {
+        font-size: 20px;
+        color: #718096;
+        cursor: pointer;
+    }
+    
+    .header-icons img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid #e2e8f0;
+    }
+    
+    .content-area {
+        padding: 30px;
+        background: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%);
+        min-height: calc(100vh - 80px);
+    }
+    
+    @media (max-width: 768px) {
+        .sidebar {
+            display: none;
+        }
+    }
+</style>
+{% block page_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="counselor-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <i class="bi bi-heart-pulse-fill" style="font-size: 22px;"></i>
+            <h4>CampusCare</h4>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li><a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="{% url 'wellness:at_risk_students' %}" {% if request.resolver_match.url_name == 'at_risk_students' %}class="active"{% endif %}><i class="bi bi-people"></i> At-Risk Students</a></li>
+            <li><a href="{% url 'wellness:interventions_list' %}" {% if request.resolver_match.url_name == 'interventions_list' %}class="active"{% endif %}><i class="bi bi-calendar-check"></i> Interventions</a></li>
+            <li><a href="{% url 'wellness:alerts_list' %}" {% if request.resolver_match.url_name == 'alerts_list' %}class="active"{% endif %}><i class="bi bi-bell"></i> Alerts</a></li>
+            <li><a href="{% url 'wellness:reports' %}" {% if request.resolver_match.url_name == 'reports' %}class="active"{% endif %}><i class="bi bi-bar-chart"></i> Reports</a></li>
+            <li><a href="{% url 'profile' %}" {% if request.resolver_match.url_name == 'profile' %}class="active"{% endif %}><i class="bi bi-person"></i> Profile</a></li>
+        </ul>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-header">
+            <h5>{% block page_title %}Counselor Dashboard{% endblock %}</h5>
+            <div class="header-icons">
+                <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ user.get_full_name }}&background=4fd1c5&color=fff{% endif %}" alt="Profile">
+            </div>
+        </div>
+        
+        <div class="content-area">
+            {% block page_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
