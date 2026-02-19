@@ -3,65 +3,88 @@
 {% block title %}My Classes - Campus Care{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>My Classes</h2>
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-bold text-gray-800">My Classes</h2>
         {% if user.role == 'teacher' %}
-        <a href="{% url 'academics:create_class' %}" class="btn btn-primary">
+        <a href="{% url 'academics:create_class' %}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
             <i class="bi bi-plus-circle"></i> Create New Class
         </a>
         {% endif %}
     </div>
     
+    {% if user.role == 'teacher' %}
+    <!-- Filters for Teachers -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Year Level</label>
+                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" name="year_level_filter">
+                    <option value="">All Year Levels</option>
+                    <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
+                    <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
+                    <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
+                    <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Section</label>
+                <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" name="section_filter" placeholder="e.g., A, B, Section 1" value="{{ section_filter }}">
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Filter</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+    
     {% if classes %}
-    <div class="row">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for class in classes %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">{{ class.code }}</h5>
-                </div>
-                <div class="card-body">
-                    <h6 class="card-title">{{ class.name }}</h6>
-                    <p class="card-text text-muted mb-2">
-                        <i class="bi bi-person"></i> 
-                        {% if user.role == 'teacher' %}
-                        {{ class.students.count }} student{{ class.students.count|pluralize }}
-                        {% else %}
-                        {{ class.teacher.get_full_name }}
-                        {% endif %}
-                    </p>
-                    {% if class.schedule %}
-                    <p class="card-text text-muted mb-2">
-                        <i class="bi bi-clock"></i> {{ class.schedule }}
-                    </p>
+        <div class="bg-white rounded-lg shadow hover:shadow-lg transition">
+            <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
+                <h5 class="text-lg font-semibold">{{ class.code }}</h5>
+            </div>
+            <div class="p-6">
+                <h6 class="text-xl font-semibold text-gray-800 mb-3">{{ class.name }}</h6>
+                <p class="text-gray-600 mb-2">
+                    <i class="bi bi-person"></i> 
+                    {% if user.role == 'teacher' %}
+                    {{ class.students.count }} student{{ class.students.count|pluralize }}
+                    {% else %}
+                    {{ class.teacher.get_full_name }}
                     {% endif %}
-                    {% if class.room %}
-                    <p class="card-text text-muted mb-2">
-                        <i class="bi bi-geo-alt"></i> {{ class.room }}
-                    </p>
-                    {% endif %}
-                    <p class="card-text">
-                        <small class="text-muted">{{ class.semester }}</small>
-                    </p>
-                </div>
-                <div class="card-footer">
-                    <a href="{% url 'academics:class_detail' class.id %}" class="btn btn-sm btn-primary w-100">
-                        View Details
-                    </a>
-                </div>
+                </p>
+                {% if class.schedule %}
+                <p class="text-gray-600 mb-2">
+                    <i class="bi bi-clock"></i> {{ class.schedule }}
+                </p>
+                {% endif %}
+                {% if class.room %}
+                <p class="text-gray-600 mb-2">
+                    <i class="bi bi-geo-alt"></i> {{ class.room }}
+                </p>
+                {% endif %}
+                <p class="text-sm text-gray-500">{{ class.semester }}</p>
+            </div>
+            <div class="px-6 pb-6">
+                <a href="{% url 'academics:class_detail' class.id %}" class="block w-full bg-blue-600 text-white text-center px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    View Details
+                </a>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <div class="alert alert-info">
-        <i class="bi bi-info-circle"></i> 
-        {% if user.role == 'teacher' %}
-        You haven't created any classes yet. Click "Create New Class" to get started.
-        {% else %}
-        You are not enrolled in any classes yet.
-        {% endif %}
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+        <p class="text-blue-800">
+            <i class="bi bi-info-circle"></i> 
+            {% if user.role == 'teacher' %}
+            You haven't created any classes yet. Click "Create New Class" to get started.
+            {% else %}
+            You are not enrolled in any classes yet.
+            {% endif %}
+        </p>
     </div>
     {% endif %}
 </div>

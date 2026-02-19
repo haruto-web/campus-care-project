@@ -4,77 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Campus Care{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="bg-gray-50">
     {% if user.is_authenticated %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'dashboard' %}">
-                <i class="bi bi-heart-pulse"></i> Campus Care
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
-                    </li>
-                    {% if user.role == 'student' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'academics:my_classes' %}">My Classes</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Assignments</a>
-                    </li>
-                    {% elif user.role == 'teacher' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'academics:my_classes' %}">My Classes</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'students_list' %}">Students</a>
-                    </li>
-                    {% elif user.role == 'counselor' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'wellness:at_risk_students' %}">At-Risk Students</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'wellness:interventions_list' %}">Interventions</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'wellness:alerts_list' %}">Alerts</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'wellness:reports' %}">Reports</a>
-                    </li>
-                    {% endif %}
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> {{ user.get_full_name }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
-                        </ul>
-                    </li>
-                </ul>
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-8">
+                    <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 text-xl font-bold">
+                        <i class="bi bi-heart-pulse"></i>
+                        <span>Campus Care</span>
+                    </a>
+                    <div class="hidden md:flex space-x-4">
+                        <a href="{% url 'dashboard' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Dashboard</a>
+                        {% if user.role == 'student' %}
+                        <a href="{% url 'academics:my_classes' %}" class="hover:bg-blue-700 px-3 py-2 rounded">My Classes</a>
+                        <a href="#" class="hover:bg-blue-700 px-3 py-2 rounded">Assignments</a>
+                        {% elif user.role == 'teacher' %}
+                        <a href="{% url 'academics:my_classes' %}" class="hover:bg-blue-700 px-3 py-2 rounded">My Classes</a>
+                        <a href="{% url 'students_list' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Students</a>
+                        {% elif user.role == 'counselor' %}
+                        <a href="{% url 'wellness:at_risk_students' %}" class="hover:bg-blue-700 px-3 py-2 rounded">At-Risk Students</a>
+                        <a href="{% url 'wellness:interventions_list' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Interventions</a>
+                        <a href="{% url 'wellness:alerts_list' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Alerts</a>
+                        <a href="{% url 'wellness:reports' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Reports</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="relative group">
+                    <button class="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded">
+                        <i class="bi bi-person-circle text-xl"></i>
+                        <span>{{ user.get_full_name }}</span>
+                        <i class="bi bi-chevron-down text-sm"></i>
+                    </button>
+                    <div class="hidden group-hover:block absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                        <a href="{% url 'profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                        <hr class="my-1">
+                        <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Logout</a>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
     {% endif %}
 
-    <main class="{% if user.is_authenticated %}container-fluid mt-4{% endif %}">
+    <main class="{% if user.is_authenticated %}max-w-7xl mx-auto px-4 py-6{% endif %}">
         {% if messages %}
             {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             {% endfor %}
         {% endif %}
@@ -82,7 +63,6 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

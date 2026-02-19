@@ -1,495 +1,138 @@
-{% extends 'base_minimal.html' %}
-{% load static %}
+{% extends 'base.html' %}
 
 {% block title %}Counselor Dashboard{% endblock %}
 
-{% block extra_css %}
-<style>
-    body {
-        background: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%);
-        margin: 0;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    .counselor-container {
-        display: flex;
-        min-height: 100vh;
-    }
-    
-    .sidebar {
-        width: 220px;
-        background: rgba(56, 178, 172, 0.95);
-        padding: 0;
-        color: white;
-    }
-    
-    .sidebar-logo {
-        padding: 25px 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .sidebar-logo h4 {
-        margin: 0;
-        font-weight: 600;
-        font-size: 18px;
-    }
-    
-    .sidebar-menu {
-        list-style: none;
-        padding: 20px 0;
-        margin: 0;
-    }
-    
-    .sidebar-menu li {
-        margin: 0;
-    }
-    
-    .sidebar-menu a {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 20px;
-        color: rgba(255, 255, 255, 0.8);
-        text-decoration: none;
-        transition: all 0.3s;
-        font-size: 14px;
-    }
-    
-    .sidebar-menu a:hover,
-    .sidebar-menu a.active {
-        background: rgba(255, 255, 255, 0.15);
-        color: white;
-        border-left: 3px solid white;
-    }
-    
-    .sidebar-menu i {
-        font-size: 18px;
-        width: 20px;
-    }
-    
-    .main-content {
-        flex: 1;
-        padding: 0;
-        overflow-y: auto;
-    }
-    
-    .top-header {
-        background: white;
-        padding: 20px 30px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .top-header h5 {
-        margin: 0;
-        color: #2d3748;
-        font-size: 18px;
-        font-weight: 600;
-    }
-    
-    .header-icons {
-        display: flex;
-        gap: 20px;
-        align-items: center;
-    }
-    
-    .header-icons i {
-        font-size: 20px;
-        color: #718096;
-        cursor: pointer;
-    }
-    
-    .header-icons img {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        border: 2px solid #e2e8f0;
-    }
-    
-    .content-area {
-        padding: 30px;
-        background: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%);
-    }
-    
-    .greeting-card {
-        background: white;
-        padding: 25px 30px;
-        border-radius: 15px;
-        margin-bottom: 25px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    }
-    
-    .greeting-card h2 {
-        color: #2d3748;
-        font-size: 24px;
-        margin: 0 0 5px 0;
-        font-weight: 600;
-    }
-    
-    .greeting-card p {
-        color: #718096;
-        margin: 0;
-        font-size: 14px;
-    }
-    
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
-        margin-bottom: 25px;
-    }
-    
-    .stat-box {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-    
-    .stat-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-    }
-    
-    .stat-icon.red { background: #fed7d7; color: #c53030; }
-    .stat-icon.orange { background: #feebc8; color: #c05621; }
-    .stat-icon.blue { background: #bee3f8; color: #2c5282; }
-    .stat-icon.teal { background: #b2f5ea; color: #234e52; }
-    
-    .stat-info h3 {
-        margin: 0;
-        font-size: 32px;
-        color: #2d3748;
-        font-weight: 700;
-    }
-    
-    .stat-info p {
-        margin: 0;
-        color: #718096;
-        font-size: 13px;
-    }
-    
-    .content-grid {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 20px;
-    }
-    
-    .card {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
-    }
-    
-    .card-title {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-    
-    .card-title h5 {
-        margin: 0;
-        color: #2d3748;
-        font-size: 16px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .view-link {
-        color: #4fd1c5;
-        text-decoration: none;
-        font-size: 14px;
-        font-weight: 500;
-    }
-    
-    .empty-state {
-        text-align: center;
-        padding: 40px 20px;
-        color: #718096;
-    }
-    
-    .alert-item {
-        padding: 18px;
-        background: #f7fafc;
-        border-radius: 10px;
-        margin-bottom: 12px;
-        border-left: 3px solid #4fd1c5;
-    }
-    
-    .alert-item h6 {
-        margin: 0 0 8px 0;
-        color: #2d3748;
-        font-size: 14px;
-        font-weight: 600;
-    }
-    
-    .alert-item p {
-        margin: 0 0 8px 0;
-        color: #718096;
-        font-size: 13px;
-        line-height: 1.5;
-    }
-    
-    .alert-item small {
-        color: #a0aec0;
-        font-size: 12px;
-    }
-    
-    .action-btn {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 14px 18px;
-        background: white;
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        color: #2d3748;
-        text-decoration: none;
-        margin-bottom: 12px;
-        transition: all 0.2s;
-        font-size: 14px;
-    }
-    
-    .action-btn:hover {
-        border-color: #4fd1c5;
-        background: #f0fdfa;
-        color: #2d3748;
-    }
-    
-    .action-btn i {
-        color: #4fd1c5;
-        font-size: 18px;
-    }
-    
-    .intervention-item {
-        padding: 15px;
-        background: #f7fafc;
-        border-radius: 10px;
-        margin-bottom: 12px;
-    }
-    
-    .intervention-item h6 {
-        margin: 0 0 5px 0;
-        color: #2d3748;
-        font-size: 14px;
-        font-weight: 600;
-    }
-    
-    .intervention-item small {
-        display: block;
-        color: #718096;
-        font-size: 12px;
-        margin-bottom: 3px;
-    }
-    
-    .intervention-item .date {
-        color: #4fd1c5;
-        font-weight: 500;
-    }
-    
-    @media (max-width: 1200px) {
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        .content-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .sidebar {
-            display: none;
-        }
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="counselor-container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-logo">
-            <i class="bi bi-heart-pulse-fill" style="font-size: 22px;"></i>
-            <h4>CampusCare</h4>
+<div class="space-y-6">
+    <h2 class="text-3xl font-bold text-gray-800">Counselor Dashboard</h2>
+    
+    <!-- Warning Banner for Unnoticed Violations -->
+    {% if unread_alerts > 0 %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+        <div class="flex items-center">
+            <i class="bi bi-exclamation-triangle-fill text-red-500 text-2xl mr-3"></i>
+            <div>
+                <h3 class="text-red-800 font-semibold">⚠️ Attention Required!</h3>
+                <p class="text-red-700">You have <strong>{{ unread_alerts }}</strong> unread alert(s) requiring immediate attention.</p>
+            </div>
         </div>
-        
-        <ul class="sidebar-menu">
-            <li><a href="{% url 'dashboard' %}" class="active"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-            <li><a href="{% url 'wellness:at_risk_students' %}"><i class="bi bi-people"></i> At-Risk Students</a></li>
-            <li><a href="{% url 'wellness:interventions_list' %}"><i class="bi bi-calendar-check"></i> Interventions</a></li>
-            <li><a href="{% url 'wellness:alerts_list' %}"><i class="bi bi-bell"></i> Alerts</a></li>
-            <li><a href="{% url 'wellness:reports' %}"><i class="bi bi-bar-chart"></i> Reports</a></li>
-            <li><a href="{% url 'profile' %}"><i class="bi bi-person"></i> Profile</a></li>
-        </ul>
+    </div>
+    {% endif %}
+    
+    <!-- Statistics with Interpretation -->
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+        <h3 class="text-blue-900 font-semibold mb-2">📊 Statistics Interpretation</h3>
+        <p class="text-blue-800 text-sm">
+            {% if high_risk_count > 10 %}
+                <strong>Critical:</strong> High number of at-risk students ({{ high_risk_count }}). Immediate intervention recommended.
+            {% elif high_risk_count > 5 %}
+                <strong>Moderate:</strong> {{ high_risk_count }} students need attention. Monitor closely.
+            {% else %}
+                <strong>Good:</strong> Low number of high-risk students. Continue current support strategies.
+            {% endif %}
+            {% if pending_interventions > 5 %}
+                {{ pending_interventions }} pending interventions - prioritize scheduling.
+            {% endif %}
+        </p>
     </div>
     
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="top-header">
-            <h5>Counselor Dashboard</h5>
-            <div class="header-icons">
-                <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ user.get_full_name }}&background=4fd1c5&color=fff{% endif %}" alt="Profile">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-red-600">{{ high_risk_count }}</h3>
+            <p class="text-gray-600">High Risk</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-yellow-600">{{ medium_risk_count }}</h3>
+            <p class="text-gray-600">Medium Risk</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-blue-600">{{ pending_interventions }}</h3>
+            <p class="text-gray-600">Pending Interventions</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-purple-600">{{ unread_alerts }}</h3>
+            <p class="text-gray-600">Unread Alerts</p>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                    <h5 class="text-lg font-semibold">High-Risk Students</h5>
+                    <a href="{% url 'wellness:at_risk_students' %}" class="text-sm hover:underline">View All ›</a>
+                </div>
+                <div class="p-6">
+                    {% if high_risk_students %}
+                        <div class="space-y-3">
+                        {% for assessment in high_risk_students|slice:":5" %}
+                            <a href="{% url 'student_profile' assessment.student.id %}" class="block p-4 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                                <h6 class="font-semibold text-gray-800">{{ assessment.student.get_full_name }}</h6>
+                                <p class="text-sm text-gray-600">Risk Score: {{ assessment.risk_score }} | GPA: {{ assessment.gpa|default:"N/A" }} | Attendance: {{ assessment.attendance_rate|default:"N/A" }}%</p>
+                                <p class="text-sm text-red-600">Missing {{ assessment.missing_assignments }} assignment(s)</p>
+                            </a>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500">No high-risk students at this time.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-yellow-500 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                    <h5 class="text-lg font-semibold">Recent Alerts</h5>
+                    <a href="{% url 'wellness:alerts_list' %}" class="text-sm hover:underline">View All ›</a>
+                </div>
+                <div class="p-6">
+                    {% if alerts %}
+                        <div class="space-y-3">
+                        {% for alert in alerts|slice:":5" %}
+                            <div class="p-4 border rounded-lg">
+                                <h6 class="font-semibold text-gray-800">{{ alert.get_alert_type_display }}</h6>
+                                <p class="text-sm text-gray-600">{{ alert.message }}</p>
+                                <p class="text-sm text-gray-500">{{ alert.student.get_full_name }} - {{ alert.created_at|date:"M d, Y" }}</p>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500">No recent alerts.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
         
-        <div class="content-area">
-            <div class="greeting-card">
-                <h2>Good {% now "H" as hour %}{% if hour|add:"0" < 12 %}Morning{% elif hour|add:"0" < 18 %}Afternoon{% else %}Evening{% endif %}, {{ user.first_name }}</h2>
-                <p>Here's your daily overview</p>
-            </div>
-            
-            <!-- Stats Grid -->
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-icon red">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>{{ high_risk_count }}</h3>
-                        <p>High Risk Students</p>
-                    </div>
+        <div class="space-y-6">
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
+                    <h5 class="text-lg font-semibold">Quick Actions</h5>
                 </div>
-                
-                <div class="stat-box">
-                    <div class="stat-icon orange">
-                        <i class="bi bi-exclamation-circle-fill"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>{{ medium_risk_count }}</h3>
-                        <p>Medium Risk Students</p>
-                    </div>
-                </div>
-                
-                <div class="stat-box">
-                    <div class="stat-icon blue">
-                        <i class="bi bi-calendar-check-fill"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>{{ pending_interventions }}</h3>
-                        <p>Pending Interventions</p>
-                    </div>
-                </div>
-                
-                <div class="stat-box">
-                    <div class="stat-icon teal">
-                        <i class="bi bi-bell-fill"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>{{ unread_alerts }}</h3>
-                        <p>Unread Alerts</p>
-                    </div>
+                <div class="p-6 space-y-3">
+                    <a href="{% url 'wellness:create_intervention' %}" class="block w-full bg-blue-600 text-white text-center px-4 py-2 rounded-lg hover:bg-blue-700">Create Intervention</a>
+                    <a href="{% url 'wellness:at_risk_students' %}" class="block w-full border border-blue-600 text-blue-600 text-center px-4 py-2 rounded-lg hover:bg-blue-50">View All Students</a>
+                    <a href="{% url 'wellness:reports' %}" class="block w-full border border-blue-600 text-blue-600 text-center px-4 py-2 rounded-lg hover:bg-blue-50">View Reports</a>
                 </div>
             </div>
             
-            <!-- Content Grid -->
-            <div class="content-grid">
-                <!-- Left Column -->
-                <div>
-                    <!-- High Risk Students -->
-                    <div class="card">
-                        <div class="card-title">
-                            <h5>📍 High Risk Students</h5>
-                            <a href="{% url 'wellness:at_risk_students' %}" class="view-link">View All ›</a>
-                        </div>
-                        
-                        {% if high_risk_students %}
-                            {% for assessment in high_risk_students|slice:":3" %}
-                            <div class="alert-item">
-                                <h6>{{ assessment.student.get_full_name }}</h6>
-                                <p>Risk Score: {{ assessment.risk_score }} | GPA: {{ assessment.gpa|default:"N/A" }} | Attendance: {{ assessment.attendance_rate|default:"N/A" }}%</p>
-                                <small>Missing {{ assessment.missing_assignments }} assignment(s)</small>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="empty-state">
-                                No high-risk students at this time. 🎉
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Recent Alerts -->
-                    <div class="card">
-                        <div class="card-title">
-                            <h5>⚠️ Recent Alerts</h5>
-                            <a href="{% url 'wellness:alerts_list' %}" class="view-link">View All ›</a>
-                        </div>
-                        
-                        {% if alerts %}
-                            {% for alert in alerts|slice:":3" %}
-                            <div class="alert-item">
-                                <h6>{{ alert.get_alert_type_display }}</h6>
-                                <p>{{ alert.message|truncatewords:20 }}</p>
-                                <small>{{ alert.student.get_full_name }} - {{ alert.created_at|date:"M d, Y" }}</small>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="empty-state">
-                                No recent alerts.
-                            </div>
-                        {% endif %}
-                    </div>
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-purple-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                    <h5 class="text-lg font-semibold">Upcoming Interventions</h5>
+                    <a href="{% url 'wellness:interventions_list' %}" class="text-sm hover:underline">View All ›</a>
                 </div>
-                
-                <!-- Right Column -->
-                <div>
-                    <!-- Quick Actions -->
-                    <div class="card">
-                        <div class="card-title">
-                            <h5>⚡ Quick Actions</h5>
-                        </div>
-                        
-                        <a href="{% url 'wellness:create_intervention' %}" class="action-btn">
-                            <i class="bi bi-plus-circle"></i> Create Intervention
-                        </a>
-                        <a href="{% url 'wellness:at_risk_students' %}" class="action-btn">
-                            <i class="bi bi-people"></i> View All Students
-                        </a>
-                        <a href="{% url 'wellness:reports' %}" class="action-btn">
-                            <i class="bi bi-graph-up"></i> View Reports
-                        </a>
-                    </div>
-                    
-                    <!-- Upcoming Interventions -->
-                    <div class="card">
-                        <div class="card-title">
-                            <h5>📅 Upcoming Interventions</h5>
-                            <a href="{% url 'wellness:interventions_list' %}" class="view-link">View All ›</a>
-                        </div>
-                        
-                        {% if upcoming_interventions %}
-                            {% for intervention in upcoming_interventions|slice:":4" %}
-                            <div class="intervention-item">
-                                <h6>{{ intervention.student.get_full_name }}</h6>
-                                <small>{{ intervention.get_intervention_type_display }}</small>
-                                <small class="date">{{ intervention.scheduled_date|date:"M d, Y g:i A" }}</small>
+                <div class="p-6">
+                    {% if upcoming_interventions %}
+                        <div class="space-y-3">
+                        {% for intervention in upcoming_interventions|slice:":5" %}
+                            <div class="p-3 border rounded-lg">
+                                <h6 class="font-semibold text-gray-800">{{ intervention.student.get_full_name }}</h6>
+                                <p class="text-sm text-gray-600">{{ intervention.get_intervention_type_display }}</p>
+                                <p class="text-sm text-purple-600">{{ intervention.scheduled_date|date:"M d, Y g:i A" }}</p>
                             </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="empty-state">
-                                No upcoming interventions.
-                            </div>
-                        {% endif %}
-                    </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500">No upcoming interventions.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>

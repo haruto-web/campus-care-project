@@ -3,69 +3,68 @@
 {% block title %}Manage Students - {{ class.code }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2>Manage Students - {{ class.code }}</h2>
-                <a href="{% url 'academics:class_detail' class.id %}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Back to Class
-                </a>
-            </div>
-        </div>
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-bold text-gray-800">Manage Students - {{ class.code }}</h2>
+        <a href="{% url 'academics:class_detail' class.id %}" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition">
+            <i class="bi bi-arrow-left"></i> Back to Class
+        </a>
     </div>
 
-    <div class="row">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Enrolled Students -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-people-fill"></i> Enrolled Students ({{ enrolled_students.count }})</h5>
+        <div>
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-green-600 text-white px-6 py-4 rounded-t-lg">
+                    <h5 class="text-lg font-semibold"><i class="bi bi-people-fill"></i> Enrolled Students ({{ enrolled_students.count }})</h5>
                 </div>
-                <div class="card-body">
+                <div class="p-6">
                     {% if enrolled_students %}
-                        <div class="list-group">
+                        <div class="space-y-3">
                             {% for student in enrolled_students %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
                                 <div>
-                                    <h6 class="mb-0">{{ student.get_full_name }}</h6>
-                                    <small class="text-muted">{{ student.email }}</small>
+                                    <h6 class="font-semibold text-gray-800">{{ student.get_full_name }}</h6>
+                                    <small class="text-gray-600">{{ student.email }}</small>
+                                    {% if student.year_level %}
+                                    <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Grade {{ student.year_level }}</span>
+                                    {% endif %}
                                 </div>
-                                <a href="{% url 'academics:remove_student' class.id student.id %}" 
-                                   class="btn btn-sm btn-danger"
-                                   onclick="return confirm('Remove {{ student.get_full_name }} from this class?')">
-                                    <i class="bi bi-x-circle"></i> Remove
+                                <a href="{% url 'academics:drop_student' class.id student.id %}" 
+                                   class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
+                                   onclick="return confirm('Are you sure you want to drop {{ student.get_full_name }} from this class? This action will remove all their grades and attendance records for this class.')">
+                                    <i class="bi bi-person-dash"></i> Drop Student
                                 </a>
                             </div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted">No students enrolled yet.</p>
+                        <p class="text-gray-500">No students enrolled yet.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
 
         <!-- Available Students -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-person-plus"></i> Add Students</h5>
+        <div>
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
+                    <h5 class="text-lg font-semibold"><i class="bi bi-person-plus"></i> Add Students</h5>
                 </div>
-                <div class="card-body">
+                <div class="p-6">
                     <!-- Search Bar -->
-                    <form method="get" class="mb-3">
-                        <div class="input-group">
+                    <form method="get" class="mb-4">
+                        <div class="flex gap-2">
                             <input type="text" 
                                    name="search" 
-                                   class="form-control" 
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
                                    placeholder="Search by name, username, or email..."
                                    value="{{ search_query }}">
-                            <button class="btn btn-outline-primary" type="submit">
+                            <button class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" type="submit">
                                 <i class="bi bi-search"></i> Search
                             </button>
                             {% if search_query %}
-                            <a href="{% url 'academics:manage_students' class.id %}" class="btn btn-outline-secondary">
+                            <a href="{% url 'academics:manage_students' class.id %}" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition">
                                 <i class="bi bi-x"></i> Clear
                             </a>
                             {% endif %}
@@ -73,21 +72,24 @@
                     </form>
 
                     {% if search_query %}
-                        <p class="text-muted mb-2">
-                            <small>Search results for "{{ search_query }}"</small>
+                        <p class="text-gray-600 text-sm mb-3">
+                            Search results for "{{ search_query }}"
                         </p>
                     {% endif %}
 
                     {% if available_students %}
-                        <div class="list-group" style="max-height: 500px; overflow-y: auto;">
+                        <div class="space-y-3 max-h-[500px] overflow-y-auto">
                             {% for student in available_students %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
                                 <div>
-                                    <h6 class="mb-0">{{ student.get_full_name }}</h6>
-                                    <small class="text-muted">{{ student.email }}</small>
+                                    <h6 class="font-semibold text-gray-800">{{ student.get_full_name }}</h6>
+                                    <small class="text-gray-600">{{ student.email }}</small>
+                                    {% if student.year_level %}
+                                    <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Grade {{ student.year_level }}</span>
+                                    {% endif %}
                                 </div>
                                 <a href="{% url 'academics:add_student' class.id student.id %}" 
-                                   class="btn btn-sm btn-success">
+                                   class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
                                     <i class="bi bi-plus-circle"></i> Add
                                 </a>
                             </div>
@@ -95,9 +97,9 @@
                         </div>
                     {% else %}
                         {% if search_query %}
-                            <p class="text-muted">No students found matching "{{ search_query }}".</p>
+                            <p class="text-gray-500">No students found matching "{{ search_query }}".</p>
                         {% else %}
-                            <p class="text-muted">All students are already enrolled in this class.</p>
+                            <p class="text-gray-500">All students are already enrolled in this class.</p>
                         {% endif %}
                     {% endif %}
                 </div>

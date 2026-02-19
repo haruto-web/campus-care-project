@@ -1,57 +1,31 @@
-{% extends 'counselor_base.html' %}
+{% extends 'base.html' %}
 
-{% block page_title %}Alerts & Notifications{% endblock %}
+{% block title %}Alerts & Notifications{% endblock %}
 
-{% block page_css %}
-<style>
-    .card {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
-    }
+{% block content %}
+<div class="space-y-6">
+    <h2 class="text-3xl font-bold text-gray-800">Alerts & Notifications</h2>
     
-    .alert-item {
-        padding: 20px;
-        background: white;
-        border-radius: 12px;
-        border-left: 4px solid;
-        margin-bottom: 15px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
+    <!-- Warning Banner for Critical/High Alerts -->\n    {% if critical_unread > 0 or high_unread > 0 %}
+    <div class="bg-red-100 border-l-4 border-red-600 p-4 rounded-lg animate-pulse">
+        <div class="flex items-center">
+            <i class="bi bi-exclamation-triangle-fill text-red-600 text-3xl mr-3"></i>
+            <div>
+                <h3 class="text-red-900 font-bold text-lg">\u26a0\ufe0f URGENT ATTENTION REQUIRED!</h3>
+                <p class="text-red-800">
+                    {% if critical_unread > 0 %}<strong class="text-red-900">{{ critical_unread }} CRITICAL</strong>{% endif %}
+                    {% if critical_unread > 0 and high_unread > 0 %} and {% endif %}
+                    {% if high_unread > 0 %}<strong class="text-red-900">{{ high_unread }} HIGH SEVERITY</strong>{% endif %}
+                    unread alert(s) require immediate action.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     
-    .alert-item.critical { border-left-color: #e53e3e; background: linear-gradient(to right, #fff5f5 0%, white 100%); }
-    .alert-item.high { border-left-color: #dd6b20; background: linear-gradient(to right, #fffaf0 0%, white 100%); }
-    .alert-item.medium { border-left-color: #3182ce; background: linear-gradient(to right, #ebf8ff 0%, white 100%); }
-    .alert-item.low { border-left-color: #718096; background: #f7fafc; }
-    
-    .warning-banner {
-        background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-    }
-</style>
-{% endblock %}
-
-{% block page_content %}
-{% if critical_unread > 0 or high_unread > 0 %}
-<div class="warning-banner">
-    <i class="bi bi-exclamation-triangle-fill"></i>
-    <strong>Warning!</strong> You have 
-    {% if critical_unread > 0 %}<strong>{{ critical_unread }} critical</strong>{% endif %}
-    {% if critical_unread > 0 and high_unread > 0 %} and {% endif %}
-    {% if high_unread > 0 %}<strong>{{ high_unread }} high severity</strong>{% endif %}
-    unread alert(s) that require immediate attention.
-</div>
-{% endif %}
-
-<div class="card mb-3">
-    <form method="get" class="row g-3">
-        <div class="col-md-3">
-            <select name="type" class="form-select">
+    <div class="bg-white rounded-lg shadow p-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <select name="type" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="">All Types</option>
                 <option value="high_risk" {% if alert_type == 'high_risk' %}selected{% endif %}>High Risk Student</option>
                 <option value="missing_assignments" {% if alert_type == 'missing_assignments' %}selected{% endif %}>Missing Assignments</option>
@@ -59,59 +33,67 @@
                 <option value="wellness_concern" {% if alert_type == 'wellness_concern' %}selected{% endif %}>Wellness Concern</option>
                 <option value="teacher_concern" {% if alert_type == 'teacher_concern' %}selected{% endif %}>Teacher Concern</option>
             </select>
-        </div>
-        <div class="col-md-2">
-            <select name="severity" class="form-select">
+            <select name="severity" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="">All Severity</option>
                 <option value="critical" {% if severity_filter == 'critical' %}selected{% endif %}>Critical</option>
                 <option value="high" {% if severity_filter == 'high' %}selected{% endif %}>High</option>
                 <option value="medium" {% if severity_filter == 'medium' %}selected{% endif %}>Medium</option>
                 <option value="low" {% if severity_filter == 'low' %}selected{% endif %}>Low</option>
             </select>
-        </div>
-        <div class="col-md-2">
-            <select name="resolved" class="form-select">
+            <select name="resolved" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="">Hide Resolved</option>
                 <option value="true" {% if show_resolved == 'true' %}selected{% endif %}>Show Resolved</option>
             </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">Filter</button>
-        </div>
-    </form>
-</div>
-
-{% for alert in alerts %}
-<div class="alert-item {{ alert.severity|lower }}">
-    <div class="d-flex justify-content-between align-items-start">
-        <div style="flex: 1;">
-            <h6 style="margin: 0 0 8px 0; color: #2d3748; font-size: 15px;">
-                {{ alert.get_alert_type_display }}
-                <span class="badge" style="background: {% if alert.severity == 'critical' %}#fc8181{% elif alert.severity == 'high' %}#f6ad55{% elif alert.severity == 'medium' %}#4299e1{% else %}#a0aec0{% endif %}; color: white; font-size: 11px;">{{ alert.get_severity_display }}</span>
-                {% if not alert.is_read %}<span class="badge" style="background: #4fd1c5; color: white; font-size: 11px;">New</span>{% endif %}
-                {% if alert.resolved %}<span class="badge" style="background: #68d391; color: white; font-size: 11px;">Resolved</span>{% endif %}
-            </h6>
-            <p style="margin: 0 0 8px 0; color: #718096; font-size: 14px;">{{ alert.message }}</p>
-            <small style="color: #a0aec0;">
-                <a href="{% url 'student_profile' alert.student.id %}" style="color: #4fd1c5; text-decoration: none;">{{ alert.student.get_full_name }}</a>
-                | {{ alert.created_at|date:"M d, Y g:i A" }}
-            </small>
-        </div>
-        {% if not alert.resolved %}
-        <div style="display: flex; gap: 8px;">
-            {% if not alert.is_read %}
-            <a href="{% url 'wellness:mark_alert_read' alert.id %}" class="btn btn-sm btn-outline-primary">Mark Read</a>
-            {% endif %}
-            <a href="{% url 'wellness:resolve_alert' alert.id %}" class="btn btn-sm btn-success">Resolve</a>
-        </div>
-        {% endif %}
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Filter</button>
+        </form>
     </div>
-</div>
-{% empty %}
-<div class="card">
-    <div style="text-align: center; padding: 40px; color: #718096;">
+    
+    {% for alert in alerts %}
+    <div class="bg-white rounded-lg shadow border-l-4 
+        {% if alert.severity == 'critical' %}border-red-600 bg-red-50
+        {% elif alert.severity == 'high' %}border-orange-500 bg-orange-50
+        {% elif alert.severity == 'medium' %}border-yellow-500 bg-yellow-50
+        {% else %}border-blue-500 bg-blue-50{% endif %}">
+        <div class="p-6">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <h5 class="text-lg font-bold text-gray-800">{{ alert.get_alert_type_display }}</h5>
+                        <span class="px-3 py-1 text-xs font-bold rounded-full
+                            {% if alert.severity == 'critical' %}bg-red-600 text-white
+                            {% elif alert.severity == 'high' %}bg-orange-500 text-white
+                            {% elif alert.severity == 'medium' %}bg-yellow-500 text-white
+                            {% else %}bg-blue-500 text-white{% endif %}">
+                            {{ alert.get_severity_display|upper }}
+                        </span>
+                        {% if not alert.is_read %}
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 animate-pulse">NEW</span>
+                        {% endif %}
+                        {% if alert.resolved %}
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">RESOLVED</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-gray-700 mb-2">{{ alert.message }}</p>
+                    <p class="text-sm text-gray-500">
+                        <a href="{% url 'student_profile' alert.student.id %}" class="text-blue-600 hover:text-blue-900 font-semibold">{{ alert.student.get_full_name }}</a>
+                        | {{ alert.created_at|date:"M d, Y g:i A" }}
+                    </p>
+                </div>
+                {% if not alert.resolved %}
+                <div class="flex space-x-2">
+                    {% if not alert.is_read %}
+                    <a href="{% url 'wellness:mark_alert_read' alert.id %}" class="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-semibold">Mark Read</a>
+                    {% endif %}
+                    <a href="{% url 'wellness:resolve_alert' alert.id %}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold">Resolve</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center text-blue-800">
         No alerts found.
     </div>
+    {% endfor %}
 </div>
-{% endfor %}
 {% endblock %}

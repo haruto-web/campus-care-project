@@ -1,250 +1,236 @@
-{% extends 'counselor_base.html' %}
+{% extends 'base.html' %}
 
-{% block page_title %}Reports & Analytics{% endblock %}
+{% block title %}Reports & Analytics{% endblock %}
 
-{% block page_css %}
-<style>
-    .card {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
-    }
+{% block content %}
+<div class="space-y-6">
+    <h2 class="text-3xl font-bold text-gray-800">Reports & Analytics</h2>
     
-    .stat-box {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        text-align: center;
-    }
-    
-    .stat-box h3 {
-        margin: 0;
-        font-size: 32px;
-        color: #2d3748;
-    }
-    
-    .stat-box p {
-        margin: 5px 0 0 0;
-        color: #718096;
-        font-size: 13px;
-    }
-</style>
-{% endblock %}
-
-{% block page_content %}
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="stat-box" style="background: linear-gradient(135deg, #fc8181 0%, #f56565 100%); color: white;">
-                <h3>{{ high_risk_count }}</h3>
-                <p style="color: white;">High Risk Students</p>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-box" style="background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%); color: white;">
-                <h3>{{ medium_risk_count }}</h3>
-                <p style="color: white;">Medium Risk Students</p>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-box" style="background: linear-gradient(135deg, #68d391 0%, #48bb78 100%); color: white;">
-                <h3>{{ low_risk_count }}</h3>
-                <p style="color: white;">Low Risk Students</p>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-box" style="background: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%); color: white;">
-                <h3>{{ total_students }}</h3>
-                <p style="color: white;">Total Students</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts Row 1 -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-pie-chart-fill"></i> Risk Level Distribution</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="riskDistributionChart" height="200"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-bar-chart-fill"></i> Intervention Status</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="interventionStatusChart" height="200"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Intervention & Alert Statistics -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Intervention Statistics</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-4">
-                            <h4 class="text-primary">{{ scheduled_interventions }}</h4>
-                            <small class="text-muted">Scheduled</small>
-                        </div>
-                        <div class="col-4">
-                            <h4 class="text-success">{{ completed_interventions }}</h4>
-                            <small class="text-muted">Completed</small>
-                        </div>
-                        <div class="col-4">
-                            <h4 class="text-secondary">{{ cancelled_interventions }}</h4>
-                            <small class="text-muted">Cancelled</small>
-                        </div>
-                    </div>
-                    <hr>
-                    <p class="mb-0"><strong>Total Interventions:</strong> {{ total_interventions }}</p>
-                    <p class="mb-0"><strong>Completion Rate:</strong> {{ completion_rate }}%</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Alert Statistics</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-6">
-                            <h4 class="text-danger">{{ unresolved_alerts }}</h4>
-                            <small class="text-muted">Unresolved</small>
-                        </div>
-                        <div class="col-6">
-                            <h4 class="text-success">{{ resolved_alerts }}</h4>
-                            <small class="text-muted">Resolved</small>
-                        </div>
-                    </div>
-                    <hr>
-                    <p class="mb-0"><strong>Total Alerts:</strong> {{ total_alerts }}</p>
-                    <p class="mb-0"><strong>Resolution Rate:</strong> {{ resolution_rate }}%</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts Row 2 -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Alerts by Type</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="alertsTypeChart" height="200"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Interventions by Type</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="interventionsTypeChart" height="200"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Age Range Analysis -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-people-fill"></i> Age Range of High-Risk Students</h5>
-                </div>
-                <div class="card-body">
-                    {% if most_problematic_age %}
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <strong>Most Problematic Age Range:</strong> {{ most_problematic_age }} years old
-                    </div>
+    <!-- Statistics Interpretation -->
+    <div class="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 p-4 rounded-lg">
+        <h3 class="text-blue-900 font-semibold mb-2">📊 Data Insights</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+                <p class="text-blue-800">
+                    <strong>Risk Distribution:</strong> 
+                    {% if high_risk_count > medium_risk_count and high_risk_count > low_risk_count %}
+                        High concentration of at-risk students. Increase intervention resources.
+                    {% elif medium_risk_count > high_risk_count %}
+                        Moderate risk levels dominant. Preventive measures recommended.
+                    {% else %}
+                        Positive trend. Most students in low-risk category.
                     {% endif %}
-                    <canvas id="ageRangeChart" height="200"></canvas>
-                </div>
+                </p>
+            </div>
+            <div>
+                <p class="text-purple-800">
+                    <strong>Intervention Effectiveness:</strong> 
+                    {% if completion_rate >= 80 %}
+                        Excellent completion rate ({{ completion_rate }}%). Maintain current approach.
+                    {% elif completion_rate >= 60 %}
+                        Good completion rate ({{ completion_rate }}%). Room for improvement.
+                    {% else %}
+                        Low completion rate ({{ completion_rate }}%). Review intervention strategies.
+                    {% endif %}
+                </p>
             </div>
         </div>
-
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Academic Overview</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-4">
-                            <h4>{{ avg_attendance }}%</h4>
-                            <small class="text-muted">Average Attendance</small>
-                        </div>
-                        <div class="col-md-4">
-                            <h4>{{ total_concerns }}</h4>
-                            <small class="text-muted">Teacher Concerns</small>
-                        </div>
-                        <div class="col-md-4">
-                            <h4>{{ total_checkins }}</h4>
-                            <small class="text-muted">Wellness Check-ins</small>
-                        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg shadow p-6 text-center transform hover:scale-105 transition">
+            <h3 class="text-4xl font-bold">{{ high_risk_count }}</h3>
+            <p class="mt-2">High Risk Students</p>
+        </div>
+        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-lg shadow p-6 text-center transform hover:scale-105 transition">
+            <h3 class="text-4xl font-bold">{{ medium_risk_count }}</h3>
+            <p class="mt-2">Medium Risk Students</p>
+        </div>
+        <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg shadow p-6 text-center transform hover:scale-105 transition">
+            <h3 class="text-4xl font-bold">{{ low_risk_count }}</h3>
+            <p class="mt-2">Low Risk Students</p>
+        </div>
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg shadow p-6 text-center transform hover:scale-105 transition">
+            <h3 class="text-4xl font-bold">{{ total_students }}</h3>
+            <p class="mt-2">Total Students</p>
+        </div>
+    </div>
+    
+    <!-- Analytical Charts -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-blue-100">
+                <h5 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i class="bi bi-pie-chart-fill mr-2 text-blue-600"></i> Risk Level Distribution
+                </h5>
+            </div>
+            <div class="p-6">
+                <canvas id="riskPieChart" height="250"></canvas>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b bg-gradient-to-r from-purple-50 to-purple-100">
+                <h5 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i class="bi bi-bar-chart-fill mr-2 text-purple-600"></i> Intervention Status
+                </h5>
+            </div>
+            <div class="p-6">
+                <canvas id="interventionBarChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b">
+                <h5 class="text-lg font-semibold text-gray-800">Intervention Statistics</h5>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-3 gap-4 text-center mb-4">
+                    <div>
+                        <h4 class="text-3xl font-bold text-blue-600">{{ scheduled_interventions }}</h4>
+                        <p class="text-sm text-gray-600">Scheduled</p>
                     </div>
+                    <div>
+                        <h4 class="text-3xl font-bold text-green-600">{{ completed_interventions }}</h4>
+                        <p class="text-sm text-gray-600">Completed</p>
+                    </div>
+                    <div>
+                        <h4 class="text-3xl font-bold text-gray-600">{{ cancelled_interventions }}</h4>
+                        <p class="text-sm text-gray-600">Cancelled</p>
+                    </div>
+                </div>
+                <hr class="my-4">
+                <p class="mb-2"><strong>Total Interventions:</strong> {{ total_interventions }}</p>
+                <p><strong>Completion Rate:</strong> <span class="{% if completion_rate >= 80 %}text-green-600{% elif completion_rate >= 60 %}text-yellow-600{% else %}text-red-600{% endif %} font-bold">{{ completion_rate }}%</span></p>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b">
+                <h5 class="text-lg font-semibold text-gray-800">Alert Statistics</h5>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-2 gap-4 text-center mb-4">
+                    <div>
+                        <h4 class="text-3xl font-bold text-red-600">{{ unresolved_alerts }}</h4>
+                        <p class="text-sm text-gray-600">Unresolved</p>
+                    </div>
+                    <div>
+                        <h4 class="text-3xl font-bold text-green-600">{{ resolved_alerts }}</h4>
+                        <p class="text-sm text-gray-600">Resolved</p>
+                    </div>
+                </div>
+                <hr class="my-4">
+                <p class="mb-2"><strong>Total Alerts:</strong> {{ total_alerts }}</p>
+                <p><strong>Resolution Rate:</strong> <span class="{% if resolution_rate >= 80 %}text-green-600{% elif resolution_rate >= 60 %}text-yellow-600{% else %}text-red-600{% endif %} font-bold">{{ resolution_rate }}%</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Age Range Analysis -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b bg-gradient-to-r from-orange-50 to-red-50">
+            <h5 class="text-lg font-semibold text-gray-800 flex items-center">
+                <i class="bi bi-people-fill mr-2 text-orange-600"></i> Age Range of High-Risk Students
+            </h5>
+        </div>
+        <div class="p-6">
+            {% if most_problematic_age %}
+            <div class="bg-red-100 border-l-4 border-red-500 p-4 mb-4 rounded">
+                <p class="text-red-800">
+                    <i class="bi bi-exclamation-triangle-fill mr-2"></i>
+                    <strong>Most Problematic Age Range:</strong> {{ most_problematic_age }} years old
+                </p>
+            </div>
+            {% endif %}
+            <canvas id="ageRangeChart" height="200"></canvas>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b">
+                <h5 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i class="bi bi-bar-chart mr-2 text-blue-600"></i> Alerts by Type
+                </h5>
+            </div>
+            <div class="p-6">
+                <canvas id="alertsTypeChart" height="250"></canvas>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b">
+                <h5 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i class="bi bi-calendar-check mr-2 text-purple-600"></i> Interventions by Type
+                </h5>
+            </div>
+            <div class="p-6">
+                <canvas id="interventionsTypeChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Academic Overview -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b">
+            <h5 class="text-lg font-semibold text-gray-800">Academic Overview</h5>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div>
+                    <h4 class="text-3xl font-bold text-blue-600">{{ avg_attendance }}%</h4>
+                    <p class="text-gray-600">Average Attendance</p>
+                </div>
+                <div>
+                    <h4 class="text-3xl font-bold text-orange-600">{{ total_concerns }}</h4>
+                    <p class="text-gray-600">Teacher Concerns</p>
+                </div>
+                <div>
+                    <h4 class="text-3xl font-bold text-green-600">{{ total_checkins }}</h4>
+                    <p class="text-gray-600">Wellness Check-ins</p>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Recent Activity -->
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Recent Concerns (Last 7 Days)</h5>
-                </div>
-                <div class="card-body">
-                    <table class="table table-sm">
-                        <thead>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b">
+                <h5 class="text-lg font-semibold text-gray-800">Recent Concerns (Last 7 Days)</h5>
+            </div>
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
                             <tr>
-                                <th>Student</th>
-                                <th>Type</th>
-                                <th>Severity</th>
-                                <th>Date</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Severity</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-gray-200">
                             {% for concern in recent_concerns %}
                             <tr>
-                                <td><a href="{% url 'student_profile' concern.student.id %}">{{ concern.student.get_full_name }}</a></td>
-                                <td><span class="badge bg-info">{{ concern.get_concern_type_display }}</span></td>
-                                <td>
+                                <td class="px-4 py-2 text-sm"><a href="{% url 'student_profile' concern.student.id %}" class="text-blue-600 hover:text-blue-900">{{ concern.student.get_full_name }}</a></td>
+                                <td class="px-4 py-2"><span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{ concern.get_concern_type_display }}</span></td>
+                                <td class="px-4 py-2">
                                     {% if concern.severity == 'high' %}
-                                    <span class="badge bg-danger">High</span>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">High</span>
                                     {% elif concern.severity == 'medium' %}
-                                    <span class="badge bg-warning text-dark">Medium</span>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Medium</span>
                                     {% else %}
-                                    <span class="badge bg-secondary">Low</span>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Low</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ concern.date_observed|date:"M d" }}</td>
+                                <td class="px-4 py-2 text-sm text-gray-500">{{ concern.date_observed|date:"M d" }}</td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="4" class="text-center text-muted">No recent concerns</td>
+                                <td colspan="4" class="px-4 py-4 text-center text-gray-500">No recent concerns</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -252,31 +238,31 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Upcoming Interventions</h5>
-                </div>
-                <div class="card-body">
-                    <table class="table table-sm">
-                        <thead>
+        
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b">
+                <h5 class="text-lg font-semibold text-gray-800">Upcoming Interventions</h5>
+            </div>
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
                             <tr>
-                                <th>Student</th>
-                                <th>Type</th>
-                                <th>Date</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-gray-200">
                             {% for intervention in upcoming_interventions %}
                             <tr>
-                                <td><a href="{% url 'student_profile' intervention.student.id %}">{{ intervention.student.get_full_name }}</a></td>
-                                <td><span class="badge bg-primary">{{ intervention.get_intervention_type_display }}</span></td>
-                                <td>{{ intervention.scheduled_date|date:"M d, g:i A" }}</td>
+                                <td class="px-4 py-2 text-sm"><a href="{% url 'student_profile' intervention.student.id %}" class="text-blue-600 hover:text-blue-900">{{ intervention.student.get_full_name }}</a></td>
+                                <td class="px-4 py-2"><span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{ intervention.get_intervention_type_display }}</span></td>
+                                <td class="px-4 py-2 text-sm text-gray-500">{{ intervention.scheduled_date|date:"M d, g:i A" }}</td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="3" class="text-center text-muted">No upcoming interventions</td>
+                                <td colspan="3" class="px-4 py-4 text-center text-gray-500">No upcoming interventions</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -286,140 +272,112 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- Chart.js -->
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-// Risk Distribution Pie Chart
-const riskCtx = document.getElementById('riskDistributionChart').getContext('2d');
-new Chart(riskCtx, {
-    type: 'pie',
-    data: {
-        labels: {{ risk_distribution_data.labels|safe }},
-        datasets: [{
-            data: {{ risk_distribution_data.data|safe }},
-            backgroundColor: ['#dc3545', '#ffc107', '#28a745']
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'bottom'
-            }
-        }
-    }
-});
-
-// Intervention Status Bar Chart
-const interventionCtx = document.getElementById('interventionStatusChart').getContext('2d');
-new Chart(interventionCtx, {
-    type: 'bar',
-    data: {
-        labels: {{ intervention_status_data.labels|safe }},
-        datasets: [{
-            label: 'Interventions',
-            data: {{ intervention_status_data.data|safe }},
-            backgroundColor: ['#0d6efd', '#28a745', '#6c757d']
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                display: false
-            }
+document.addEventListener('DOMContentLoaded', function() {
+    // Risk Distribution Pie Chart
+    new Chart(document.getElementById('riskPieChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+            datasets: [{
+                data: [{{ high_risk_count }}, {{ medium_risk_count }}, {{ low_risk_count }}],
+                backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
         },
-        scales: {
-            y: {
-                beginAtZero: true
-            }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
         }
-    }
-});
+    });
 
-// Alerts by Type Bar Chart
-const alertsTypeCtx = document.getElementById('alertsTypeChart').getContext('2d');
-new Chart(alertsTypeCtx, {
-    type: 'bar',
-    data: {
-        labels: [{% for alert in alerts_by_type %}'{{ alert.type_display }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
-        datasets: [{
-            label: 'Count',
-            data: [{% for alert in alerts_by_type %}{{ alert.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-            backgroundColor: '#dc3545'
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                display: false
-            }
+    // Intervention Status Bar Chart
+    new Chart(document.getElementById('interventionBarChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Scheduled', 'Completed', 'Cancelled'],
+            datasets: [{
+                label: 'Interventions',
+                data: [{{ scheduled_interventions }}, {{ completed_interventions }}, {{ cancelled_interventions }}],
+                backgroundColor: ['#3b82f6', '#10b981', '#6b7280'],
+                borderRadius: 8
+            }]
         },
-        scales: {
-            y: {
-                beginAtZero: true
-            }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
         }
-    }
-});
+    });
 
-// Interventions by Type Bar Chart
-const interventionsTypeCtx = document.getElementById('interventionsTypeChart').getContext('2d');
-new Chart(interventionsTypeCtx, {
-    type: 'bar',
-    data: {
-        labels: [{% for intervention in interventions_by_type %}'{{ intervention.type_display }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
-        datasets: [{
-            label: 'Count',
-            data: [{% for intervention in interventions_by_type %}{{ intervention.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-            backgroundColor: '#0d6efd'
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                display: false
-            }
+    // Age Range Bar Chart
+    new Chart(document.getElementById('ageRangeChart'), {
+        type: 'bar',
+        data: {
+            labels: ['15-17 years', '18-20 years', '21-23 years', '24+ years'],
+            datasets: [{
+                label: 'High-Risk Students',
+                data: {{ age_range_values|safe }},
+                backgroundColor: '#f97316',
+                borderRadius: 8
+            }]
         },
-        scales: {
-            y: {
-                beginAtZero: true
-            }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
-    }
-});
+    });
 
-// Age Range Bar Chart
-const ageRangeCtx = document.getElementById('ageRangeChart').getContext('2d');
-new Chart(ageRangeCtx, {
-    type: 'bar',
-    data: {
-        labels: ['15-17', '18-20', '21-23', '24+'],
-        datasets: [{
-            label: 'High-Risk Students',
-            data: {{ age_range_values|safe }},
-            backgroundColor: '#ffc107'
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                display: false
-            }
+    // Alerts by Type Bar Chart
+    new Chart(document.getElementById('alertsTypeChart'), {
+        type: 'bar',
+        data: {
+            labels: [{% for alert in alerts_by_type %}'{{ alert.type_display }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Count',
+                data: [{% for alert in alerts_by_type %}{{ alert.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: '#dc2626',
+                borderRadius: 8
+            }]
         },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    stepSize: 1
-                }
-            }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true } }
         }
-    }
+    });
+
+    // Interventions by Type Bar Chart
+    new Chart(document.getElementById('interventionsTypeChart'), {
+        type: 'bar',
+        data: {
+            labels: [{% for intervention in interventions_by_type %}'{{ intervention.type_display }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Count',
+                data: [{% for intervention in interventions_by_type %}{{ intervention.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: '#8b5cf6',
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true } }
+        }
+    });
 });
 </script>
 {% endblock %}

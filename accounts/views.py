@@ -278,11 +278,7 @@ def profile_view(request):
         messages.success(request, 'Profile updated successfully!')
         return redirect('profile')
     
-    # Use different template based on role
-    if request.user.role in ['counselor', 'admin']:
-        return render(request, 'accounts/profile_counselor.html')
-    else:
-        return render(request, 'accounts/profile.html')
+    return render(request, 'accounts/profile.html')
 
 @login_required
 def student_profile_view(request, student_id):
@@ -349,11 +345,15 @@ def students_list_view(request):
     # Apply filters
     search_query = request.GET.get('search', '')
     class_filter = request.GET.get('class_filter', '')
+    year_level_filter = request.GET.get('year_level_filter', '')
     
     if class_filter:
         filtered_class = Class.objects.filter(id=class_filter, teacher=request.user).first()
         if filtered_class:
             students = set(filtered_class.students.all())
+    
+    if year_level_filter:
+        students = [s for s in students if s.year_level == year_level_filter]
     
     if search_query:
         students = [s for s in students if 
@@ -390,5 +390,6 @@ def students_list_view(request):
         'my_classes': my_classes,
         'search_query': search_query,
         'class_filter': class_filter,
+        'year_level_filter': year_level_filter,
     }
     return render(request, 'accounts/students_list.html', context)

@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Class, Announcement, Material, Assignment, Attendance, Submission
+from django.db.models import Q
+from .models import Class, Announcement, Material, Assignment, Attendance, Submission, Grade
 from .forms import ClassForm, AssignmentForm, MaterialForm
 from datetime import date
 
@@ -129,7 +130,7 @@ def add_student(request, class_id, student_id):
     return redirect('academics:manage_students', class_id=class_id)
 
 @login_required
-def remove_student(request, class_id, student_id):
+def drop_student(request, class_id, student_id):
     class_obj = get_object_or_404(Class, id=class_id)
     
     if request.user.role != 'teacher' or class_obj.teacher != request.user:
@@ -138,8 +139,16 @@ def remove_student(request, class_id, student_id):
     
     from accounts.models import User
     student = get_object_or_404(User, id=student_id)
+    
+    # Remove student from class
     class_obj.students.remove(student)
-    messages.success(request, f'{student.get_full_name()} removed from {class_obj.code}!')
+    
+    # Delete related records (grades, attendance, submissions)
+    Grade.objects.filter(student=student, class_obj=class_obj).delete()
+    Attendance.objects.filter(student=student, class_obj=class_obj).delete()
+    Submission.objects.filter(student=student, assignment__class_obj=class_obj).delete()
+    
+    messages.success(request, f'{student.get_full_name()} has been dropped from {class_obj.code}. All related records have been removed.')
     return redirect('academics:manage_students', class_id=class_id)
 
 @login_required
@@ -292,13 +301,31 @@ def delete_material(request, material_id):
 def my_classes(request):
     if request.user.role == 'teacher':
         classes = Class.objects.filter(teacher=request.user)
+        
+        # Apply filters for teachers
+        year_level_filter = request.GET.get('year_level_filter', '')
+        section_filter = request.GET.get('section_filter', '')
+        
+        if year_level_filter:
+            # Filter classes that have at least one student with the specified year level
+            classes = classes.filter(students__year_level=year_level_filter).distinct()
+        
+        if section_filter:
+            # Filter by section (assuming section is part of class name or code)
+            classes = classes.filter(Q(name__icontains=section_filter) | Q(code__icontains=section_filter))
+        
+        context = {
+            'classes': classes,
+            'year_level_filter': year_level_filter,
+            'section_filter': section_filter,
+        }
     elif request.user.role == 'student':
         classes = request.user.enrolled_classes.all()
+        context = {
+            'classes': classes,
+        }
     else:
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
     
-    context = {
-        'classes': classes,
-    }
     return render(request, 'academics/my_classes.html', context)
