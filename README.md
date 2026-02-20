@@ -67,14 +67,6 @@ Campus Care is an LMS with integrated student support monitoring that tracks aca
 - ✅ View Concerns
 - ✅ Student Profile View (with year level filter)
 - ✅ Profile (modern UI with gradient design)
-
-Teacher:
-
-Student nav = Add year level filter in student view page
-Classes nav = Add filter for year level/section to navigate the interface smoothly
-My classes - subject - manage student = Change remove function to “drop student” feature 
-
-
 ---
 
 ## 2. COUNSELOR FEATURES (100% Complete)
