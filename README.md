@@ -165,7 +165,7 @@ My classes - subject - manage student = Change remove function to “drop studen
 
 ---
 
-## 4. STUDENT FEATURES (50% Complete)
+## 4. STUDENT FEATURES (100% Complete)
 
 ### ✅ Class Access
 - ✅ View enrolled classes
@@ -179,16 +179,16 @@ My classes - subject - manage student = Change remove function to “drop studen
 - ✅ View grades and feedback
 - ✅ Re-submit assignments
 
-### ⏳ Attendance & Grades
+### ✅ Attendance & Grades
 - ✅ View own attendance record (stats in dashboard)
 - ✅ View current GPA (in dashboard)
-- ⏳ My Attendance (detailed view)
-- ⏳ My Grades (detailed view)
+- ✅ My Attendance (detailed view)
+- ✅ My Grades (detailed view)
 
-### ⏳ Wellness Check-ins
+### ✅ Wellness Check-ins
 - ✅ Wellness model created (stress, motivation, workload, sleep, need help)
-- ⏳ Submit check-in form
-- ⏳ View check-in history
+- ✅ Submit check-in form
+- ✅ View check-in history
 
 ### ✅ Communication
 - ✅ View announcements
@@ -201,18 +201,11 @@ My classes - subject - manage student = Change remove function to “drop studen
 - ✅ Class Detail (interactive UI with assignments, grades, announcements, materials, schedule)
 - ✅ Submit Assignment (with re-submit feature)
 - ✅ View Announcements (with read tracking and AJAX)
-- ⏳ Assignments (all assignments across classes)
-- ⏳ My Grades (detailed view)
-- ⏳ Wellness Check-in Form
-- ⏳ My Attendance (detailed view)
-- ⏳ Profile
-STUDENTS:
-
-Dashboard = remove “my stats”
-Announcement/Class Materials = should have different pages each add filter on priority and date
-Implement assignment page
-Make dashboard a one pager, combine announcements (add checkbox),  
-
+- ✅ Assignments (all assignments across classes)
+- ✅ My Grades (detailed view)
+- ✅ Wellness Check-in Form
+- ✅ My Attendance (detailed view)
+- ✅ Profile
 
 ---
 
