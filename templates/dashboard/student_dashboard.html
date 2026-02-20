@@ -1,116 +1,289 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block title %}Student Dashboard{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/custom.css' %}">
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4">Welcome, {{ user.get_full_name }}!</h2>
+<div class="max-w-7xl mx-auto space-y-6">
+    <h2 class="text-3xl font-bold text-gray-800">Welcome, {{ user.get_full_name }}!</h2>
     
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-book"></i> My Classes</h5>
+    <!-- Quick Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">GPA</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ gpa|default:"N/A" }}</p>
                 </div>
-                <div class="card-body">
-                    {% if classes %}
-                        <div class="list-group">
-                        {% for class in classes %}
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">{{ class.code }} - {{ class.name }}</h6>
-                                        <small class="text-muted">{{ class.teacher.get_full_name }}</small>
-                                    </div>
-                                    <span class="badge bg-info">{{ class.semester }}</span>
-                                </div>
-                            </div>
-                        {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted">No classes enrolled yet.</p>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-header bg-warning">
-                    <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Upcoming Assignments</h5>
-                </div>
-                <div class="card-body">
-                    {% if assignments %}
-                        <div class="list-group">
-                        {% for assignment in assignments %}
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">{{ assignment.title }}</h6>
-                                        <small class="text-muted">{{ assignment.class_obj.code }}</small>
-                                    </div>
-                                    <div class="text-end">
-                                        <small class="text-danger">Due: {{ assignment.due_date|date:"M d, Y" }}</small><br>
-                                        <span class="badge bg-secondary">{{ assignment.total_points }} pts</span>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted">No upcoming assignments.</p>
-                    {% endif %}
-                </div>
+                <i class="bi bi-graph-up text-3xl text-blue-600"></i>
             </div>
         </div>
-        
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-heart"></i> Wellness Check-in</h5>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Attendance</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ attendance_rate|default:"N/A" }}%</p>
                 </div>
-                <div class="card-body text-center">
-                    <p>How are you feeling today?</p>
-                    <a href="#" class="btn btn-success">Take Check-in Survey</a>
-                    {% if last_checkin %}
-                    <hr>
-                    <small class="text-muted">Last check-in: {{ last_checkin.date|date:"M d, Y" }}</small>
+                <i class="bi bi-calendar-check text-3xl text-green-600"></i>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Classes</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ classes.count }}</p>
+                </div>
+                <i class="bi bi-book text-3xl text-purple-600"></i>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Missing</p>
+                    <p class="text-2xl font-bold text-red-600">{{ missing_assignments|default:0 }}</p>
+                </div>
+                <i class="bi bi-exclamation-triangle text-3xl text-red-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column - Classes & Assignments -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- My Classes -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                    <h5 class="text-lg font-semibold flex items-center">
+                        <i class="bi bi-book mr-2"></i> My Classes
+                    </h5>
+                    <a href="{% url 'academics:my_classes' %}" class="text-sm hover:underline">View All</a>
+                </div>
+                <div class="p-6">
+                    {% if classes %}
+                        <div class="space-y-3">
+                        {% for class in classes|slice:":4" %}
+                            <a href="{% url 'academics:class_detail' class.id %}" class="block p-4 border rounded-lg hover:bg-gray-50 transition">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h6 class="font-semibold text-gray-800">{{ class.code }} - {{ class.name }}</h6>
+                                        <p class="text-sm text-gray-600">{{ class.teacher.get_full_name }}</p>
+                                    </div>
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">{{ class.semester }}</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500">No classes enrolled yet.</p>
                     {% endif %}
                 </div>
             </div>
             
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> My Stats</h5>
+            <!-- Upcoming Assignments -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-yellow-500 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                    <h5 class="text-lg font-semibold flex items-center">
+                        <i class="bi bi-clipboard-check mr-2"></i> Upcoming Assignments
+                    </h5>
+                    <a href="{% url 'academics:student_assignments' %}" class="text-sm hover:underline">View All</a>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>Attendance Rate</span>
-                            <strong>{{ attendance_rate|default:"N/A" }}%</strong>
+                <div class="p-6">
+                    {% if assignments %}
+                        <div class="space-y-3">
+                        {% for assignment in assignments|slice:":5" %}
+                            <div class="p-4 border rounded-lg">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h6 class="font-semibold text-gray-800">{{ assignment.title }}</h6>
+                                        <p class="text-sm text-gray-600">{{ assignment.class_obj.code }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm {% if assignment.is_overdue %}text-red-600{% else %}text-gray-600{% endif %}">
+                                            Due: {{ assignment.due_date|date:"M d, Y" }}
+                                        </p>
+                                        <span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-sm">{{ assignment.total_points }} pts</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
                         </div>
-                        <div class="progress mt-1">
-                            <div class="progress-bar bg-success" style="width: {{ attendance_rate|default:0 }}%"></div>
+                    {% else %}
+                        <p class="text-gray-500">No upcoming assignments.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Announcements -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-indigo-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                    <h5 class="text-lg font-semibold flex items-center">
+                        <i class="bi bi-megaphone mr-2"></i> Recent Announcements
+                    </h5>
+                    <a href="{% url 'academics:student_announcements' %}" class="text-sm hover:underline">View All</a>
+                </div>
+                <div class="p-6">
+                    {% if announcements %}
+                        <div class="space-y-3">
+                        {% for announcement in announcements|slice:":3" %}
+                            <div class="p-4 border rounded-lg {% if announcement.priority == 'urgent' %}border-red-300 bg-red-50{% endif %}" id="announcement-{{ announcement.id }}">
+                                <div class="flex items-start gap-3">
+                                    <input type="checkbox" class="mt-1 announcement-checkbox" data-announcement-id="{{ announcement.id }}" onchange="markAsRead(this)">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h6 class="font-semibold text-gray-800">{{ announcement.title }}</h6>
+                                            {% if announcement.priority == 'urgent' %}
+                                            <span class="px-2 py-1 bg-red-600 text-white rounded text-xs">URGENT</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-2">{{ announcement.content|truncatewords:20 }}</p>
+                                        <p class="text-xs text-gray-500">
+                                            {% if announcement.class_obj %}{{ announcement.class_obj.code }}{% else %}School-wide{% endif %} • 
+                                            {{ announcement.created_at|date:"M d, Y" }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
                         </div>
+                    {% else %}
+                        <p class="text-gray-500">No announcements.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recently Graded Assignments -->
+            {% if recently_graded %}
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-600 to-pink-700 px-6 py-4">
+                    <h5 class="text-lg font-semibold text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Recently Graded
+                    </h5>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-3">
+                    {% for submission in recently_graded %}
+                        <div class="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg hover:shadow-md transition-all duration-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <h6 class="font-semibold text-gray-900">{{ submission.assignment.title }}</h6>
+                                    <p class="text-sm text-gray-600">{{ submission.assignment.class_obj.code }} - {{ submission.assignment.class_obj.name }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">Graded: {{ submission.graded_at|date:"M d, Y h:i A" }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold text-purple-600">{{ submission.score }}/{{ submission.assignment.total_points }}</div>
+                                    <div class="text-sm text-gray-500">{{ submission.score|floatformat:0|add:"0"|floatformat:0|add:submission.assignment.total_points|floatformat:0|add:"-"|add:submission.assignment.total_points|floatformat:0|add:"*100/"|add:submission.assignment.total_points|floatformat:0 }}%</div>
+                                </div>
+                            </div>
+                            {% if submission.feedback %}
+                            <div class="mt-3 p-3 bg-white rounded border border-purple-200">
+                                <p class="text-sm text-gray-700"><strong>Feedback:</strong> {{ submission.feedback }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
                     </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span>Current GPA</span>
-                            <strong>{{ gpa|default:"N/A" }}</strong>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="d-flex justify-content-between">
-                            <span>Missing Assignments</span>
-                            <strong class="text-danger">{{ missing_assignments|default:0 }}</strong>
-                        </div>
-                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Right Column - Wellness & Quick Links -->
+        <div class="space-y-6">
+            <!-- Wellness Check-in -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-green-600 text-white px-6 py-4 rounded-t-lg">
+                    <h5 class="text-lg font-semibold flex items-center">
+                        <i class="bi bi-heart mr-2"></i> Wellness Check-in
+                    </h5>
+                </div>
+                <div class="p-6 text-center">
+                    <p class="mb-4 text-gray-700">How are you feeling today?</p>
+                    <a href="{% url 'wellness:wellness_checkin' %}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                        Take Check-in Survey
+                    </a>
+                    {% if last_checkin %}
+                    <hr class="my-4">
+                    <p class="text-sm text-gray-500">Last check-in: {{ last_checkin.date|date:"M d, Y" }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b">
+                    <h5 class="text-lg font-semibold flex items-center">
+                        <i class="bi bi-link-45deg mr-2"></i> Quick Links
+                    </h5>
+                </div>
+                <div class="p-6 space-y-2">
+                    <a href="{% url 'academics:student_grades' %}" class="block p-3 border rounded-lg hover:bg-gray-50 transition">
+                        <i class="bi bi-trophy mr-2 text-yellow-600"></i> My Grades
+                    </a>
+                    <a href="{% url 'academics:student_attendance' %}" class="block p-3 border rounded-lg hover:bg-gray-50 transition">
+                        <i class="bi bi-calendar-check mr-2 text-blue-600"></i> My Attendance
+                    </a>
+                    <a href="{% url 'academics:student_materials' %}" class="block p-3 border rounded-lg hover:bg-gray-50 transition">
+                        <i class="bi bi-file-earmark mr-2 text-purple-600"></i> Class Materials
+                    </a>
+                    <a href="{% url 'profile' %}" class="block p-3 border rounded-lg hover:bg-gray-50 transition">
+                        <i class="bi bi-person mr-2 text-gray-600"></i> My Profile
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function markAsRead(checkbox) {
+    const announcementId = checkbox.dataset.announcementId;
+    const announcementDiv = document.getElementById('announcement-' + announcementId);
+    const csrftoken = getCookie('csrftoken');
+    
+    if (checkbox.checked) {
+        fetch(`/class/announcement/${announcementId}/mark-read/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                announcementDiv.style.transition = 'opacity 0.3s';
+                announcementDiv.style.opacity = '0';
+                setTimeout(() => {
+                    announcementDiv.remove();
+                    if (document.querySelectorAll('.announcement-checkbox').length === 0) {
+                        location.reload();
+                    }
+                }, 300);
+            }
+        })
+        .catch(error => {
+            checkbox.checked = false;
+            console.error('Error:', error);
+        });
+    }
+}
+</script>
 {% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load academics_extras %}
+
+{% block title %}Mark Attendance{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800">Mark Attendance - {{ class.code }}</h2>
+            <p class="text-gray-600 mt-1">Date: {{ today|date:"F d, Y" }}</p>
+        </div>
+        <a href="{% url 'academics:class_detail' class.id %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+            <i class="bi bi-arrow-left"></i> Back to Class
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-lg">
+        <div class="p-8">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for student in students %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ student.get_full_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ student.email }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex gap-2">
+                                        <input type="radio" class="hidden" name="status_{{ student.id }}" 
+                                               id="present_{{ student.id }}" value="present" 
+                                               {% if attendance_records|get_item:student.id == 'present' %}checked{% endif %}>
+                                        <label class="px-4 py-2 rounded-lg cursor-pointer transition {% if attendance_records|get_item:student.id == 'present' %}bg-green-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}" 
+                                               for="present_{{ student.id }}">
+                                            <i class="bi bi-check-circle"></i> Present
+                                        </label>
+
+                                        <input type="radio" class="hidden" name="status_{{ student.id }}" 
+                                               id="late_{{ student.id }}" value="late"
+                                               {% if attendance_records|get_item:student.id == 'late' %}checked{% endif %}>
+                                        <label class="px-4 py-2 rounded-lg cursor-pointer transition {% if attendance_records|get_item:student.id == 'late' %}bg-yellow-500 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}" 
+                                               for="late_{{ student.id }}">
+                                            <i class="bi bi-clock"></i> Late
+                                        </label>
+
+                                        <input type="radio" class="hidden" name="status_{{ student.id }}" 
+                                               id="absent_{{ student.id }}" value="absent"
+                                               {% if attendance_records|get_item:student.id == 'absent' %}checked{% endif %}>
+                                        <label class="px-4 py-2 rounded-lg cursor-pointer transition {% if attendance_records|get_item:student.id == 'absent' %}bg-red-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}" 
+                                               for="absent_{{ student.id }}">
+                                            <i class="bi bi-x-circle"></i> Absent
+                                        </label>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="px-6 py-4 text-center text-gray-500">No students enrolled in this class.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if students %}
+                <div class="flex gap-3 mt-6">
+                    <button type="submit" class="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                        <i class="bi bi-save"></i> Save Attendance
+                    </button>
+                    <a href="{% url 'academics:class_detail' class.id %}" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold text-center">
+                        Cancel
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    input[type="radio"]:checked + label {
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    }
+</style>
+{% endblock %}

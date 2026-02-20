@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h2 class="text-3xl font-bold text-gray-800">Admin Dashboard</h2>
+        <div class="flex gap-2">
+            <a href="{% url 'admin_teachers_list' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"><i class="bi bi-people"></i> Teachers</a>
+            <a href="{% url 'admin_create_class' %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"><i class="bi bi-plus-circle"></i> Create Class</a>
+            <a href="{% url 'admin_enroll_student' %}" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"><i class="bi bi-person-plus"></i> Enroll Student</a>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-blue-600">{{ total_students }}</h3>
+            <p class="text-gray-600">Total Students</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-green-600">{{ total_teachers }}</h3>
+            <p class="text-gray-600">Total Teachers</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-purple-600">{{ total_classes }}</h3>
+            <p class="text-gray-600">Total Classes</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-red-600">{{ high_risk_count }}</h3>
+            <p class="text-gray-600">High-Risk Students</p>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h5 class="text-lg font-semibold mb-4">User Distribution</h5>
+            <canvas id="userChart"></canvas>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h5 class="text-lg font-semibold mb-4">Risk Level Distribution</h5>
+            <canvas id="riskChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-6">
+        <h5 class="text-lg font-semibold mb-4">System Activity (Last 30 Days)</h5>
+        <canvas id="activityChart"></canvas>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow">
+        <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg">
+            <h5 class="text-lg font-semibold">High-Risk Students</h5>
+        </div>
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Level</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">GPA</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Attendance</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for assessment in high_risk_students %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ assessment.student.get_full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ assessment.risk_level }}</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ assessment.gpa|default:"N/A" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ assessment.attendance_rate|default:"N/A" }}%</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <a href="{% url 'student_profile' assessment.student.id %}" class="text-blue-600 hover:text-blue-900">View</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">No high-risk students</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// User Distribution Pie Chart
+const userCtx = document.getElementById('userChart').getContext('2d');
+new Chart(userCtx, {
+    type: 'pie',
+    data: {
+        labels: ['Students', 'Teachers', 'Counselors', 'Admins'],
+        datasets: [{
+            data: [{{ total_students }}, {{ total_teachers }}, {{ total_counselors }}, {{ total_admins }}],
+            backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom' }
+        }
+    }
+});
+
+// Risk Level Bar Chart
+const riskCtx = document.getElementById('riskChart').getContext('2d');
+new Chart(riskCtx, {
+    type: 'bar',
+    data: {
+        labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+        datasets: [{
+            label: 'Students',
+            data: [{{ high_risk_count }}, {{ medium_risk_count }}, {{ low_risk_count }}],
+            backgroundColor: ['#EF4444', '#F59E0B', '#10B981']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+
+// Activity Line Chart
+const activityCtx = document.getElementById('activityChart').getContext('2d');
+new Chart(activityCtx, {
+    type: 'line',
+    data: {
+        labels: {{ activity_labels|safe }},
+        datasets: [{
+            label: 'New Users',
+            data: {{ activity_data|safe }},
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+</script>
+{% endblock %}

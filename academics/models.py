@@ -8,6 +8,8 @@ class Class(models.Model):
     teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='classes_taught')
     students = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='enrolled_classes', blank=True)
     semester = models.CharField(max_length=50)
+    schedule = models.CharField(max_length=200, blank=True, help_text='e.g., MWF 9:00-10:00 AM')
+    room = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -71,3 +73,37 @@ class Grade(models.Model):
     
     def __str__(self):
         return f"{self.student.username} - {self.class_obj.code} - {self.score}/{self.max_score}"
+
+class Announcement(models.Model):
+    PRIORITY_CHOICES = [
+        ('normal', 'Normal'),
+        ('urgent', 'Urgent'),
+    ]
+    class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='announcements', null=True, blank=True)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='announcements')
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='normal')
+    is_school_wide = models.BooleanField(default=False, help_text='If True, visible to all users')
+    read_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='read_announcements', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.author.username}"
+
+class Material(models.Model):
+    class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='materials')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    file = models.FileField(upload_to='materials/')
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.class_obj.code}"

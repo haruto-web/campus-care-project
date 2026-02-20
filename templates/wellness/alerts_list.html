@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Alerts & Notifications{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <h2 class="text-3xl font-bold text-gray-800">Alerts & Notifications</h2>
+    
+    <!-- Warning Banner for Critical/High Alerts -->
+    {% if critical_unread > 0 or high_unread > 0 %}
+    <div class="bg-red-100 border-l-4 border-red-600 p-4 rounded-lg animate-pulse">
+        <div class="flex items-center">
+            <i class="bi bi-exclamation-triangle-fill text-red-600 text-3xl mr-3"></i>
+            <div>
+                <h3 class="text-red-900 font-bold text-lg">⚠️ URGENT ATTENTION REQUIRED!</h3>
+                <p class="text-red-800">
+                    {% if critical_unread > 0 %}<strong class="text-red-900">{{ critical_unread }} CRITICAL</strong>{% endif %}
+                    {% if critical_unread > 0 and high_unread > 0 %} and {% endif %}
+                    {% if high_unread > 0 %}<strong class="text-red-900">{{ high_unread }} HIGH SEVERITY</strong>{% endif %}
+                    unread alert(s) require immediate action.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="bg-white rounded-lg shadow p-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <select name="type" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">All Types</option>
+                <option value="high_risk" {% if alert_type == 'high_risk' %}selected{% endif %}>High Risk Student</option>
+                <option value="missing_assignments" {% if alert_type == 'missing_assignments' %}selected{% endif %}>Missing Assignments</option>
+                <option value="low_attendance" {% if alert_type == 'low_attendance' %}selected{% endif %}>Low Attendance</option>
+                <option value="wellness_concern" {% if alert_type == 'wellness_concern' %}selected{% endif %}>Wellness Concern</option>
+                <option value="teacher_concern" {% if alert_type == 'teacher_concern' %}selected{% endif %}>Teacher Concern</option>
+            </select>
+            <select name="severity" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">All Severity</option>
+                <option value="critical" {% if severity_filter == 'critical' %}selected{% endif %}>Critical</option>
+                <option value="high" {% if severity_filter == 'high' %}selected{% endif %}>High</option>
+                <option value="medium" {% if severity_filter == 'medium' %}selected{% endif %}>Medium</option>
+                <option value="low" {% if severity_filter == 'low' %}selected{% endif %}>Low</option>
+            </select>
+            <select name="resolved" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">Hide Resolved</option>
+                <option value="true" {% if show_resolved == 'true' %}selected{% endif %}>Show Resolved</option>
+            </select>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Filter</button>
+        </form>
+    </div>
+    
+    {% for alert in alerts %}
+    <div class="bg-white rounded-lg shadow border-l-4 
+        {% if alert.severity == 'critical' %}border-red-600 bg-red-50
+        {% elif alert.severity == 'high' %}border-orange-500 bg-orange-50
+        {% elif alert.severity == 'medium' %}border-yellow-500 bg-yellow-50
+        {% else %}border-blue-500 bg-blue-50{% endif %}">
+        <div class="p-6">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <h5 class="text-lg font-bold text-gray-800">{{ alert.get_alert_type_display }}</h5>
+                        <span class="px-3 py-1 text-xs font-bold rounded-full
+                            {% if alert.severity == 'critical' %}bg-red-600 text-white
+                            {% elif alert.severity == 'high' %}bg-orange-500 text-white
+                            {% elif alert.severity == 'medium' %}bg-yellow-500 text-white
+                            {% else %}bg-blue-500 text-white{% endif %}">
+                            {{ alert.get_severity_display|upper }}
+                        </span>
+                        {% if not alert.is_read %}
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 animate-pulse">NEW</span>
+                        {% endif %}
+                        {% if alert.resolved %}
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">RESOLVED</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-gray-700 mb-2">{{ alert.message }}</p>
+                    <p class="text-sm text-gray-500">
+                        <a href="{% url 'student_profile' alert.student.id %}" class="text-blue-600 hover:text-blue-900 font-semibold">{{ alert.student.get_full_name }}</a>
+                        | {{ alert.created_at|date:"M d, Y g:i A" }}
+                    </p>
+                </div>
+                {% if not alert.resolved %}
+                <div class="flex space-x-2">
+                    {% if not alert.is_read %}
+                    <a href="{% url 'wellness:mark_alert_read' alert.id %}" class="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-semibold">Mark Read</a>
+                    {% endif %}
+                    <a href="{% url 'wellness:resolve_alert' alert.id %}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold">Resolve</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center text-blue-800">
+        No alerts found.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

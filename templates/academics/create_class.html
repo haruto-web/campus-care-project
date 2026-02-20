@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Class{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800">Create New Class</h2>
+            <p class="text-gray-600 mt-1">Fill in the details to create a new class</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-lg">
+        <div class="p-8">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-6">
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Class Name <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="name" id="{{ form.name.id_for_label }}" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                           placeholder="e.g., Introduction to Computer Science"
+                           value="{{ form.name.value|default:'' }}" required>
+                    {% if form.name.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-6">
+                    <label for="{{ form.code.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Class Code <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="code" id="{{ form.code.id_for_label }}" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                           placeholder="e.g., CS101"
+                           value="{{ form.code.value|default:'' }}" required>
+                    {% if form.code.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.code.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-6">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Description
+                    </label>
+                    <textarea name="description" id="{{ form.description.id_for_label }}" rows="4"
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                              placeholder="Brief description of the class...">{{ form.description.value|default:'' }}</textarea>
+                    {% if form.description.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="{{ form.semester.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Semester <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="semester" id="{{ form.semester.id_for_label }}" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                               placeholder="e.g., Spring 2026"
+                               value="{{ form.semester.value|default:'' }}" required>
+                        {% if form.semester.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.semester.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.room.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Room
+                        </label>
+                        <input type="text" name="room" id="{{ form.room.id_for_label }}" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                               placeholder="e.g., Room 301"
+                               value="{{ form.room.value|default:'' }}">
+                        {% if form.room.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.room.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <label for="{{ form.schedule.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Schedule
+                    </label>
+                    <input type="text" name="schedule" id="{{ form.schedule.id_for_label }}" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                           placeholder="e.g., MWF 9:00-10:00 AM"
+                           value="{{ form.schedule.value|default:'' }}">
+                    {% if form.schedule.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.schedule.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                        <i class="bi bi-check-circle"></i> Create Class
+                    </button>
+                    <a href="{% url 'dashboard' %}" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold text-center">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

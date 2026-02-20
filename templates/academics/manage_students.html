@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Students - {{ class.code }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-bold text-gray-800">Manage Students - {{ class.code }}</h2>
+        <a href="{% url 'academics:class_detail' class.id %}" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition">
+            <i class="bi bi-arrow-left"></i> Back to Class
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Enrolled Students -->
+        <div>
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-green-600 text-white px-6 py-4 rounded-t-lg">
+                    <h5 class="text-lg font-semibold"><i class="bi bi-people-fill"></i> Enrolled Students ({{ enrolled_students.count }})</h5>
+                </div>
+                <div class="p-6">
+                    {% if enrolled_students %}
+                        <div class="space-y-3">
+                            {% for student in enrolled_students %}
+                            <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                                <div>
+                                    <h6 class="font-semibold text-gray-800">{{ student.get_full_name }}</h6>
+                                    <small class="text-gray-600">{{ student.email }}</small>
+                                    {% if student.year_level %}
+                                    <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Grade {{ student.year_level }}</span>
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'academics:drop_student' class.id student.id %}" 
+                                   class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
+                                   onclick="return confirm('Are you sure you want to drop {{ student.get_full_name }} from this class? This action will remove all their grades and attendance records for this class.')">
+                                    <i class="bi bi-person-dash"></i> Drop Student
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500">No students enrolled yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Students -->
+        <div>
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
+                    <h5 class="text-lg font-semibold"><i class="bi bi-person-plus"></i> Add Students</h5>
+                </div>
+                <div class="p-6">
+                    <!-- Search and Filter -->
+                    <form method="get" class="mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                            <input type="text" 
+                                   name="search" 
+                                   class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                   placeholder="Search by name, username, or email..."
+                                   value="{{ search_query }}">
+                            <select name="year_level" 
+                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">All Year Levels</option>
+                                <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
+                                <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
+                                <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
+                                <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" type="submit">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                            {% if search_query or year_level_filter %}
+                            <a href="{% url 'academics:manage_students' class.id %}" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition">
+                                <i class="bi bi-x"></i> Clear
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+
+                    {% if search_query or year_level_filter %}
+                        <p class="text-gray-600 text-sm mb-3">
+                            {% if search_query %}Search results for "{{ search_query }}"{% endif %}
+                            {% if search_query and year_level_filter %} - {% endif %}
+                            {% if year_level_filter %}Grade {{ year_level_filter }}{% endif %}
+                        </p>
+                    {% endif %}
+
+                    {% if available_students %}
+                        <div class="space-y-3 max-h-[500px] overflow-y-auto">
+                            {% for student in available_students %}
+                            <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                                <div>
+                                    <h6 class="font-semibold text-gray-800">{{ student.get_full_name }}</h6>
+                                    <small class="text-gray-600">{{ student.email }}</small>
+                                    {% if student.year_level %}
+                                    <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Grade {{ student.year_level }}</span>
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'academics:add_student' class.id student.id %}" 
+                                   class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
+                                    <i class="bi bi-plus-circle"></i> Add
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {% if search_query %}
+                            <p class="text-gray-500">No students found matching "{{ search_query }}".</p>
+                        {% else %}
+                            <p class="text-gray-500">All students are already enrolled in this class.</p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

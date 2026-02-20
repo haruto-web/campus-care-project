@@ -1,0 +1,156 @@
+{% extends 'counselor_base.html' %}
+
+{% block page_title %}My Profile{% endblock %}
+
+{% block page_css %}
+<style>
+    .profile-card {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        text-align: center;
+    }
+    
+    .info-card {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    
+    .profile-img {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #4fd1c5;
+        margin-bottom: 15px;
+    }
+    
+    .profile-placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%);
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+    
+    .form-label {
+        color: #4a5568;
+        font-weight: 500;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 15px;
+    }
+    
+    .form-control:focus {
+        border-color: #4fd1c5;
+        box-shadow: 0 0 0 3px rgba(79, 209, 197, 0.1);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%);
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #38b2ac 0%, #2c7a7b 100%);
+    }
+    
+    .btn-logout {
+        background: white;
+        border: 2px solid #fc8181;
+        color: #fc8181;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .btn-logout:hover {
+        background: #fc8181;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="profile-card">
+            {% if user.profile_picture %}
+            <img src="{{ user.profile_picture.url }}" class="profile-img" alt="Profile">
+            {% else %}
+            <div class="profile-placeholder">
+                {{ user.first_name.0 }}{{ user.last_name.0 }}
+            </div>
+            {% endif %}
+            <h4 style="color: #2d3748; margin: 10px 0 5px 0; font-weight: 600;">{{ user.get_full_name }}</h4>
+            <p style="color: #718096; margin: 0 0 20px 0; font-size: 14px;">{{ user.get_role_display }}</p>
+            <a href="{% url 'logout' %}" class="btn-logout">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="info-card">
+            <h5 style="color: #2d3748; margin-bottom: 25px; font-weight: 600;">Profile Information</h5>
+            
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}" required>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-control" value="{{ user.username }}" disabled style="background: #f7fafc; color: #718096;">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Phone Number</label>
+                    <input type="text" class="form-control" name="phone" value="{{ user.phone }}" placeholder="Enter phone number">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">Profile Picture</label>
+                    <input type="file" class="form-control" name="profile_picture" accept="image/*">
+                    <small style="color: #718096; font-size: 12px;">Recommended: Square image, at least 200x200px</small>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Update Profile
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,159 +1,137 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block title %}Counselor Dashboard{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/custom.css' %}">
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4">Welcome, {{ user.get_full_name }}!</h2>
+<div class="space-y-6">
+    <h2 class="text-3xl font-bold text-gray-800">Counselor Dashboard</h2>
     
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-white bg-danger">
-                <div class="card-body">
-                    <h3>{{ high_risk_count }}</h3>
-                    <p class="mb-0">High Risk Students</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-warning">
-                <div class="card-body">
-                    <h3>{{ medium_risk_count }}</h3>
-                    <p class="mb-0">Medium Risk Students</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-info">
-                <div class="card-body">
-                    <h3>{{ pending_interventions }}</h3>
-                    <p class="mb-0">Pending Interventions</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-primary">
-                <div class="card-body">
-                    <h3>{{ unread_alerts }}</h3>
-                    <p class="mb-0">Unread Alerts</p>
-                </div>
+    <!-- Warning Banner for Unnoticed Violations -->
+    {% if unread_alerts > 0 %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+        <div class="flex items-center">
+            <i class="bi bi-exclamation-triangle-fill text-red-500 text-2xl mr-3"></i>
+            <div>
+                <h3 class="text-red-800 font-semibold">⚠️ Attention Required!</h3>
+                <p class="text-red-700">You have <strong>{{ unread_alerts }}</strong> unread alert(s) requiring immediate attention.</p>
             </div>
         </div>
     </div>
+    {% endif %}
     
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> High Risk Students</h5>
+    <!-- Statistics with Interpretation -->
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+        <h3 class="text-blue-900 font-semibold mb-2">📊 Statistics Interpretation</h3>
+        <p class="text-blue-800 text-sm">
+            {% if high_risk_count > 10 %}
+                <strong>Critical:</strong> High number of at-risk students ({{ high_risk_count }}). Immediate intervention recommended.
+            {% elif high_risk_count > 5 %}
+                <strong>Moderate:</strong> {{ high_risk_count }} students need attention. Monitor closely.
+            {% else %}
+                <strong>Good:</strong> Low number of high-risk students. Continue current support strategies.
+            {% endif %}
+            {% if pending_interventions > 5 %}
+                {{ pending_interventions }} pending interventions - prioritize scheduling.
+            {% endif %}
+        </p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-red-600">{{ high_risk_count }}</h3>
+            <p class="text-gray-600">High Risk</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-yellow-600">{{ medium_risk_count }}</h3>
+            <p class="text-gray-600">Medium Risk</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-blue-600">{{ pending_interventions }}</h3>
+            <p class="text-gray-600">Pending Interventions</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-purple-600">{{ unread_alerts }}</h3>
+            <p class="text-gray-600">Unread Alerts</p>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                    <h5 class="text-lg font-semibold">High-Risk Students</h5>
+                    <a href="{% url 'wellness:at_risk_students' %}" class="text-sm hover:underline">View All ›</a>
                 </div>
-                <div class="card-body">
+                <div class="p-6">
                     {% if high_risk_students %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Student</th>
-                                        <th>Risk Score</th>
-                                        <th>GPA</th>
-                                        <th>Attendance</th>
-                                        <th>Missing</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                {% for assessment in high_risk_students %}
-                                    <tr>
-                                        <td>{{ assessment.student.get_full_name }}</td>
-                                        <td><span class="badge bg-danger">{{ assessment.risk_score }}</span></td>
-                                        <td>{{ assessment.gpa|default:"N/A" }}</td>
-                                        <td>{{ assessment.attendance_rate|default:"N/A" }}%</td>
-                                        <td>{{ assessment.missing_assignments }}</td>
-                                        <td>
-                                            <a href="#" class="btn btn-sm btn-primary">View</a>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
+                        <div class="space-y-3">
+                        {% for assessment in high_risk_students|slice:":5" %}
+                            <a href="{% url 'student_profile' assessment.student.id %}" class="block p-4 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                                <h6 class="font-semibold text-gray-800">{{ assessment.student.get_full_name }}</h6>
+                                <p class="text-sm text-gray-600">Risk Score: {{ assessment.risk_score }} | GPA: {{ assessment.gpa|default:"N/A" }} | Attendance: {{ assessment.attendance_rate|default:"N/A" }}%</p>
+                                <p class="text-sm text-red-600">Missing {{ assessment.missing_assignments }} assignment(s)</p>
+                            </a>
+                        {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-success">No high-risk students at this time.</p>
+                        <p class="text-gray-500">No high-risk students at this time.</p>
                     {% endif %}
                 </div>
             </div>
             
-            <div class="card">
-                <div class="card-header bg-warning">
-                    <h5 class="mb-0"><i class="bi bi-bell"></i> Recent Alerts</h5>
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-yellow-500 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                    <h5 class="text-lg font-semibold">Recent Alerts</h5>
+                    <a href="{% url 'wellness:alerts_list' %}" class="text-sm hover:underline">View All ›</a>
                 </div>
-                <div class="card-body">
+                <div class="p-6">
                     {% if alerts %}
-                        <div class="list-group">
-                        {% for alert in alerts %}
-                            <div class="list-group-item {% if not alert.is_read %}list-group-item-warning{% endif %}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="mb-1">{{ alert.get_alert_type_display }}</h6>
-                                        <p class="mb-1">{{ alert.message }}</p>
-                                        <small class="text-muted">{{ alert.student.get_full_name }} - {{ alert.created_at|date:"M d, Y" }}</small>
-                                    </div>
-                                    {% if not alert.is_read %}
-                                    <span class="badge bg-warning">New</span>
-                                    {% endif %}
-                                </div>
+                        <div class="space-y-3">
+                        {% for alert in alerts|slice:":5" %}
+                            <div class="p-4 border rounded-lg">
+                                <h6 class="font-semibold text-gray-800">{{ alert.get_alert_type_display }}</h6>
+                                <p class="text-sm text-gray-600">{{ alert.message }}</p>
+                                <p class="text-sm text-gray-500">{{ alert.student.get_full_name }} - {{ alert.created_at|date:"M d, Y" }}</p>
                             </div>
                         {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted">No recent alerts.</p>
+                        <p class="text-gray-500">No recent alerts.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
         
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Quick Actions</h5>
+        <div class="space-y-6">
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
+                    <h5 class="text-lg font-semibold">Quick Actions</h5>
                 </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="#" class="btn btn-outline-primary">
-                            <i class="bi bi-plus-circle"></i> Create Intervention
-                        </a>
-                        <a href="#" class="btn btn-outline-info">
-                            <i class="bi bi-people"></i> View All Students
-                        </a>
-                        <a href="#" class="btn btn-outline-warning">
-                            <i class="bi bi-graph-up"></i> Generate Report
-                        </a>
-                    </div>
+                <div class="p-6 space-y-3">
+                    <a href="{% url 'wellness:create_intervention' %}" class="block w-full bg-blue-600 text-white text-center px-4 py-2 rounded-lg hover:bg-blue-700">Create Intervention</a>
+                    <a href="{% url 'wellness:at_risk_students' %}" class="block w-full border border-blue-600 text-blue-600 text-center px-4 py-2 rounded-lg hover:bg-blue-50">View All Students</a>
+                    <a href="{% url 'wellness:reports' %}" class="block w-full border border-blue-600 text-blue-600 text-center px-4 py-2 rounded-lg hover:bg-blue-50">View Reports</a>
                 </div>
             </div>
             
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-calendar3"></i> Upcoming Interventions</h5>
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-purple-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                    <h5 class="text-lg font-semibold">Upcoming Interventions</h5>
+                    <a href="{% url 'wellness:interventions_list' %}" class="text-sm hover:underline">View All ›</a>
                 </div>
-                <div class="card-body">
+                <div class="p-6">
                     {% if upcoming_interventions %}
-                        <div class="list-group">
-                        {% for intervention in upcoming_interventions %}
-                            <div class="list-group-item">
-                                <h6 class="mb-1">{{ intervention.student.get_full_name }}</h6>
-                                <small class="text-muted">{{ intervention.get_intervention_type_display }}</small><br>
-                                <small class="text-primary">{{ intervention.scheduled_date|date:"M d, Y g:i A" }}</small>
+                        <div class="space-y-3">
+                        {% for intervention in upcoming_interventions|slice:":5" %}
+                            <div class="p-3 border rounded-lg">
+                                <h6 class="font-semibold text-gray-800">{{ intervention.student.get_full_name }}</h6>
+                                <p class="text-sm text-gray-600">{{ intervention.get_intervention_type_display }}</p>
+                                <p class="text-sm text-purple-600">{{ intervention.scheduled_date|date:"M d, Y g:i A" }}</p>
                             </div>
                         {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted">No upcoming interventions.</p>
+                        <p class="text-gray-500">No upcoming interventions.</p>
                     {% endif %}
                 </div>
             </div>

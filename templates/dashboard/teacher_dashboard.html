@@ -1,108 +1,134 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block title %}Teacher Dashboard{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/custom.css' %}">
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4">Welcome, {{ user.get_full_name }}!</h2>
+<div class="space-y-6">
+    <h2 class="text-3xl font-bold text-gray-800">Teacher Dashboard</h2>
     
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-book"></i> My Classes</h5>
-                </div>
-                <div class="card-body">
-                    {% if classes %}
-                        <div class="list-group">
-                        {% for class in classes %}
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">{{ class.code }} - {{ class.name }}</h6>
-                                        <small class="text-muted">{{ class.students.count }} students enrolled</small>
-                                    </div>
-                                    <span class="badge bg-info">{{ class.semester }}</span>
-                                </div>
-                            </div>
-                        {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted">No classes assigned yet.</p>
-                    {% endif %}
-                </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-blue-600">{{ classes.count }}</h3>
+            <p class="text-gray-600">My Classes</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-green-600">{{ total_students }}</h3>
+            <p class="text-gray-600">Total Students</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-red-600">{{ at_risk_count }}</h3>
+            <p class="text-gray-600">At-Risk Students</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <h3 class="text-3xl font-bold text-yellow-600">{{ pending_grades }}</h3>
+            <p class="text-gray-600">Pending Grades</p>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow">
+            <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
+                <h5 class="text-lg font-semibold">My Classes</h5>
             </div>
-            
-            <div class="card">
-                <div class="card-header bg-warning">
-                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Students Needing Attention</h5>
-                </div>
-                <div class="card-body">
-                    {% if at_risk_students %}
-                        <div class="list-group">
-                        {% for student in at_risk_students %}
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">{{ student.get_full_name }}</h6>
-                                        <small class="text-muted">{{ student.username }}</small>
-                                    </div>
-                                    <span class="badge bg-danger">High Risk</span>
+            <div class="p-6">
+                {% if classes %}
+                    <div class="space-y-3">
+                    {% for class in classes %}
+                        <a href="{% url 'academics:class_detail' class.id %}" class="block p-4 border rounded-lg hover:bg-gray-50 transition">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h6 class="font-semibold text-gray-800">{{ class.code }} - {{ class.name }}</h6>
+                                    <p class="text-sm text-gray-600">{{ class.students.count }} students</p>
                                 </div>
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">{{ class.semester }}</span>
                             </div>
-                        {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-success">All students are doing well!</p>
-                    {% endif %}
-                </div>
+                        </a>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500">No classes yet.</p>
+                {% endif %}
             </div>
         </div>
         
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Quick Actions</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="#" class="btn btn-outline-primary">
-                            <i class="bi bi-plus-circle"></i> Create Assignment
-                        </a>
-                        <a href="#" class="btn btn-outline-primary">
-                            <i class="bi bi-check-square"></i> Mark Attendance
-                        </a>
-                        <a href="#" class="btn btn-outline-warning">
-                            <i class="bi bi-flag"></i> Report Concern
-                        </a>
-                    </div>
-                </div>
+        <div class="bg-white rounded-lg shadow">
+            <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg">
+                <h5 class="text-lg font-semibold">Students Needing Attention</h5>
             </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Overview</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h3 class="text-primary">{{ total_students }}</h3>
-                        <small class="text-muted">Total Students</small>
+            <div class="p-6">
+                {% if at_risk_students %}
+                    <div class="space-y-3">
+                    {% for student in at_risk_students|slice:":5" %}
+                        <a href="{% url 'student_profile' student.id %}" class="block p-4 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                            <h6 class="font-semibold text-gray-800">{{ student.get_full_name }}</h6>
+                            <p class="text-sm text-red-600">High Risk</p>
+                        </a>
+                    {% endfor %}
                     </div>
-                    <div class="mb-3">
-                        <h3 class="text-warning">{{ pending_grades }}</h3>
-                        <small class="text-muted">Pending Grades</small>
-                    </div>
-                    <div>
-                        <h3 class="text-danger">{{ at_risk_count }}</h3>
-                        <small class="text-muted">At-Risk Students</small>
-                    </div>
-                </div>
+                {% else %}
+                    <p class="text-gray-500">No students needing attention.</p>
+                {% endif %}
             </div>
+        </div>
+    </div>
+
+    <!-- Recent Submissions Section -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-gradient-to-r from-green-600 to-emerald-700 px-6 py-4">
+            <h5 class="text-lg font-semibold text-white flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Recent Submissions
+            </h5>
+        </div>
+        <div class="p-6">
+            {% if recent_submissions %}
+                <div class="space-y-3">
+                {% for submission in recent_submissions %}
+                    <div class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-green-50 border-2 border-green-200 rounded-lg hover:shadow-md transition-all duration-200">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-shrink-0 h-12 w-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                {{ submission.student.get_full_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <h6 class="font-semibold text-gray-900">{{ submission.student.get_full_name }} {% if submission.student.year_level %}<span class="text-xs text-gray-500">(Grade {{ submission.student.year_level }})</span>{% endif %}</h6>
+                                <p class="text-sm text-gray-600">{{ submission.assignment.title }}</p>
+                                <p class="text-xs text-gray-500">{{ submission.assignment.class_obj.code }} - {{ submission.assignment.class_obj.name }} • {{ submission.submitted_at|date:"M d, Y h:i A" }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            {% if submission.score %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Graded
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
+                                    <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-pulse"></span>
+                                    Pending
+                                </span>
+                            {% endif %}
+                            <a href="{% url 'academics:grade_submission' submission.id %}" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                Grade
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="text-gray-500">No recent submissions.</p>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>

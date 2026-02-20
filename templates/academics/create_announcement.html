@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Post Announcement{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800">Post Announcement</h2>
+            <p class="text-gray-600 mt-1">{{ class.code }} - {{ class.name }}</p>
+        </div>
+        <a href="{% url 'academics:class_detail' class.id %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-lg">
+        <div class="p-8">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-6">
+                    <label for="title" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Title <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                           id="title" 
+                           name="title" 
+                           placeholder="e.g., Important: Class Schedule Change"
+                           required>
+                </div>
+
+                <div class="mb-6">
+                    <label for="content" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Content <span class="text-red-500">*</span>
+                    </label>
+                    <textarea class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                              id="content" 
+                              name="content" 
+                              rows="6"
+                              placeholder="Write your announcement here..."
+                              required></textarea>
+                </div>
+
+                <div class="mb-6">
+                    <label for="priority" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Priority <span class="text-red-500">*</span>
+                    </label>
+                    <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                            id="priority" 
+                            name="priority">
+                        <option value="normal">Normal</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                    <small class="text-gray-500 mt-1 block">
+                        Urgent announcements will be highlighted in red
+                    </small>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                        <i class="bi bi-megaphone"></i> Post Announcement
+                    </button>
+                    <a href="{% url 'academics:class_detail' class.id %}" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold text-center">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

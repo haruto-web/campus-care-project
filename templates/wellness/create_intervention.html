@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Intervention - Campus Care{% endblock %}
+
+{% block extra_css %}
+<style>
+    .student-search-wrapper {
+        position: relative;
+    }
+    .student-search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-top: none;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+    .student-search-results.show {
+        display: block;
+    }
+    .student-result-item {
+        padding: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .student-result-item:hover {
+        background-color: #f8f9fa;
+    }
+    .student-result-item strong {
+        display: block;
+    }
+    .student-result-item small {
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-clipboard-plus"></i> Create Intervention</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="interventionForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Student *</label>
+                            <div class="student-search-wrapper">
+                                <input type="text" 
+                                       id="studentSearch" 
+                                       class="form-control" 
+                                       placeholder="Search student by name or email..."
+                                       autocomplete="off">
+                                <div id="searchResults" class="student-search-results"></div>
+                                <input type="hidden" name="student" id="studentId" required>
+                            </div>
+                            <small class="form-text text-muted">Type to search for a student</small>
+                            {% if form.student.errors %}
+                            <div class="text-danger">{{ form.student.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Intervention Type *</label>
+                            {{ form.intervention_type }}
+                            {% if form.intervention_type.errors %}
+                            <div class="text-danger">{{ form.intervention_type.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Description *</label>
+                            {{ form.description }}
+                            <small class="form-text text-muted">Describe the purpose and goals of this intervention</small>
+                            {% if form.description.errors %}
+                            <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Scheduled Date & Time *</label>
+                            {{ form.scheduled_date }}
+                            {% if form.scheduled_date.errors %}
+                            <div class="text-danger">{{ form.scheduled_date.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Status *</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                            <div class="text-danger">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            {{ form.notes }}
+                            <small class="form-text text-muted">Additional notes or preparation details</small>
+                            {% if form.notes.errors %}
+                            <div class="text-danger">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Outcome</label>
+                            {{ form.outcome }}
+                            <small class="form-text text-muted">Results and follow-up actions (fill after completion)</small>
+                            {% if form.outcome.errors %}
+                            <div class="text-danger">{{ form.outcome.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Create Intervention
+                            </button>
+                            <a href="{% url 'wellness:interventions_list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const searchInput = document.getElementById('studentSearch');
+const searchResults = document.getElementById('searchResults');
+const studentIdInput = document.getElementById('studentId');
+let students = [];
+
+// Fetch all students on page load
+fetch('{% url "wellness:api_students" %}')
+    .then(response => response.json())
+    .then(data => {
+        students = data;
+    });
+
+// Search functionality
+searchInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase().trim();
+    
+    if (query.length < 2) {
+        searchResults.classList.remove('show');
+        return;
+    }
+    
+    const filtered = students.filter(student => 
+        student.name.toLowerCase().includes(query) || 
+        student.email.toLowerCase().includes(query)
+    );
+    
+    if (filtered.length > 0) {
+        searchResults.innerHTML = filtered.map(student => `
+            <div class="student-result-item" data-id="${student.id}">
+                <strong>${student.name}</strong>
+                <small>${student.email}</small>
+            </div>
+        `).join('');
+        searchResults.classList.add('show');
+        
+        // Add click handlers
+        document.querySelectorAll('.student-result-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const name = this.querySelector('strong').textContent;
+                searchInput.value = name;
+                studentIdInput.value = id;
+                searchResults.classList.remove('show');
+            });
+        });
+    } else {
+        searchResults.innerHTML = '<div class="student-result-item">No students found</div>';
+        searchResults.classList.add('show');
+    }
+});
+
+// Close results when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.student-search-wrapper')) {
+        searchResults.classList.remove('show');
+    }
+});
+</script>
+{% endblock %}

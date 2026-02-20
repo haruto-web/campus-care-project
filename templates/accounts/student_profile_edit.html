@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">
+            <i class="bi bi-person mr-2"></i>My Profile
+        </h2>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Profile Picture -->
+            <div class="mb-8 text-center">
+                <div class="inline-block relative">
+                    {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="Profile" class="w-32 h-32 rounded-full object-cover border-4 border-blue-600">
+                    {% else %}
+                    <div class="w-32 h-32 rounded-full bg-blue-600 flex items-center justify-center text-white text-4xl font-bold border-4 border-blue-600">
+                        {{ user.first_name.0 }}{{ user.last_name.0 }}
+                    </div>
+                    {% endif %}
+                    <label for="profile_picture" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition">
+                        <i class="bi bi-camera"></i>
+                    </label>
+                    <input type="file" id="profile_picture" name="profile_picture" accept="image/*" class="hidden">
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Click the camera icon to change your profile picture</p>
+            </div>
+
+            <!-- Personal Information -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Personal Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            First Name <span class="text-red-600">*</span>
+                        </label>
+                        <input type="text" 
+                               name="first_name" 
+                               value="{{ user.first_name }}" 
+                               required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Last Name <span class="text-red-600">*</span>
+                        </label>
+                        <input type="text" 
+                               name="last_name" 
+                               value="{{ user.last_name }}" 
+                               required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Contact Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Email <span class="text-red-600">*</span>
+                        </label>
+                        <input type="email" 
+                               name="email" 
+                               value="{{ user.email }}" 
+                               required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Phone Number
+                        </label>
+                        <input type="tel" 
+                               name="phone" 
+                               value="{{ user.phone|default:'' }}" 
+                               placeholder="+1 (555) 123-4567"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Information -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Academic Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Username
+                        </label>
+                        <input type="text" 
+                               value="{{ user.username }}" 
+                               disabled
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Year Level
+                        </label>
+                        <input type="text" 
+                               value="Grade {{ user.year_level }}" 
+                               disabled
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Stats (Read-only) -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Academic Performance</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-sm text-gray-600 mb-1">Current GPA</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ gpa|default:"N/A" }}</p>
+                    </div>
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p class="text-sm text-gray-600 mb-1">Attendance Rate</p>
+                        <p class="text-2xl font-bold text-green-600">{{ attendance_rate|default:"N/A" }}%</p>
+                    </div>
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <p class="text-sm text-gray-600 mb-1">Enrolled Classes</p>
+                        <p class="text-2xl font-bold text-purple-600">{{ enrolled_classes_count }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="flex gap-4">
+                <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                    <i class="bi bi-save mr-2"></i>Save Changes
+                </button>
+                <a href="{% url 'dashboard' %}" class="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-300 transition font-semibold">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

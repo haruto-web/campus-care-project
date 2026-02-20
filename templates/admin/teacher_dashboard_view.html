@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ teacher.get_full_name }} - Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800"><i class="bi bi-person-badge"></i> {{ teacher.get_full_name }}'s Dashboard</h2>
+            <p class="text-gray-600">Viewing as Administrator</p>
+        </div>
+        <a href="{% url 'admin_teachers_list' %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+            <i class="bi bi-arrow-left"></i> Back to Teachers
+        </a>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
+                    <h5 class="text-lg font-semibold"><i class="bi bi-book"></i> Classes</h5>
+                </div>
+                <div class="p-6">
+                    {% if classes %}
+                        <div class="space-y-3">
+                        {% for class in classes %}
+                            <a href="{% url 'academics:class_detail' class.id %}" class="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h6 class="font-semibold text-gray-800">{{ class.code }} - {{ class.name }}</h6>
+                                        <small class="text-gray-600">{{ class.students.count }} students enrolled</small>
+                                    </div>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{ class.semester }}</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500">No classes assigned yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-yellow-500 text-white px-6 py-4 rounded-t-lg">
+                    <h5 class="text-lg font-semibold"><i class="bi bi-exclamation-triangle"></i> Students Needing Attention</h5>
+                </div>
+                <div class="p-6">
+                    {% if at_risk_students %}
+                        <div class="space-y-3">
+                        {% for student in at_risk_students %}
+                            <div class="p-4 border border-gray-200 rounded-lg">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h6 class="font-semibold text-gray-800">{{ student.get_full_name }}</h6>
+                                        <small class="text-gray-600">{{ student.username }}</small>
+                                    </div>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">High Risk</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-green-600">All students are doing well!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="space-y-6">
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-gray-700 text-white px-6 py-4 rounded-t-lg">
+                    <h5 class="text-lg font-semibold"><i class="bi bi-person-circle"></i> Teacher Info</h5>
+                </div>
+                <div class="p-6 text-center">
+                    {% if teacher.profile_picture %}
+                    <img src="{{ teacher.profile_picture.url }}" class="rounded-full mx-auto mb-3" width="100" height="100" style="object-fit: cover;">
+                    {% else %}
+                    <div class="rounded-full bg-gray-300 text-gray-600 flex items-center justify-center mx-auto mb-3" style="width: 100px; height: 100px;">
+                        <i class="bi bi-person-fill text-4xl"></i>
+                    </div>
+                    {% endif %}
+                    <h5 class="text-xl font-semibold text-gray-800">{{ teacher.get_full_name }}</h5>
+                    <p class="text-gray-600 mb-2">{{ teacher.email }}</p>
+                    <p class="text-gray-600">{{ teacher.username }}</p>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow">
+                <div class="bg-gray-700 text-white px-6 py-4 rounded-t-lg">
+                    <h5 class="text-lg font-semibold"><i class="bi bi-graph-up"></i> Overview</h5>
+                </div>
+                <div class="p-6">
+                    <div class="mb-4">
+                        <h3 class="text-3xl font-bold text-blue-600">{{ total_students }}</h3>
+                        <small class="text-gray-600">Total Students</small>
+                    </div>
+                    <div class="mb-4">
+                        <h3 class="text-3xl font-bold text-yellow-500">{{ pending_grades }}</h3>
+                        <small class="text-gray-600">Pending Grades</small>
+                    </div>
+                    <div>
+                        <h3 class="text-3xl font-bold text-red-600">{{ at_risk_count }}</h3>
+                        <small class="text-gray-600">At-Risk Students</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

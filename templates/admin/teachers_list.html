@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Teachers - Admin{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800"><i class="bi bi-people-fill"></i> All Teachers</h2>
+            <p class="text-gray-600">View and manage teacher accounts</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Classes</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for teacher in teachers %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    {% if teacher.profile_picture %}
+                                    <img src="{{ teacher.profile_picture.url }}" class="rounded-full mr-3" width="40" height="40" style="object-fit: cover;">
+                                    {% else %}
+                                    <div class="rounded-full bg-gray-300 mr-3 flex items-center justify-center" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-person-fill text-gray-600"></i>
+                                    </div>
+                                    {% endif %}
+                                    <span class="font-medium text-gray-900">{{ teacher.get_full_name }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ teacher.email }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ teacher.username }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{ teacher.classes_count }}</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <a href="{% url 'admin_teacher_dashboard' teacher.id %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                    <i class="bi bi-eye"></i> View Dashboard
+                                </a>
+                                <a href="{% url 'profile' %}?user_id={{ teacher.id }}" class="ml-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                    <i class="bi bi-person"></i> Profile
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">No teachers found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
