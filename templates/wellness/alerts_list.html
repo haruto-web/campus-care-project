@@ -6,12 +6,13 @@
 <div class="space-y-6">
     <h2 class="text-3xl font-bold text-gray-800">Alerts & Notifications</h2>
     
-    <!-- Warning Banner for Critical/High Alerts -->\n    {% if critical_unread > 0 or high_unread > 0 %}
+    <!-- Warning Banner for Critical/High Alerts -->
+    {% if critical_unread > 0 or high_unread > 0 %}
     <div class="bg-red-100 border-l-4 border-red-600 p-4 rounded-lg animate-pulse">
         <div class="flex items-center">
             <i class="bi bi-exclamation-triangle-fill text-red-600 text-3xl mr-3"></i>
             <div>
-                <h3 class="text-red-900 font-bold text-lg">\u26a0\ufe0f URGENT ATTENTION REQUIRED!</h3>
+                <h3 class="text-red-900 font-bold text-lg">⚠️ URGENT ATTENTION REQUIRED!</h3>
                 <p class="text-red-800">
                     {% if critical_unread > 0 %}<strong class="text-red-900">{{ critical_unread }} CRITICAL</strong>{% endif %}
                     {% if critical_unread > 0 and high_unread > 0 %} and {% endif %}

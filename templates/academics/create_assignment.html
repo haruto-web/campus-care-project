@@ -3,48 +3,72 @@
 {% block title %}Create Assignment{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4><i class="bi bi-clipboard-plus"></i> Create Assignment - {{ class.code }}</h4>
+<div class="max-w-4xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800">Create Assignment</h2>
+            <p class="text-gray-600 mt-1">{{ class.code }} - {{ class.name }}</p>
+        </div>
+        <a href="{% url 'academics:class_detail' class.id %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-lg">
+        <div class="p-8">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-6">
+                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Assignment Title <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="title" id="{{ form.title.id_for_label }}" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                           placeholder="e.g., Chapter 5 Quiz or Final Project"
+                           value="{{ form.title.value|default:'' }}" required>
                 </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.title.id_for_label }}" class="form-label">Assignment Title *</label>
-                            {{ form.title }}
-                        </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">Description *</label>
-                            {{ form.description }}
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.due_date.id_for_label }}" class="form-label">Due Date *</label>
-                                {{ form.due_date }}
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.total_points.id_for_label }}" class="form-label">Total Points *</label>
-                                {{ form.total_points }}
-                            </div>
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i> Create Assignment
-                            </button>
-                            <a href="{% url 'academics:class_detail' class.id %}" class="btn btn-secondary">Cancel</a>
-                        </div>
-                    </form>
+                <div class="mb-6">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Description <span class="text-red-500">*</span>
+                    </label>
+                    <textarea name="description" id="{{ form.description.id_for_label }}" rows="5"
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                              placeholder="Describe the assignment requirements and instructions..."
+                              required>{{ form.description.value|default:'' }}</textarea>
                 </div>
-            </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="{{ form.due_date.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Due Date <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local" name="due_date" id="{{ form.due_date.id_for_label }}" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                               value="{{ form.due_date.value|default:'' }}" required>
+                    </div>
+
+                    <div>
+                        <label for="{{ form.total_points.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Total Points <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" name="total_points" id="{{ form.total_points.id_for_label }}" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                               placeholder="100"
+                               value="{{ form.total_points.value|default:'' }}" required>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                        <i class="bi bi-check-circle"></i> Create Assignment
+                    </button>
+                    <a href="{% url 'academics:class_detail' class.id %}" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold text-center">
+                        Cancel
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 </div>

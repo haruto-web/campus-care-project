@@ -4,7 +4,14 @@
 
 {% block content %}
 <div class="space-y-6">
-    <h2 class="text-3xl font-bold text-gray-800">Admin Dashboard</h2>
+    <div class="flex justify-between items-center">
+        <h2 class="text-3xl font-bold text-gray-800">Admin Dashboard</h2>
+        <div class="flex gap-2">
+            <a href="{% url 'admin_teachers_list' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"><i class="bi bi-people"></i> Teachers</a>
+            <a href="{% url 'admin_create_class' %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"><i class="bi bi-plus-circle"></i> Create Class</a>
+            <a href="{% url 'admin_enroll_student' %}" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"><i class="bi bi-person-plus"></i> Enroll Student</a>
+        </div>
+    </div>
     
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="bg-white rounded-lg shadow p-6 text-center">
@@ -23,6 +30,22 @@
             <h3 class="text-3xl font-bold text-red-600">{{ high_risk_count }}</h3>
             <p class="text-gray-600">High-Risk Students</p>
         </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h5 class="text-lg font-semibold mb-4">User Distribution</h5>
+            <canvas id="userChart"></canvas>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h5 class="text-lg font-semibold mb-4">Risk Level Distribution</h5>
+            <canvas id="riskChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-6">
+        <h5 class="text-lg font-semibold mb-4">System Activity (Last 30 Days)</h5>
+        <canvas id="activityChart"></canvas>
     </div>
     
     <div class="bg-white rounded-lg shadow">
@@ -63,4 +86,77 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// User Distribution Pie Chart
+const userCtx = document.getElementById('userChart').getContext('2d');
+new Chart(userCtx, {
+    type: 'pie',
+    data: {
+        labels: ['Students', 'Teachers', 'Counselors', 'Admins'],
+        datasets: [{
+            data: [{{ total_students }}, {{ total_teachers }}, {{ total_counselors }}, {{ total_admins }}],
+            backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom' }
+        }
+    }
+});
+
+// Risk Level Bar Chart
+const riskCtx = document.getElementById('riskChart').getContext('2d');
+new Chart(riskCtx, {
+    type: 'bar',
+    data: {
+        labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+        datasets: [{
+            label: 'Students',
+            data: [{{ high_risk_count }}, {{ medium_risk_count }}, {{ low_risk_count }}],
+            backgroundColor: ['#EF4444', '#F59E0B', '#10B981']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+
+// Activity Line Chart
+const activityCtx = document.getElementById('activityChart').getContext('2d');
+new Chart(activityCtx, {
+    type: 'line',
+    data: {
+        labels: {{ activity_labels|safe }},
+        datasets: [{
+            label: 'New Users',
+            data: {{ activity_data|safe }},
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+</script>
 {% endblock %}

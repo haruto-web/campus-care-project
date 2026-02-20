@@ -4,97 +4,102 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-6">
-    <div class="flex justify-between items-center mb-6">
+    <div class="mb-6">
         <h2 class="text-3xl font-bold text-gray-800">My Students</h2>
     </div>
     
-    <div class="bg-white rounded-lg shadow">
-        <div class="p-6">
-            <div class="mb-6">
-                <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="md:col-span-2">
-                        <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" name="search" placeholder="Search by name, email, or username..." value="{{ search_query }}">
-                    </div>
-                    <div>
-                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" name="year_level_filter">
-                            <option value="">All Year Levels</option>
-                            <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
-                            <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
-                            <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
-                            <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
-                        </select>
-                    </div>
-                    <div>
-                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" name="class_filter">
-                            <option value="">All Classes</option>
-                            {% for class in my_classes %}
-                            <option value="{{ class.id }}" {% if class_filter == class.id|stringformat:"s" %}selected{% endif %}>{{ class.code }} - {{ class.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="md:col-span-4">
-                        <button type="submit" class="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Search</button>
-                    </div>
-                </form>
+    <div class="bg-white rounded-lg shadow p-6">
+        <form method="get" class="mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <input type="text" 
+                       class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                       name="search" 
+                       placeholder="Search by name, email, or username..." 
+                       value="{{ search_query }}">
+                
+                <select class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                        name="year_level_filter">
+                    <option value="">All Year Levels</option>
+                    <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
+                    <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
+                    <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
+                    <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
+                </select>
+                
+                <select class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                        name="class_filter">
+                    <option value="">All Classes</option>
+                    {% for class in my_classes %}
+                    <option value="{{ class.id }}" {% if class_filter == class.id|stringformat:"s" %}selected{% endif %}>{{ class.code }} - {{ class.name }}</option>
+                    {% endfor %}
+                </select>
             </div>
             
-            {% if students %}
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year Level</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classes</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GPA</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attendance</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Level</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for student_data in students %}
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <strong class="text-gray-900">{{ student_data.student.get_full_name }}</strong>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                {% if student_data.student.year_level %}
-                                    Grade {{ student_data.student.year_level }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ student_data.student.email }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ student_data.classes_count }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ student_data.gpa|default:"N/A" }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ student_data.attendance_rate|default:"N/A" }}%</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                {% if student_data.risk_level == 'high' %}
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">High</span>
-                                {% elif student_data.risk_level == 'medium' %}
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Medium</span>
-                                {% elif student_data.risk_level == 'low' %}
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Low</span>
-                                {% else %}
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">N/A</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <a href="{% url 'student_profile' student_data.student.id %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">View Profile</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-                <p class="text-blue-800"><i class="bi bi-info-circle"></i> No students found. Students will appear here once you add them to your classes.</p>
-            </div>
-            {% endif %}
+            <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                Search
+            </button>
+        </form>
+        
+        {% if students %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year Level</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classes</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GPA</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attendance</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Level</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for student_data in students %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <strong class="text-gray-900">{{ student_data.student.get_full_name }}</strong>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {% if student_data.student.year_level %}
+                                Grade {{ student_data.student.year_level }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ student_data.student.email }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ student_data.classes_count }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ student_data.gpa|default:"N/A" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ student_data.attendance_rate|default:"N/A" }}%</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if student_data.risk_level == 'high' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">High</span>
+                            {% elif student_data.risk_level == 'medium' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Medium</span>
+                            {% elif student_data.risk_level == 'low' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Low</span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <a href="{% url 'student_profile' student_data.student.id %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                                View Profile
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+        {% else %}
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+            <p class="text-blue-700">
+                <i class="bi bi-info-circle"></i> No students found. Students will appear here once you add them to your classes.
+            </p>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

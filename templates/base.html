@@ -22,7 +22,7 @@
                         <a href="{% url 'dashboard' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Dashboard</a>
                         {% if user.role == 'student' %}
                         <a href="{% url 'academics:my_classes' %}" class="hover:bg-blue-700 px-3 py-2 rounded">My Classes</a>
-                        <a href="#" class="hover:bg-blue-700 px-3 py-2 rounded">Assignments</a>
+                        <a href="{% url 'academics:student_assignments' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Assignments</a>
                         {% elif user.role == 'teacher' %}
                         <a href="{% url 'academics:my_classes' %}" class="hover:bg-blue-700 px-3 py-2 rounded">My Classes</a>
                         <a href="{% url 'students_list' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Students</a>
@@ -31,6 +31,10 @@
                         <a href="{% url 'wellness:interventions_list' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Interventions</a>
                         <a href="{% url 'wellness:alerts_list' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Alerts</a>
                         <a href="{% url 'wellness:reports' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Reports</a>
+                        {% elif user.role == 'admin' %}
+                        <a href="{% url 'admin_teachers_list' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Teachers</a>
+                        <a href="{% url 'admin_create_class' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Create Class</a>
+                        <a href="{% url 'admin_enroll_student' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Enroll Student</a>
                         {% endif %}
                     </div>
                 </div>

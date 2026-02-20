@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Wellness Check-in{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+        <div class="text-center mb-8">
+            <div class="inline-block bg-green-100 p-4 rounded-full mb-4">
+                <i class="bi bi-heart text-4xl text-green-600"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Wellness Check-in</h2>
+            <p class="text-gray-600">Take a moment to reflect on how you're feeling. Your responses help us support you better.</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Stress Level -->
+            <div class="mb-8 p-6 bg-gray-50 rounded-lg">
+                <label class="block text-lg font-semibold text-gray-800 mb-3">
+                    How stressed have you been feeling? <span class="text-red-600">*</span>
+                </label>
+                <div class="flex justify-between items-center gap-2">
+                    {% for i in "12345" %}
+                    <label class="flex-1 text-center cursor-pointer">
+                        <input type="radio" name="stress_level" value="{{ i }}" required class="hidden peer">
+                        <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
+                            <div class="text-3xl mb-2">
+                                {% if i == "1" %}😊{% elif i == "2" %}🙂{% elif i == "3" %}😐{% elif i == "4" %}😟{% else %}😰{% endif %}
+                            </div>
+                            <div class="text-sm font-semibold text-gray-700">{{ i }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+                <div class="flex justify-between text-sm text-gray-600 mt-2 px-2">
+                    <span>Not stressed</span>
+                    <span>Very stressed</span>
+                </div>
+            </div>
+
+            <!-- Motivation Level -->
+            <div class="mb-8 p-6 bg-gray-50 rounded-lg">
+                <label class="block text-lg font-semibold text-gray-800 mb-3">
+                    How motivated have you been feeling? <span class="text-red-600">*</span>
+                </label>
+                <div class="flex justify-between items-center gap-2">
+                    {% for i in "12345" %}
+                    <label class="flex-1 text-center cursor-pointer">
+                        <input type="radio" name="motivation_level" value="{{ i }}" required class="hidden peer">
+                        <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
+                            <div class="text-3xl mb-2">
+                                {% if i == "1" %}😔{% elif i == "2" %}😕{% elif i == "3" %}😊{% elif i == "4" %}😄{% else %}🤩{% endif %}
+                            </div>
+                            <div class="text-sm font-semibold text-gray-700">{{ i }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+                <div class="flex justify-between text-sm text-gray-600 mt-2 px-2">
+                    <span>Not motivated</span>
+                    <span>Very motivated</span>
+                </div>
+            </div>
+
+            <!-- Workload Level -->
+            <div class="mb-8 p-6 bg-gray-50 rounded-lg">
+                <label class="block text-lg font-semibold text-gray-800 mb-3">
+                    How manageable is your workload? <span class="text-red-600">*</span>
+                </label>
+                <div class="flex justify-between items-center gap-2">
+                    {% for i in "12345" %}
+                    <label class="flex-1 text-center cursor-pointer">
+                        <input type="radio" name="workload_level" value="{{ i }}" required class="hidden peer">
+                        <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
+                            <div class="text-3xl mb-2">
+                                {% if i == "1" %}😌{% elif i == "2" %}🙂{% elif i == "3" %}😐{% elif i == "4" %}😓{% else %}😵{% endif %}
+                            </div>
+                            <div class="text-sm font-semibold text-gray-700">{{ i }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+                <div class="flex justify-between text-sm text-gray-600 mt-2 px-2">
+                    <span>Very manageable</span>
+                    <span>Overwhelming</span>
+                </div>
+            </div>
+
+            <!-- Sleep Quality -->
+            <div class="mb-8 p-6 bg-gray-50 rounded-lg">
+                <label class="block text-lg font-semibold text-gray-800 mb-3">
+                    How would you rate your sleep quality? <span class="text-red-600">*</span>
+                </label>
+                <div class="flex justify-between items-center gap-2">
+                    {% for i in "12345" %}
+                    <label class="flex-1 text-center cursor-pointer">
+                        <input type="radio" name="sleep_quality" value="{{ i }}" required class="hidden peer">
+                        <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-blue-600 peer-checked:bg-blue-50 hover:border-blue-400 transition">
+                            <div class="text-3xl mb-2">
+                                {% if i == "1" %}😴{% elif i == "2" %}😪{% elif i == "3" %}😐{% elif i == "4" %}😊{% else %}😁{% endif %}
+                            </div>
+                            <div class="text-sm font-semibold text-gray-700">{{ i }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+                <div class="flex justify-between text-sm text-gray-600 mt-2 px-2">
+                    <span>Very poor</span>
+                    <span>Excellent</span>
+                </div>
+            </div>
+
+            <!-- Need Help -->
+            <div class="mb-8 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="need_help" value="true" class="mt-1 w-5 h-5">
+                    <div>
+                        <span class="block text-lg font-semibold text-gray-800 mb-1">
+                            I would like to speak with a counselor
+                        </span>
+                        <span class="text-sm text-gray-600">
+                            Check this box if you'd like someone to reach out to you for support.
+                        </span>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Comments -->
+            <div class="mb-8">
+                <label class="block text-lg font-semibold text-gray-800 mb-3">
+                    Additional Comments (Optional)
+                </label>
+                <textarea name="comments" 
+                          rows="4" 
+                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Share anything else you'd like us to know..."></textarea>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="flex gap-4">
+                <button type="submit" class="flex-1 bg-green-600 text-white px-8 py-4 rounded-lg hover:bg-green-700 transition font-semibold text-lg">
+                    <i class="bi bi-check-circle mr-2"></i>Submit Check-in
+                </button>
+                <a href="{% url 'dashboard' %}" class="bg-gray-200 text-gray-700 px-8 py-4 rounded-lg hover:bg-gray-300 transition font-semibold">
+                    Cancel
+                </a>
+            </div>
+        </form>
+
+        <!-- Previous Check-ins -->
+        {% if recent_checkins %}
+        <div class="mt-8 pt-8 border-t">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Check-ins</h3>
+            <div class="space-y-3">
+                {% for checkin in recent_checkins|slice:":3" %}
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-semibold text-gray-800">{{ checkin.date|date:"M d, Y" }}</span>
+                        {% if checkin.need_help %}
+                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">Requested Support</span>
+                        {% endif %}
+                    </div>
+                    <div class="grid grid-cols-4 gap-2 text-sm text-gray-600">
+                        <div>Stress: {{ checkin.stress_level }}/5</div>
+                        <div>Motivation: {{ checkin.motivation_level }}/5</div>
+                        <div>Workload: {{ checkin.workload_level }}/5</div>
+                        <div>Sleep: {{ checkin.sleep_quality }}/5</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

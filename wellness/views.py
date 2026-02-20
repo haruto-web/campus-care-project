@@ -428,3 +428,38 @@ def api_students(request):
         for s in students
     ]
     return JsonResponse(students_list, safe=False)
+
+@login_required
+def wellness_checkin(request):
+    if request.user.role != 'student':
+        messages.error(request, 'Only students can submit wellness check-ins.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        stress_level = request.POST.get('stress_level')
+        motivation_level = request.POST.get('motivation_level')
+        workload_level = request.POST.get('workload_level')
+        sleep_quality = request.POST.get('sleep_quality')
+        need_help = request.POST.get('need_help') == 'true'
+        comments = request.POST.get('comments', '')
+        
+        WellnessCheckIn.objects.create(
+            student=request.user,
+            stress_level=int(stress_level),
+            motivation_level=int(motivation_level),
+            workload_level=int(workload_level),
+            sleep_quality=int(sleep_quality),
+            need_help=need_help,
+            comments=comments
+        )
+        
+        messages.success(request, 'Wellness check-in submitted successfully! Thank you for sharing.')
+        return redirect('dashboard')
+    
+    # Get recent check-ins
+    recent_checkins = WellnessCheckIn.objects.filter(student=request.user).order_by('-date')[:5]
+    
+    context = {
+        'recent_checkins': recent_checkins,
+    }
+    return render(request, 'wellness/wellness_checkin.html', context)

@@ -52,18 +52,28 @@
                     <h5 class="text-lg font-semibold"><i class="bi bi-person-plus"></i> Add Students</h5>
                 </div>
                 <div class="p-6">
-                    <!-- Search Bar -->
+                    <!-- Search and Filter -->
                     <form method="get" class="mb-4">
-                        <div class="flex gap-2">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                             <input type="text" 
                                    name="search" 
-                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                   class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
                                    placeholder="Search by name, username, or email..."
                                    value="{{ search_query }}">
-                            <button class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" type="submit">
+                            <select name="year_level" 
+                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">All Year Levels</option>
+                                <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
+                                <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
+                                <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
+                                <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" type="submit">
                                 <i class="bi bi-search"></i> Search
                             </button>
-                            {% if search_query %}
+                            {% if search_query or year_level_filter %}
                             <a href="{% url 'academics:manage_students' class.id %}" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition">
                                 <i class="bi bi-x"></i> Clear
                             </a>
@@ -71,9 +81,11 @@
                         </div>
                     </form>
 
-                    {% if search_query %}
+                    {% if search_query or year_level_filter %}
                         <p class="text-gray-600 text-sm mb-3">
-                            Search results for "{{ search_query }}"
+                            {% if search_query %}Search results for "{{ search_query }}"{% endif %}
+                            {% if search_query and year_level_filter %} - {% endif %}
+                            {% if year_level_filter %}Grade {{ year_level_filter }}{% endif %}
                         </p>
                     {% endif %}
 

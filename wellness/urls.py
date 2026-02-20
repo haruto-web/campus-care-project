@@ -27,6 +27,9 @@ urlpatterns = [
     path('reports/', views.reports_view, name='reports'),
     path('generate-report/', views.generate_report, name='generate_report'),
     
+    # Student - Wellness Check-in
+    path('checkin/', views.wellness_checkin, name='wellness_checkin'),
+    
     # API
     path('api/students/', views.api_students, name='api_students'),
 ]

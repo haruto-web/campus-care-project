@@ -110,6 +110,18 @@ def student_dashboard(request):
         due_date__gte=datetime.now()
     ).order_by('due_date')[:5]
     
+    # Get recent announcements (unread only)
+    from academics.models import Announcement
+    announcements = Announcement.objects.filter(
+        Q(class_obj__in=classes) | Q(class_obj__isnull=True)
+    ).exclude(read_by=user).order_by('-created_at')[:3]
+    
+    # Get recently graded assignments (last 5)
+    recently_graded = Submission.objects.filter(
+        student=user,
+        score__isnull=False
+    ).select_related('assignment', 'assignment__class_obj').order_by('-graded_at')[:5]
+    
     # Get last wellness check-in
     last_checkin = WellnessCheckIn.objects.filter(student=user).order_by('-date').first()
     
@@ -130,6 +142,8 @@ def student_dashboard(request):
     context = {
         'classes': classes,
         'assignments': assignments,
+        'announcements': announcements,
+        'recently_graded': recently_graded,
         'last_checkin': last_checkin,
         'attendance_rate': round(attendance_rate, 1) if attendance_rate else None,
         'gpa': gpa,
@@ -159,12 +173,18 @@ def teacher_dashboard(request):
         score__isnull=True
     ).count()
     
+    # Get recent submissions (last 10)
+    recent_submissions = Submission.objects.filter(
+        assignment__class_obj__in=classes
+    ).select_related('student', 'assignment', 'assignment__class_obj').order_by('-submitted_at')[:10]
+    
     context = {
         'classes': classes,
         'at_risk_students': at_risk_students,
         'total_students': len(students),
         'pending_grades': pending_grades,
         'at_risk_count': len(at_risk_students),
+        'recent_submissions': recent_submissions,
     }
     return render(request, 'dashboard/teacher_dashboard.html', context)
 
@@ -278,7 +298,27 @@ def profile_view(request):
         messages.success(request, 'Profile updated successfully!')
         return redirect('profile')
     
-    return render(request, 'accounts/profile.html')
+    # Add context for students
+    context = {}
+    if request.user.role == 'student':
+        # Get GPA
+        latest_assessment = RiskAssessment.objects.filter(student=request.user).order_by('-date').first()
+        gpa = latest_assessment.gpa if latest_assessment else None
+        
+        # Calculate attendance rate
+        attendance_records = Attendance.objects.filter(student=request.user)
+        if attendance_records.exists():
+            attendance_rate = round((attendance_records.filter(status='present').count() / attendance_records.count()) * 100, 1)
+        else:
+            attendance_rate = None
+        
+        context.update({
+            'gpa': gpa,
+            'attendance_rate': attendance_rate,
+            'enrolled_classes_count': request.user.enrolled_classes.count(),
+        })
+    
+    return render(request, 'accounts/profile.html' if request.user.role != 'student' else 'accounts/student_profile_edit.html', context)
 
 @login_required
 def student_profile_view(request, student_id):

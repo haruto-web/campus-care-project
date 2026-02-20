@@ -85,6 +85,7 @@ class Announcement(models.Model):
     content = models.TextField()
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='normal')
     is_school_wide = models.BooleanField(default=False, help_text='If True, visible to all users')
+    read_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='read_announcements', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
