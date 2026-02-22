@@ -3,12 +3,12 @@
 {% block title %}Register - BrightTrack{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 py-12 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-2xl w-full">
-        <div class="bg-white rounded-2xl shadow-xl p-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                    <i class="bi bi-person-plus text-blue-600 text-3xl"></i>
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                    <i class="bi bi-person-plus text-red-600 text-3xl"></i>
                 </div>
                 <h2 class="text-3xl font-bold text-gray-900">Create Account</h2>
                 <p class="text-gray-600 mt-2">Join BrightTrack</p>
@@ -20,7 +20,7 @@
                 <div>
                     <label for="role" class="block text-sm font-medium text-gray-700 mb-2">I am a:</label>
                     <select id="role" name="role" required onchange="toggleYearLevel()"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
                         <option value="">Select your role</option>
                         <option value="student">Student</option>
                         <option value="teacher">Teacher</option>
@@ -31,7 +31,7 @@
                 <div id="year_level_field" class="hidden">
                     <label for="year_level" class="block text-sm font-medium text-gray-700 mb-2">Grade Level</label>
                     <select id="year_level" name="year_level"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
                         <option value="">Select grade level</option>
                         <option value="7">Grade 7</option>
                         <option value="8">Grade 8</option>
@@ -40,23 +40,30 @@
                     </select>
                 </div>
                 
+                <div id="section_field" class="hidden">
+                    <label for="section" class="block text-sm font-medium text-gray-700 mb-2">Section</label>
+                    <input type="text" id="section" name="section" placeholder="e.g., A, B, Einstein"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+                    <p class="text-sm text-gray-500 mt-1">Enter the section/class you teach</p>
+                </div>
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
                         <input type="text" id="first_name" name="first_name" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
                     </div>
                     <div>
                         <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
                         <input type="text" id="last_name" name="last_name" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
                     </div>
                 </div>
                 
                 <div>
                     <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
                     <select id="gender" name="gender" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
                         <option value="">Select gender</option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
@@ -67,43 +74,43 @@
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
                         <input type="email" id="email" name="email" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
                     </div>
                     <div>
                         <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
                         <input type="text" id="username" name="username" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
                     </div>
                 </div>
                 
                 <div>
                     <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone (Optional)</label>
                     <input type="tel" id="phone" name="phone"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
                         <input type="password" id="password" name="password" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
                     </div>
                     <div>
                         <label for="password2" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
                         <input type="password" id="password2" name="password2" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
                     </div>
                 </div>
                 
                 <button type="submit" 
-                        class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 shadow-lg hover:shadow-xl">
-                    Register
+                        class="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition duration-200">
+                    Create Account
                 </button>
             </form>
             
             <div class="text-center mt-6">
                 <p class="text-gray-600">Already have an account? 
-                    <a href="{% url 'login' %}" class="text-blue-600 hover:text-blue-700 font-semibold">Login here</a>
+                    <a href="{% url 'login' %}" class="text-red-600 hover:text-red-700 font-semibold">Login here</a>
                 </p>
             </div>
         </div>
@@ -115,14 +122,26 @@ function toggleYearLevel() {
     const role = document.getElementById('role').value;
     const yearLevelField = document.getElementById('year_level_field');
     const yearLevelSelect = document.getElementById('year_level');
+    const sectionField = document.getElementById('section_field');
+    const sectionInput = document.getElementById('section');
     
     if (role === 'student') {
         yearLevelField.classList.remove('hidden');
         yearLevelSelect.required = true;
+        sectionField.classList.add('hidden');
+        sectionInput.required = false;
+    } else if (role === 'teacher') {
+        yearLevelField.classList.add('hidden');
+        yearLevelSelect.required = false;
+        yearLevelSelect.value = '';
+        sectionField.classList.remove('hidden');
+        sectionInput.required = false;
     } else {
         yearLevelField.classList.add('hidden');
         yearLevelSelect.required = false;
         yearLevelSelect.value = '';
+        sectionField.classList.add('hidden');
+        sectionInput.required = false;
     }
 }
 </script>

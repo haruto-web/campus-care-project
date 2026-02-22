@@ -28,6 +28,7 @@ def register_view(request):
         phone = request.POST.get('phone', '')
         year_level = request.POST.get('year_level', '')
         gender = request.POST.get('gender', '')
+        section = request.POST.get('section', '')
         
         if password != password2:
             messages.error(request, 'Passwords do not match')
@@ -55,14 +56,45 @@ def register_view(request):
         if role == 'student' and year_level:
             user.year_level = year_level
         
+        # Set section for teachers
+        if role == 'teacher' and section:
+            user.section = section
+        
         # Set gender
         if gender:
             user.gender = gender
         
         user.save()
         
-        messages.success(request, 'Account created successfully! Please login.')
-        return redirect('login')
+        # Log the user in automatically
+        login(request, user)
+        
+        # Teachers and counselors skip profile completion
+        if role in ['teacher', 'counselor']:
+            user.profile_completed = True
+            user.save()
+            
+            # Auto-assign teacher to section class if section provided
+            if role == 'teacher' and section:
+                from academics.models import Class
+                section_class, created = Class.objects.get_or_create(
+                    section=section,
+                    defaults={
+                        'name': f'Section {section}',
+                        'code': f'SEC-{section}',
+                        'semester': 'Current',
+                    }
+                )
+                if not section_class.teacher:
+                    section_class.teacher = user
+                    section_class.save()
+            
+            messages.success(request, 'Account created successfully!')
+            return redirect('dashboard')
+        
+        # Students go to profile completion
+        messages.success(request, 'Account created successfully! Please complete your profile.')
+        return redirect('complete_profile')
     
     return render(request, 'accounts/register.html')
 
@@ -90,6 +122,10 @@ def logout_view(request):
 @login_required
 def dashboard_view(request):
     user = request.user
+    
+    # Only students need profile completion
+    if not user.profile_completed and user.role == 'student':
+        return redirect('complete_profile')
     
     if user.role == 'student':
         return student_dashboard(request)
@@ -433,3 +469,50 @@ def students_list_view(request):
         'year_level_filter': year_level_filter,
     }
     return render(request, 'accounts/students_list.html', context)
+
+
+@login_required
+def complete_profile_view(request):
+    if request.user.profile_completed:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        user = request.user
+        user.phone = request.POST.get('phone', '')
+        user.date_of_birth = request.POST.get('date_of_birth') if request.POST.get('date_of_birth') else None
+        
+        # Student-specific fields
+        if user.role == 'student':
+            user.student_number = request.POST.get('student_number', '')
+            user.section = request.POST.get('section', '')
+            if request.FILES.get('id_picture'):
+                user.id_picture = request.FILES['id_picture']        
+        if request.FILES.get('profile_picture'):
+            user.profile_picture = request.FILES['profile_picture']
+        
+        user.profile_completed = True
+        user.save()
+        
+        # Auto-enroll student in ALL classes with matching section AND year_level
+        if user.role == 'student' and user.section and user.year_level:
+            section_classes = Class.objects.filter(
+                section__iexact=user.section,
+                year_level=user.year_level
+            )
+            for section_class in section_classes:
+                section_class.students.add(user)
+        
+        messages.success(request, 'Profile completed successfully!')
+        return redirect('dashboard')
+    
+    # Route to role-specific template
+    if request.user.role == 'student':
+        template = 'accounts/complete_profile_student.html'
+    elif request.user.role == 'teacher':
+        template = 'accounts/complete_profile_teacher.html'
+    elif request.user.role == 'counselor':
+        template = 'accounts/complete_profile_counselor.html'
+    else:
+        template = 'accounts/complete_profile.html'
+    
+    return render(request, template)

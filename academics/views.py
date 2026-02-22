@@ -80,8 +80,25 @@ def create_class(request):
         if form.is_valid():
             class_obj = form.save(commit=False)
             class_obj.teacher = request.user
+            
+            # Auto-generate code from section if section is provided
+            if class_obj.section:
+                class_obj.code = f'SEC-{class_obj.section}'
+            
             class_obj.save()
-            messages.success(request, f'Class {class_obj.code} created successfully!')
+            
+            # Auto-enroll students with matching section AND year_level
+            if class_obj.section and class_obj.year_level:
+                from accounts.models import User
+                students_with_section = User.objects.filter(
+                    role='student', 
+                    section__iexact=class_obj.section,
+                    year_level=class_obj.year_level
+                )
+                for student in students_with_section:
+                    class_obj.students.add(student)
+            
+            messages.success(request, f'Class {class_obj.name} created successfully!')
             return redirect('dashboard')
     else:
         form = ClassForm()
@@ -107,13 +124,10 @@ def manage_students(request, class_id):
     
     if search_query:
         all_students = all_students.filter(
-            first_name__icontains=search_query
-        ) | all_students.filter(
-            last_name__icontains=search_query
-        ) | all_students.filter(
-            username__icontains=search_query
-        ) | all_students.filter(
-            email__icontains=search_query
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(username__icontains=search_query) |
+            Q(email__icontains=search_query)
         )
     
     if year_level_filter:
@@ -143,7 +157,13 @@ def add_student(request, class_id, student_id):
     student = get_object_or_404(User, id=student_id, role='student')
     class_obj.students.add(student)
     messages.success(request, f'{student.get_full_name()} added to {class_obj.code}!')
-    return redirect('academics:manage_students', class_id=class_id)
+    
+    # Preserve filters when redirecting
+    search_query = request.GET.get('search', '')
+    year_level = request.GET.get('year_level', '')
+    redirect_url = f"{request.META.get('HTTP_REFERER', '')}" if request.META.get('HTTP_REFERER') else f'/class/{class_id}/students/'
+    
+    return redirect(redirect_url)
 
 @login_required
 def drop_student(request, class_id, student_id):
@@ -673,3 +693,22 @@ def student_attendance(request):
         'overall_rate': round(overall_rate, 1),
     }
     return render(request, 'academics/student_attendance.html', context)
+
+@login_required
+def edit_class(request, class_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    
+    if request.user.role != 'teacher' or class_obj.teacher != request.user:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        class_obj.name = request.POST.get('name')
+        class_obj.description = request.POST.get('description', '')
+        class_obj.schedule = request.POST.get('schedule', '')
+        class_obj.room = request.POST.get('room', '')
+        class_obj.save()
+        messages.success(request, 'Class updated successfully!')
+        return redirect('academics:class_detail', class_id=class_id)
+    
+    return render(request, 'academics/edit_class.html', {'class': class_obj})

@@ -24,6 +24,12 @@ class User(AbstractUser):
     year_level = models.CharField(max_length=2, choices=YEAR_LEVEL_CHOICES, blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
+    student_number = models.CharField(max_length=20, blank=True)
+    section = models.CharField(max_length=50, blank=True)
+    subject = models.CharField(max_length=100, blank=True)
+    id_picture = models.ImageField(upload_to='id_pictures/', blank=True, null=True)
+    about_me = models.TextField(blank=True)
+    profile_completed = models.BooleanField(default=False)
     
     def __str__(self):
         return f"{self.get_full_name()} ({self.role})"
