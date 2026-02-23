@@ -24,11 +24,10 @@ def register_view(request):
         password2 = request.POST.get('password2')
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
-        role = request.POST.get('role')
+        role = 'student'  # Only students can register
         phone = request.POST.get('phone', '')
         year_level = request.POST.get('year_level', '')
         gender = request.POST.get('gender', '')
-        section = request.POST.get('section', '')
         
         if password != password2:
             messages.error(request, 'Passwords do not match')
@@ -53,16 +52,8 @@ def register_view(request):
         )
         
         # Set year_level for students
-        if role == 'student' and year_level:
+        if year_level:
             user.year_level = year_level
-        
-        # Set section and year_level for teachers
-        if role == 'teacher':
-            if section:
-                user.section = section
-            teacher_year_level = request.POST.get('teacher_year_level', '')
-            if teacher_year_level:
-                user.year_level = teacher_year_level
         
         # Set gender
         if gender:
@@ -72,32 +63,6 @@ def register_view(request):
         
         # Log the user in automatically
         login(request, user)
-        
-        # Teachers and counselors skip profile completion
-        if role in ['teacher', 'counselor']:
-            user.profile_completed = True
-            user.save()
-            
-            # Auto-assign teacher to section class if section AND year_level provided
-            if role == 'teacher' and section:
-                from academics.models import Class
-                teacher_year_level = request.POST.get('teacher_year_level', '')
-                if teacher_year_level:
-                    section_class, created = Class.objects.get_or_create(
-                        section=section,
-                        year_level=teacher_year_level,
-                        defaults={
-                            'name': f'Grade {teacher_year_level} - Section {section}',
-                            'code': f'G{teacher_year_level}-{section}',
-                            'semester': 'Current',
-                        }
-                    )
-                    if not section_class.teacher:
-                        section_class.teacher = user
-                        section_class.save()
-            
-            messages.success(request, 'Account created successfully!')
-            return redirect('dashboard')
         
         # Students go to profile completion
         messages.success(request, 'Account created successfully! Please complete your profile.')

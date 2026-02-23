@@ -81,9 +81,10 @@ def create_class(request):
             class_obj = form.save(commit=False)
             class_obj.teacher = request.user
             
-            # Auto-generate code from section if section is provided
-            if class_obj.section:
-                class_obj.code = f'SEC-{class_obj.section}'
+            # Check if code already exists and generate unique one
+            if Class.objects.filter(code=class_obj.code).exists():
+                messages.error(request, f'Class code "{class_obj.code}" already exists. Please use a different code.')
+                return render(request, 'academics/create_class.html', {'form': form})
             
             class_obj.save()
             

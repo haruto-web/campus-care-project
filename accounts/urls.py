@@ -14,6 +14,9 @@ urlpatterns = [
     path('student/<int:student_id>/', views.student_profile_view, name='student_profile'),
     
     # Admin URLs
+    path('manage/users/', admin_views.admin_manage_users, name='admin_manage_users'),
+    path('manage/create-user/', admin_views.admin_create_user, name='admin_create_user'),
+    path('manage/user/<int:user_id>/delete/', admin_views.admin_delete_user, name='admin_delete_user'),
     path('manage/teachers/', admin_views.admin_teachers_list, name='admin_teachers_list'),
     path('manage/teacher/<int:teacher_id>/dashboard/', admin_views.admin_teacher_dashboard, name='admin_teacher_dashboard'),
     path('manage/create-class/', admin_views.admin_create_class, name='admin_create_class'),

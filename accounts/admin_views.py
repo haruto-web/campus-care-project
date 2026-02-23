@@ -7,6 +7,172 @@ from academics.models import Class
 from academics.forms import ClassForm
 
 @login_required
+def admin_create_user(request):
+    if request.user.role.lower() != 'admin':
+        messages.error(request, 'Permission denied. Admin access required.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        password2 = request.POST.get('password2')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        role = request.POST.get('role')
+        section = request.POST.get('section', '')
+        year_level = request.POST.get('year_level', '')
+        
+        if role not in ['teacher', 'counselor']:
+            messages.error(request, 'Invalid role selected.')
+            return render(request, 'accounts/admin_create_user.html')
+        
+        if password != password2:
+            messages.error(request, 'Passwords do not match.')
+            return render(request, 'accounts/admin_create_user.html')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists.')
+            return render(request, 'accounts/admin_create_user.html')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email already exists.')
+            return render(request, 'accounts/admin_create_user.html')
+        
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            role=role,
+            profile_completed=True
+        )
+        
+        if role == 'teacher':
+            subjects_input = request.POST.get('subject', '')
+            sections_input = request.POST.get('section', '')
+            year_level = request.POST.get('year_level', '')
+            
+            # Save to user profile
+            if subjects_input:
+                user.subject = subjects_input
+            if sections_input:
+                user.section = sections_input
+            if year_level:
+                user.year_level = year_level
+            user.save()
+            
+            # Auto-create classes for each subject-section combination
+            if subjects_input and sections_input and year_level:
+                # Parse comma-separated values
+                subjects = [s.strip() for s in subjects_input.split(',') if s.strip()]
+                sections = [s.strip() for s in sections_input.split(',') if s.strip()]
+                
+                classes_created = 0
+                for subject in subjects:
+                    for section in sections:
+                        class_code = f'G{year_level}-{section}-{subject[:3].upper()}'
+                        
+                        # Check if class already exists
+                        if not Class.objects.filter(code=class_code).exists():
+                            Class.objects.create(
+                                name=subject,
+                                code=class_code,
+                                section=section,
+                                year_level=year_level,
+                                teacher=user,
+                                semester='Current',
+                            )
+                            classes_created += 1
+                
+                if classes_created > 0:
+                    messages.success(request, f'{role.capitalize()} account created successfully for {user.get_full_name()}! {classes_created} class(es) auto-created.')
+                else:
+                    messages.success(request, f'{role.capitalize()} account created successfully for {user.get_full_name()}!')
+                return redirect('dashboard')
+        
+        messages.success(request, f'{role.capitalize()} account created successfully for {user.get_full_name()}!')
+        return redirect('dashboard')
+    
+    return render(request, 'accounts/admin_create_user.html')
+
+@login_required
+def admin_manage_users(request):
+    if request.user.role.lower() != 'admin':
+        messages.error(request, 'Permission denied. Admin access required.')
+        return redirect('dashboard')
+    
+    # Get filter parameters
+    role_filter = request.GET.get('role', 'all')
+    search_query = request.GET.get('search', '')
+    year_level_filter = request.GET.get('year_level', '')
+    section_filter = request.GET.get('section', '')
+    
+    # Start with all users
+    users = User.objects.all()
+    
+    # Apply role filter
+    if role_filter != 'all':
+        users = users.filter(role=role_filter)
+    
+    # Apply search filter
+    if search_query:
+        users = users.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(username__icontains=search_query)
+        )
+    
+    # Apply year level filter
+    if year_level_filter:
+        users = users.filter(year_level=year_level_filter)
+    
+    # Apply section filter
+    if section_filter:
+        users = users.filter(section__icontains=section_filter)
+    
+    users = users.order_by('role', 'last_name', 'first_name')
+    
+    context = {
+        'users': users,
+        'role_filter': role_filter,
+        'search_query': search_query,
+        'year_level_filter': year_level_filter,
+        'section_filter': section_filter,
+        'total_count': User.objects.count(),
+        'student_count': User.objects.filter(role='student').count(),
+        'teacher_count': User.objects.filter(role='teacher').count(),
+        'counselor_count': User.objects.filter(role='counselor').count(),
+    }
+    return render(request, 'admin/manage_users.html', context)
+
+@login_required
+def admin_delete_user(request, user_id):
+    if request.user.role.lower() != 'admin':
+        messages.error(request, 'Permission denied. Admin access required.')
+        return redirect('dashboard')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    # Prevent deleting admin accounts
+    if user.role == 'admin':
+        messages.error(request, 'Cannot delete admin accounts.')
+        return redirect('admin_teachers_list')
+    
+    user_name = user.get_full_name()
+    user_role = user.role
+    user.delete()
+    
+    messages.success(request, f'{user_role.capitalize()} {user_name} has been removed successfully.')
+    
+    if user_role == 'teacher':
+        return redirect('admin_teachers_list')
+    else:
+        return redirect('dashboard')
+
+@login_required
 def admin_teachers_list(request):
     if request.user.role.lower() != 'admin':
         messages.error(request, 'Permission denied. Admin access required.')
