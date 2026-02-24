@@ -3,268 +3,212 @@
 {% block title %}{{ student.get_full_name }} - Profile{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body text-center">
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 px-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header with Profile Card -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl p-8 mb-6">
+            <div class="flex flex-col md:flex-row items-center gap-6">
+                <div class="relative">
                     {% if student.profile_picture %}
-                    <img src="{{ student.profile_picture.url }}" class="rounded-circle mb-3" width="120" height="120" alt="Profile">
+                    <img src="{{ student.profile_picture.url }}" class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover" alt="Profile">
                     {% else %}
-                    <div class="bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 120px; height: 120px; font-size: 48px;">
+                    <div class="w-32 h-32 bg-white rounded-full flex items-center justify-center text-4xl font-bold text-blue-600 shadow-lg">
                         {{ student.first_name.0 }}{{ student.last_name.0 }}
                     </div>
                     {% endif %}
-                    <h5>{{ student.get_full_name }}</h5>
-                    <p class="text-muted mb-2">{{ student.email }}</p>
-                    {% if student.phone %}
-                    <p class="text-muted mb-2"><i class="bi bi-telephone"></i> {{ student.phone }}</p>
-                    {% endif %}
-                    
                     {% if risk_assessment %}
-                    <div class="mt-3">
+                    <div class="absolute -bottom-2 -right-2">
                         {% if risk_assessment.risk_level == 'high' %}
-                        <span class="badge bg-danger fs-6">High Risk</span>
+                        <span class="px-3 py-1 text-xs font-bold rounded-full bg-red-600 text-white shadow-lg animate-pulse">HIGH RISK</span>
                         {% elif risk_assessment.risk_level == 'medium' %}
-                        <span class="badge bg-warning fs-6">Medium Risk</span>
+                        <span class="px-3 py-1 text-xs font-bold rounded-full bg-yellow-500 text-white shadow-lg">MEDIUM</span>
                         {% else %}
-                        <span class="badge bg-success fs-6">Low Risk</span>
+                        <span class="px-3 py-1 text-xs font-bold rounded-full bg-green-500 text-white shadow-lg">LOW</span>
                         {% endif %}
                     </div>
                     {% endif %}
                 </div>
-            </div>
-            
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h6 class="mb-0">Quick Stats</h6>
+                <div class="text-white text-center md:text-left flex-1">
+                    <h1 class="text-4xl font-bold mb-2">{{ student.get_full_name }}</h1>
+                    <p class="text-blue-100 text-lg mb-1"><i class="bi bi-envelope"></i> {{ student.email }}</p>
+                    {% if student.phone %}
+                    <p class="text-blue-100"><i class="bi bi-telephone"></i> {{ student.phone }}</p>
+                    {% endif %}
                 </div>
-                <div class="card-body">
-                    <div class="mb-2">
-                        <strong>GPA:</strong> 
-                        <span class="float-end">{{ risk_assessment.gpa|default:"N/A" }}</span>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
+                        <p class="text-3xl font-bold text-white">{{ risk_assessment.gpa|default:"N/A" }}</p>
+                        <p class="text-blue-100 text-sm">GPA</p>
                     </div>
-                    <div class="mb-2">
-                        <strong>Attendance:</strong> 
-                        <span class="float-end">{{ attendance_rate|default:"N/A" }}%</span>
+                    <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
+                        <p class="text-3xl font-bold text-white">{{ attendance_rate|default:"N/A" }}%</p>
+                        <p class="text-blue-100 text-sm">Attendance</p>
                     </div>
-                    <div class="mb-2">
-                        <strong>Missing Assignments:</strong> 
-                        <span class="float-end">{{ risk_assessment.missing_assignments|default:0 }}</span>
+                    <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
+                        <p class="text-3xl font-bold text-white">{{ risk_assessment.missing_assignments|default:0 }}</p>
+                        <p class="text-blue-100 text-sm">Missing</p>
                     </div>
-                    <div>
-                        <strong>Classes Enrolled:</strong> 
-                        <span class="float-end">{{ enrolled_classes.count }}</span>
+                    <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
+                        <p class="text-3xl font-bold text-white">{{ enrolled_classes.count }}</p>
+                        <p class="text-blue-100 text-sm">Classes</p>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-9">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="mb-0">Enrolled Classes</h5>
-                </div>
-                <div class="card-body">
-                    {% if enrolled_classes %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Code</th>
-                                    <th>Name</th>
-                                    <th>Teacher</th>
-                                    <th>Schedule</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for class in enrolled_classes %}
-                                <tr>
-                                    <td><strong>{{ class.code }}</strong></td>
-                                    <td>{{ class.name }}</td>
-                                    <td>{{ class.teacher.get_full_name }}</td>
-                                    <td>{{ class.schedule|default:"N/A" }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted">No classes enrolled</p>
-                    {% endif %}
-                </div>
+
+        <!-- Enrolled Classes -->
+        <div class="bg-white rounded-2xl shadow-lg mb-6 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-4">
+                <h2 class="text-xl font-bold text-white"><i class="bi bi-book"></i> Enrolled Classes</h2>
             </div>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h5 class="mb-0">Recent Attendance</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if recent_attendance %}
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Class</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for record in recent_attendance %}
-                                        <tr>
-                                            <td>{{ record.date }}</td>
-                                            <td>{{ record.class_obj.code }}</td>
-                                            <td>
-                                                {% if record.status == 'present' %}
-                                                <span class="badge bg-success">Present</span>
-                                                {% elif record.status == 'late' %}
-                                                <span class="badge bg-warning">Late</span>
-                                                {% else %}
-                                                <span class="badge bg-danger">Absent</span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+            <div class="p-6">
+                {% if enrolled_classes %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for class in enrolled_classes %}
+                    <div class="border-2 border-gray-200 rounded-xl p-4 hover:border-blue-500 hover:shadow-md transition">
+                        <h3 class="font-bold text-lg text-gray-900">{{ class.code }}</h3>
+                        <p class="text-gray-600">{{ class.name }}</p>
+                        <p class="text-sm text-gray-500 mt-2"><i class="bi bi-person"></i> {{ class.teacher.get_full_name }}</p>
+                        {% if class.schedule %}
+                        <p class="text-sm text-gray-500"><i class="bi bi-clock"></i> {{ class.schedule }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-center py-8">No classes enrolled</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Recent Attendance -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-green-500 to-teal-500 px-6 py-4">
+                    <h2 class="text-xl font-bold text-white"><i class="bi bi-calendar-check"></i> Recent Attendance</h2>
+                </div>
+                <div class="p-6">
+                    {% if recent_attendance %}
+                    <div class="space-y-3">
+                        {% for record in recent_attendance %}
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="font-semibold text-gray-900">{{ record.class_obj.code }}</p>
+                                <p class="text-sm text-gray-500">{{ record.date }}</p>
                             </div>
+                            {% if record.status == 'present' %}
+                            <span class="px-3 py-1 text-xs font-bold rounded-full bg-green-100 text-green-700">Present</span>
+                            {% elif record.status == 'late' %}
+                            <span class="px-3 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-700">Late</span>
                             {% else %}
-                            <p class="text-muted">No attendance records</p>
+                            <span class="px-3 py-1 text-xs font-bold rounded-full bg-red-100 text-red-700">Absent</span>
                             {% endif %}
                         </div>
+                        {% endfor %}
                     </div>
+                    {% else %}
+                    <p class="text-gray-500 text-center py-8">No attendance records</p>
+                    {% endif %}
                 </div>
-                
-                <div class="col-md-6">
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h5 class="mb-0">Recent Wellness Check-ins</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if wellness_checkins %}
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Stress</th>
-                                            <th>Motivation</th>
-                                            <th>Need Help</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for checkin in wellness_checkins %}
-                                        <tr>
-                                            <td>{{ checkin.date }}</td>
-                                            <td>{{ checkin.stress_level }}/5</td>
-                                            <td>{{ checkin.motivation_level }}/5</td>
-                                            <td>
-                                                {% if checkin.need_help %}
-                                                <span class="badge bg-warning">Yes</span>
-                                                {% else %}
-                                                <span class="badge bg-success">No</span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+            </div>
+
+            <!-- Wellness Check-ins -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-pink-500 to-rose-500 px-6 py-4">
+                    <h2 class="text-xl font-bold text-white"><i class="bi bi-heart-pulse"></i> Recent Wellness Check-ins</h2>
+                </div>
+                <div class="p-6">
+                    {% if wellness_checkins %}
+                    <div class="space-y-3">
+                        {% for checkin in wellness_checkins %}
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-gray-500 mb-2">{{ checkin.date|date:"M d, Y" }}</p>
+                            <div class="grid grid-cols-3 gap-2 text-center">
+                                <div>
+                                    <p class="text-xs text-gray-600">Stress</p>
+                                    <p class="font-bold text-gray-900">{{ checkin.stress_level }}/5</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600">Motivation</p>
+                                    <p class="font-bold text-gray-900">{{ checkin.motivation_level }}/5</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600">Help</p>
+                                    {% if checkin.need_help %}
+                                    <span class="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 font-bold">Yes</span>
+                                    {% else %}
+                                    <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-bold">No</span>
+                                    {% endif %}
+                                </div>
                             </div>
-                            {% else %}
-                            <p class="text-muted">No wellness check-ins</p>
-                            {% endif %}
                         </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="mb-0">Teacher Concerns</h5>
-                </div>
-                <div class="card-body">
-                    {% if concerns %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Teacher</th>
-                                    <th>Type</th>
-                                    <th>Severity</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for concern in concerns %}
-                                <tr>
-                                    <td>{{ concern.date_observed }}</td>
-                                    <td>{{ concern.teacher.get_full_name }}</td>
-                                    <td><span class="badge bg-info">{{ concern.get_concern_type_display }}</span></td>
-                                    <td>
-                                        {% if concern.severity == 'high' %}
-                                        <span class="badge bg-danger">High</span>
-                                        {% elif concern.severity == 'medium' %}
-                                        <span class="badge bg-warning">Medium</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">Low</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ concern.description|truncatewords:15 }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                        {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted">No concerns reported</p>
+                    <p class="text-gray-500 text-center py-8">No wellness check-ins</p>
                     {% endif %}
                 </div>
             </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Interventions</h5>
-                </div>
-                <div class="card-body">
-                    {% if interventions %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Status</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for intervention in interventions %}
-                                <tr>
-                                    <td>{{ intervention.scheduled_date }}</td>
-                                    <td><span class="badge bg-primary">{{ intervention.get_intervention_type_display }}</span></td>
-                                    <td>
-                                        {% if intervention.status == 'completed' %}
-                                        <span class="badge bg-success">Completed</span>
-                                        {% elif intervention.status == 'scheduled' %}
-                                        <span class="badge bg-info">Scheduled</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">Cancelled</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ intervention.description|truncatewords:15 }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+        </div>
+
+        <!-- Teacher Concerns -->
+        <div class="bg-white rounded-2xl shadow-lg mb-6 overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4">
+                <h2 class="text-xl font-bold text-white"><i class="bi bi-exclamation-triangle"></i> Teacher Concerns</h2>
+            </div>
+            <div class="p-6">
+                {% if concerns %}
+                <div class="space-y-3">
+                    {% for concern in concerns %}
+                    <div class="border-l-4 {% if concern.severity == 'high' %}border-red-500 bg-red-50{% elif concern.severity == 'medium' %}border-yellow-500 bg-yellow-50{% else %}border-gray-400 bg-gray-50{% endif %} p-4 rounded-r-lg">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-700">{{ concern.get_concern_type_display }}</span>
+                                <span class="px-2 py-1 text-xs font-bold rounded-full {% if concern.severity == 'high' %}bg-red-100 text-red-700{% elif concern.severity == 'medium' %}bg-yellow-100 text-yellow-700{% else %}bg-gray-100 text-gray-700{% endif %}">{{ concern.get_severity_display }}</span>
+                            </div>
+                            <p class="text-sm text-gray-500">{{ concern.date_observed }}</p>
+                        </div>
+                        <p class="text-gray-700 mb-1">{{ concern.description }}</p>
+                        <p class="text-sm text-gray-500"><i class="bi bi-person"></i> {{ concern.teacher.get_full_name }}</p>
                     </div>
-                    {% else %}
-                    <p class="text-muted">No interventions recorded</p>
-                    {% endif %}
+                    {% endfor %}
                 </div>
+                {% else %}
+                <p class="text-gray-500 text-center py-8">No concerns reported</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Interventions -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-500 to-indigo-500 px-6 py-4">
+                <h2 class="text-xl font-bold text-white"><i class="bi bi-clipboard-check"></i> Interventions</h2>
+            </div>
+            <div class="p-6">
+                {% if interventions %}
+                <div class="space-y-3">
+                    {% for intervention in interventions %}
+                    <div class="border-2 border-gray-200 rounded-xl p-4 hover:border-purple-500 transition">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="px-3 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-700">{{ intervention.get_intervention_type_display }}</span>
+                                {% if intervention.status == 'completed' %}
+                                <span class="px-3 py-1 text-xs font-bold rounded-full bg-green-100 text-green-700">Completed</span>
+                                {% elif intervention.status == 'scheduled' %}
+                                <span class="px-3 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-700">Scheduled</span>
+                                {% else %}
+                                <span class="px-3 py-1 text-xs font-bold rounded-full bg-gray-100 text-gray-700">Cancelled</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-sm text-gray-500">{{ intervention.scheduled_date|date:"M d, Y" }}</p>
+                        </div>
+                        <p class="text-gray-700">{{ intervention.description }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-center py-8">No interventions recorded</p>
+                {% endif %}
             </div>
         </div>
     </div>

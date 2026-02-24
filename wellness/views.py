@@ -101,8 +101,8 @@ def at_risk_students_list(request):
 
 @login_required
 def create_intervention(request, student_id=None):
-    if request.user.role not in ['counselor', 'admin']:
-        messages.error(request, 'Only counselors can create interventions.')
+    if request.user.role not in ['counselor', 'admin', 'teacher']:
+        messages.error(request, 'Permission denied.')
         return redirect('dashboard')
     
     if request.method == 'POST':
@@ -122,7 +122,20 @@ def create_intervention(request, student_id=None):
         
         form.fields['student'].queryset = User.objects.filter(role='student')
     
-    return render(request, 'wellness/create_intervention.html', {'form': form})
+    # Statistics
+    total_students = User.objects.filter(role='student').count()
+    high_risk_count = RiskAssessment.objects.filter(risk_level='high').values('student').distinct().count()
+    unresolved_alerts = Alert.objects.filter(resolved=False, severity__in=['critical', 'high']).count()
+    pending_interventions = Intervention.objects.filter(status='scheduled').count()
+    
+    context = {
+        'form': form,
+        'total_students': total_students,
+        'high_risk_count': high_risk_count,
+        'unresolved_alerts': unresolved_alerts,
+        'pending_interventions': pending_interventions,
+    }
+    return render(request, 'wellness/create_intervention.html', context)
 
 @login_required
 def interventions_list(request):
@@ -136,7 +149,9 @@ def interventions_list(request):
     status_filter = request.GET.get('status', '')
     year_level_filter = request.GET.get('year_level', '')
     
-    if status_filter:
+    if status_filter == 'history':
+        interventions = interventions.filter(status__in=['completed', 'cancelled'])
+    elif status_filter:
         interventions = interventions.filter(status=status_filter)
     
     if year_level_filter:
@@ -413,20 +428,32 @@ def generate_report(request):
 @login_required
 def api_students(request):
     """API endpoint to get all students for search"""
-    if request.user.role not in ['counselor', 'admin']:
+    if request.user.role not in ['counselor', 'admin', 'teacher']:
         from django.http import JsonResponse
         return JsonResponse({'error': 'Permission denied'}, status=403)
     
     from django.http import JsonResponse
-    students = User.objects.filter(role='student').values('id', 'first_name', 'last_name', 'email')
-    students_list = [
-        {
+    students = User.objects.filter(role='student').select_related('risk_assessments').values(
+        'id', 'first_name', 'last_name', 'email', 'year_level'
+    )
+    
+    students_list = []
+    for s in students:
+        # Get risk level for student
+        try:
+            risk_assessment = RiskAssessment.objects.filter(student_id=s['id']).latest('calculated_at')
+            risk_level = risk_assessment.risk_level
+        except RiskAssessment.DoesNotExist:
+            risk_level = None
+        
+        students_list.append({
             'id': s['id'],
             'name': f"{s['first_name']} {s['last_name']}",
-            'email': s['email']
-        }
-        for s in students
-    ]
+            'email': s['email'],
+            'year_level': s['year_level'],
+            'risk_level': risk_level
+        })
+    
     return JsonResponse(students_list, safe=False)
 
 @login_required

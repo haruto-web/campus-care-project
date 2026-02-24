@@ -231,6 +231,15 @@ def counselor_dashboard(request):
 def admin_dashboard(request):
     from django.db.models import Count
     from datetime import datetime, timedelta
+    from django.core.management import call_command
+    
+    # Auto-calculate risk assessments if none exist or if last calculation was > 1 day ago
+    latest_assessment = RiskAssessment.objects.order_by('-date').first()
+    if not latest_assessment or (datetime.now().date() - latest_assessment.date).days > 0:
+        try:
+            call_command('calculate_risk')
+        except:
+            pass
     
     # User statistics
     total_users = User.objects.count()

@@ -46,11 +46,6 @@
         </div>
     </div>
     
-    <div class="bg-white rounded-lg shadow p-6">
-        <h5 class="text-lg font-semibold mb-4">System Activity (Last 30 Days)</h5>
-        <canvas id="activityChart"></canvas>
-    </div>
-    
     <div class="bg-white rounded-lg shadow">
         <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg">
             <h5 class="text-lg font-semibold">High-Risk Students</h5>
@@ -123,32 +118,6 @@ new Chart(riskCtx, {
             label: 'Students',
             data: [{{ high_risk_count }}, {{ medium_risk_count }}, {{ low_risk_count }}],
             backgroundColor: ['#EF4444', '#F59E0B', '#10B981']
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            y: { beginAtZero: true }
-        }
-    }
-});
-
-// Activity Line Chart
-const activityCtx = document.getElementById('activityChart').getContext('2d');
-new Chart(activityCtx, {
-    type: 'line',
-    data: {
-        labels: {{ activity_labels|safe }},
-        datasets: [{
-            label: 'New Users',
-            data: {{ activity_data|safe }},
-            borderColor: '#3B82F6',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            tension: 0.4,
-            fill: true
         }]
     },
     options: {
