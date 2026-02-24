@@ -105,6 +105,25 @@ def create_intervention(request, student_id=None):
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
     
+    # Get AI recommendations if student_id provided
+    ai_recommendations = None
+    selected_student = None
+    if student_id:
+        selected_student = get_object_or_404(User, id=student_id, role='student')
+        risk_assessment = RiskAssessment.objects.filter(student=selected_student).order_by('-date').first()
+        
+        if risk_assessment and risk_assessment.risk_level in ['medium', 'high']:
+            try:
+                from ml_models.gemini_client import GeminiClient
+                from ml_models.utils import get_student_profile_for_intervention
+                
+                client = GeminiClient()
+                profile = get_student_profile_for_intervention(selected_student)
+                result = client.recommend_intervention(profile)
+                ai_recommendations = result.get('recommendations', [])
+            except:
+                pass
+    
     if request.method == 'POST':
         form = InterventionForm(request.POST)
         if form.is_valid():
@@ -115,8 +134,7 @@ def create_intervention(request, student_id=None):
             return redirect('wellness:interventions_list')
     else:
         if student_id:
-            student = get_object_or_404(User, id=student_id, role='student')
-            form = InterventionForm(initial={'student': student})
+            form = InterventionForm(initial={'student': selected_student})
         else:
             form = InterventionForm()
         
@@ -134,6 +152,8 @@ def create_intervention(request, student_id=None):
         'high_risk_count': high_risk_count,
         'unresolved_alerts': unresolved_alerts,
         'pending_interventions': pending_interventions,
+        'ai_recommendations': ai_recommendations,
+        'selected_student': selected_student,
     }
     return render(request, 'wellness/create_intervention.html', context)
 
@@ -470,15 +490,43 @@ def wellness_checkin(request):
         need_help = request.POST.get('need_help') == 'true'
         comments = request.POST.get('comments', '')
         
-        WellnessCheckIn.objects.create(
+        checkin = WellnessCheckIn.objects.create(
             student=request.user,
             stress_level=int(stress_level),
             motivation_level=int(motivation_level),
             workload_level=int(workload_level),
             sleep_quality=int(sleep_quality),
             need_help=need_help,
-            comments=comments
+            text_response=comments
         )
+        
+        # AI Sentiment Analysis
+        if comments:
+            try:
+                from ml_models.gemini_client import GeminiClient
+                from ml_models.models import SentimentAnalysis
+                
+                client = GeminiClient()
+                result = client.analyze_sentiment(comments)
+                
+                SentimentAnalysis.objects.create(
+                    wellness_checkin=checkin,
+                    sentiment=result['sentiment'],
+                    confidence=result['confidence'],
+                    alert_level=result['alert_level'],
+                    concerning_phrases=result.get('concerning_phrases', [])
+                )
+                
+                # Create alert if high distress
+                if result['alert_level'] in ['high', 'critical']:
+                    Alert.objects.create(
+                        student=request.user,
+                        alert_type='emotional_distress',
+                        severity='high',
+                        description=f"Emotional distress detected in wellness check-in"
+                    )
+            except Exception as e:
+                pass  # Fail silently if AI analysis fails
         
         messages.success(request, 'Wellness check-in submitted successfully! Thank you for sharing.')
         return redirect('dashboard')

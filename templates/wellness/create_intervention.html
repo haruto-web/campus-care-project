@@ -71,10 +71,68 @@
 
         <!-- Form Card -->
         <div class="bg-white rounded-b-2xl shadow-lg p-8">
+            <!-- AI Recommendations Section -->
+            {% if ai_recommendations %}
+            <div class="mb-8 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="bg-purple-600 p-3 rounded-lg">
+                        <i class="bi bi-robot text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">AI-Recommended Interventions</h3>
+                        <p class="text-sm text-gray-600">For {{ selected_student.get_full_name }}</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    {% for rec in ai_recommendations %}
+                    <div class="bg-white rounded-lg p-4 border border-purple-200 hover:shadow-md transition">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <i class="bi bi-lightbulb-fill text-yellow-500 text-xl"></i>
+                                <h4 class="font-semibold text-gray-900">{{ rec.type }}</h4>
+                            </div>
+                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                                {{ rec.success_probability|floatformat:0 }}% Success Rate
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 ml-7">{{ rec.reasoning }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-4 flex items-center space-x-2 text-sm text-gray-500">
+                    <i class="bi bi-info-circle"></i>
+                    <span>These recommendations are AI-generated based on student data and past intervention success rates.</span>
+                </div>
+            </div>
+            {% endif %}
+            
             <form method="post" id="interventionForm" class="space-y-6">
                 {% csrf_token %}
                 
-                <!-- Student Search with Filters -->
+                <!-- Student Selection -->
+                {% if selected_student %}
+                <!-- Pre-selected Student (Hidden Field) -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="bi bi-person-circle text-purple-600"></i> Student
+                    </label>
+                    <div class="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-300 rounded-xl">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                                {{ selected_student.get_full_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900">{{ selected_student.get_full_name }}</p>
+                                <p class="text-sm text-gray-600">{{ selected_student.email }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="student" value="{{ selected_student.id }}">
+                </div>
+                {% else %}
+                <!-- Student Search -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         <i class="bi bi-person-circle text-purple-600"></i> Student *
@@ -118,6 +176,7 @@
                     <p class="text-red-600 text-sm mt-1">{{ form.student.errors }}</p>
                     {% endif %}
                 </div>
+                {% endif %}
 
                 <!-- Intervention Type -->
                 <div>

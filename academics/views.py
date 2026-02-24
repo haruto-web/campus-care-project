@@ -123,6 +123,14 @@ def manage_students(request, class_id):
     from accounts.models import User
     all_students = User.objects.filter(role='student')
     
+    # Filter by class section and year level if class has them
+    if class_obj.section and class_obj.year_level:
+        # Only show students from the same section AND year level
+        all_students = all_students.filter(
+            section__iexact=class_obj.section,
+            year_level=class_obj.year_level
+        )
+    
     if search_query:
         all_students = all_students.filter(
             Q(first_name__icontains=search_query) |
