@@ -30,11 +30,18 @@
                                     <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Grade {{ student.year_level }}</span>
                                     {% endif %}
                                 </div>
-                                <a href="{% url 'academics:drop_student' class.id student.id %}" 
-                                   class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
-                                   onclick="return confirm('Are you sure you want to drop {{ student.get_full_name }} from this class? This action will remove all their grades and attendance records for this class.')">
-                                    <i class="bi bi-person-dash"></i> Drop Student
-                                </a>
+                                <div class="flex gap-2">
+                                    <a href="{% url 'wellness:create_concern' %}?student_id={{ student.id }}" 
+                                       class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition text-sm"
+                                       title="Report Concern">
+                                        <i class="bi bi-exclamation-triangle"></i> Report
+                                    </a>
+                                    <a href="{% url 'academics:drop_student' class.id student.id %}" 
+                                       class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
+                                       onclick="return confirm('Are you sure you want to drop {{ student.get_full_name }} from this class? This action will remove all their grades and attendance records for this class.')">
+                                        <i class="bi bi-person-dash"></i> Drop
+                                    </a>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>

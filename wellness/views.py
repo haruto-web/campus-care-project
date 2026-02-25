@@ -453,15 +453,15 @@ def api_students(request):
         return JsonResponse({'error': 'Permission denied'}, status=403)
     
     from django.http import JsonResponse
-    students = User.objects.filter(role='student').select_related('risk_assessments').values(
-        'id', 'first_name', 'last_name', 'email', 'year_level'
+    students = User.objects.filter(role='student').values(
+        'id', 'first_name', 'last_name', 'email', 'year_level', 'section', 'gender'
     )
     
     students_list = []
     for s in students:
         # Get risk level for student
         try:
-            risk_assessment = RiskAssessment.objects.filter(student_id=s['id']).latest('calculated_at')
+            risk_assessment = RiskAssessment.objects.filter(student_id=s['id']).latest('date')
             risk_level = risk_assessment.risk_level
         except RiskAssessment.DoesNotExist:
             risk_level = None
@@ -471,6 +471,8 @@ def api_students(request):
             'name': f"{s['first_name']} {s['last_name']}",
             'email': s['email'],
             'year_level': s['year_level'],
+            'section': s.get('section', ''),
+            'gender': s.get('gender', ''),
             'risk_level': risk_level
         })
     

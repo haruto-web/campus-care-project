@@ -20,20 +20,20 @@ def get_student_data_for_prediction(student):
     
     # Count missing assignments
     student_classes = student.enrolled_classes.all()
-    assignments = Assignment.objects.filter(class_assigned__in=student_classes)
+    assignments = Assignment.objects.filter(class_obj__in=student_classes)
     submitted = Submission.objects.filter(student=student).values_list('assignment_id', flat=True)
     missing_count = assignments.exclude(id__in=submitted).count()
     
     # Get average stress and motivation from recent wellness check-ins
     recent_checkins = WellnessCheckIn.objects.filter(
         student=student
-    ).order_by('-created_at')[:3]
+    ).order_by('-date')[:3]
     
     avg_stress = recent_checkins.aggregate(Avg('stress_level'))['stress_level__avg'] or 3
     avg_motivation = recent_checkins.aggregate(Avg('motivation_level'))['motivation_level__avg'] or 3
     
     return {
-        'gpa': student.gpa or 0,
+        'gpa': 0,
         'attendance': round(attendance_rate, 1),
         'missing': missing_count,
         'stress': round(avg_stress, 1),
@@ -43,9 +43,16 @@ def get_student_data_for_prediction(student):
 
 def get_student_profile_for_intervention(student):
     """Get student profile for intervention recommendations"""
+    from wellness.models import RiskAssessment
+    
     issues = []
     
-    if student.gpa and student.gpa < 2.5:
+    # Get latest risk assessment for GPA
+    latest_risk = RiskAssessment.objects.filter(student=student).order_by('-date').first()
+    gpa = latest_risk.gpa if latest_risk and latest_risk.gpa else None
+    risk_level = latest_risk.risk_level if latest_risk else 'medium'
+    
+    if gpa and gpa < 2.5:
         issues.append('academic decline')
     
     data = get_student_data_for_prediction(student)
@@ -57,7 +64,7 @@ def get_student_profile_for_intervention(student):
         issues.append('high stress')
     
     return {
-        'risk_level': student.risk_level or 'medium',
+        'risk_level': risk_level,
         'issues': ', '.join(issues) if issues else 'general support needed',
         'year_level': student.year_level or 9
     }

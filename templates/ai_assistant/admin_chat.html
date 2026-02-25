@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}BT AI Assistant - Admin{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-4">
+            <h1 class="text-2xl font-bold text-white flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/>
+                    <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/>
+                </svg>
+                BT AI Assistant Admin
+            </h1>
+            <p class="text-blue-100 mt-1">Your intelligent administrative support system</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+            <!-- Quick Actions -->
+            <div class="lg:col-span-1 space-y-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
+                
+                <button onclick="generateReport()" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg flex items-center justify-start transition">
+                    <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/>
+                        <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+                    </svg>
+                    Generate System Report
+                </button>
+
+                <button onclick="showAskAI()" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg flex items-center justify-start transition">
+                    <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                    </svg>
+                    Ask AI
+                </button>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="lg:col-span-2">
+                <div class="bg-gray-50 rounded-lg h-[600px] flex flex-col">
+                    <!-- Chat Messages -->
+                    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <!-- Welcome Message -->
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold">
+                                BT
+                            </div>
+                            <div class="ml-3 bg-white rounded-lg px-4 py-3 shadow-sm max-w-md">
+                                <p class="text-gray-800">Hi! I'm <strong>BT</strong>, your AI assistant admin. I'm here to help you with system reports, analytics, and administrative insights. How can I assist you today?</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div id="inputArea" class="p-4 bg-white border-t hidden">
+                        <div class="flex space-x-2">
+                            <input type="text" id="userInput" placeholder="Type your message..." class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const csrftoken = '{{ csrf_token }}';
+let currentAction = null;
+
+function addMessage(text, isUser = false) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'flex items-start' + (isUser ? ' justify-end' : '');
+    
+    if (isUser) {
+        messageDiv.innerHTML = `
+            <div class="bg-blue-600 text-white rounded-lg px-4 py-3 shadow-sm max-w-md">
+                <p>${text}</p>
+            </div>
+        `;
+    } else {
+        messageDiv.innerHTML = `
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold">
+                BT
+            </div>
+            <div class="ml-3 bg-white rounded-lg px-4 py-3 shadow-sm max-w-md">
+                <p class="text-gray-800">${text}</p>
+            </div>
+        `;
+    }
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function generateReport() {
+    addMessage('Generating system report summary...', false);
+    
+    fetch('/ai/admin/chat/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            action: 'generate_report'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const d = data.data;
+        
+        let html = `
+        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-5 space-y-4 max-w-2xl">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="bg-blue-500 text-white rounded-full p-3">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/>
+                        <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+                    </svg>
+                </div>
+                <h4 class="text-xl font-bold text-gray-800">System Executive Report</h4>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
+                    <div class="text-3xl font-bold text-blue-600">${d.total_students}</div>
+                    <div class="text-sm text-gray-600 mt-1">Total Students</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-green-100">
+                    <div class="text-3xl font-bold text-green-600">${d.total_teachers}</div>
+                    <div class="text-sm text-gray-600 mt-1">Total Teachers</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-purple-100">
+                    <div class="text-3xl font-bold text-purple-600">${d.total_counselors}</div>
+                    <div class="text-sm text-gray-600 mt-1">Total Counselors</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-red-100">
+                    <div class="text-3xl font-bold text-red-600">${d.high_risk_students}</div>
+                    <div class="text-sm text-gray-600 mt-1">High-Risk Students</div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg p-4 mt-4 border border-blue-100">
+                <div class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${data.response.replace(/\*\*/g, '').replace(/\*/g, '')}</div>
+            </div>
+        </div>
+        `;
+        
+        const chatMessages = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex items-start';
+        messageDiv.innerHTML = `
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">BT</div>
+            <div class="ml-3">${html}</div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    })
+    .catch(error => {
+        addMessage('Error generating report. Please try again.', false);
+    });
+}
+
+function showAskAI() {
+    addMessage('Ask me anything about system administration, analytics, or management!', false);
+    document.getElementById('inputArea').classList.remove('hidden');
+    currentAction = 'ask_ai';
+}
+
+function sendMessage() {
+    const input = document.getElementById('userInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    addMessage(message, true);
+    input.value = '';
+    
+    if (currentAction === 'ask_ai') {
+        fetch('/ai/admin/chat/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                action: 'ask_ai',
+                message: message
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            addMessage(data.response, false);
+        })
+        .catch(error => {
+            addMessage('Error processing your request.', false);
+        });
+    }
+}
+
+document.getElementById('userInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+</script>
+{% endblock %}

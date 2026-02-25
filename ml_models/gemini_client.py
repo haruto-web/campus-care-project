@@ -115,3 +115,15 @@ Return JSON only:
 }}"""
         
         return self._call_with_cache(prompt, cache_hours=24)
+    
+    def generate_text(self, prompt):
+        """Generate text response for general queries"""
+        try:
+            # Use gemini-2.5-flash without JSON mode for text generation
+            response = self.client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt
+            )
+            return response.text
+        except Exception as e:
+            return f"I apologize, but I encountered an error: {str(e)}. Please try again."

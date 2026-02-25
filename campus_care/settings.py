@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'academics',
     'wellness',
     'ml_models',
+    'ai_assistant',
 ]
 
 MIDDLEWARE = [

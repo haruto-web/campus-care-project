@@ -303,12 +303,14 @@ fetch('{% url "wellness:api_students" %}')
     .then(response => response.json())
     .then(data => {
         students = data;
+        console.log('Loaded students:', students.length);
         // Sort by risk level (high first)
         students.sort((a, b) => {
             const riskOrder = { 'high': 0, 'medium': 1, 'low': 2, null: 3 };
             return riskOrder[a.risk_level] - riskOrder[b.risk_level];
         });
-    });
+    })
+    .catch(error => console.error('Error loading students:', error));
 
 function getRiskBadge(riskLevel) {
     if (riskLevel === 'high') {
@@ -329,9 +331,19 @@ function getYearLevelBadge(yearLevel) {
 }
 
 function filterStudents(filter) {
+    console.log('Filter clicked:', filter, 'Total students:', students.length);
     currentFilter = filter;
     searchInput.value = '';
     studentIdInput.value = '';
+    
+    // Update button styles
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-purple-500');
+    });
+    if (event && event.target) {
+        event.target.classList.add('ring-2', 'ring-purple-500');
+    }
+    
     displayFilteredStudents();
 }
 
@@ -343,6 +355,7 @@ function filterByYearLevel() {
 }
 
 function displayFilteredStudents() {
+    console.log('Displaying filtered students. Filter:', currentFilter, 'Year:', currentYearLevel);
     let filtered = students;
     
     // Apply risk filter
@@ -355,8 +368,10 @@ function displayFilteredStudents() {
         filtered = filtered.filter(s => s.year_level == currentYearLevel);
     }
     
+    console.log('Filtered count:', filtered.length);
+    
     if (filtered.length > 0) {
-        searchResults.innerHTML = filtered.map(student => {
+        searchResults.innerHTML = filtered.slice(0, 50).map(student => {
             const bgClass = student.risk_level === 'high' ? 'bg-red-50 border-l-4 border-red-500' : 
                            student.risk_level === 'medium' ? 'bg-yellow-50 border-l-4 border-yellow-500' : '';
             return `
@@ -379,6 +394,9 @@ function displayFilteredStudents() {
                 </div>
             `;
         }).join('');
+        if (filtered.length > 50) {
+            searchResults.innerHTML += '<div class="px-4 py-3 text-gray-500 text-center text-sm">Showing first 50 of ' + filtered.length + ' students</div>';
+        }
         searchResults.classList.remove('hidden');
         attachClickHandlers();
     } else {

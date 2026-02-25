@@ -8,6 +8,7 @@
         <h2 class="text-3xl font-bold text-gray-800">Admin Dashboard</h2>
         <div class="flex gap-2">
             <a href="/admin/" target="_blank" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800"><i class="bi bi-gear-fill"></i> Django Admin</a>
+            <a href="{% url 'ai_assistant:admin_chat_view' %}" class="bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700"><i class="bi bi-robot"></i> BT AI Assistant</a>
             <a href="{% url 'admin_manage_users' %}" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"><i class="bi bi-people-fill"></i> Manage Users</a>
             <a href="{% url 'admin_create_user' %}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"><i class="bi bi-person-plus-fill"></i> Create Staff</a>
             <a href="{% url 'admin_teachers_list' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"><i class="bi bi-people"></i> Teachers</a>

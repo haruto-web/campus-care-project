@@ -95,6 +95,7 @@ class Alert(models.Model):
         ('wellness_concern', 'Wellness Concern'),
         ('teacher_concern', 'Teacher Concern'),
         ('emotional_distress', 'Emotional Distress'),
+        ('ai_intervention', 'AI Intervention Created'),
     ]
     SEVERITY_LEVELS = [
         ('critical', 'Critical'),
