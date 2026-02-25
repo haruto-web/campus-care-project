@@ -8,6 +8,7 @@ urlpatterns = [
     path('my-classes/', views.my_classes, name='my_classes'),
     path('create/', views.create_class, name='create_class'),
     path('class/<int:class_id>/', views.class_detail, name='class_detail'),
+    path('class/<int:class_id>/edit/', views.edit_class, name='edit_class'),
     path('class/<int:class_id>/announcement/create/', views.create_announcement, name='create_announcement'),
     path('announcement/<int:announcement_id>/mark-read/', announcement_views.mark_announcement_read, name='mark_announcement_read'),
     path('class/<int:class_id>/students/', views.manage_students, name='manage_students'),

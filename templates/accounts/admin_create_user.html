@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Staff Account{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-lg shadow p-8">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Create Staff Account</h2>
+            <p class="text-gray-600 mt-1">Create teacher or counselor accounts</p>
+        </div>
+        
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+                <select id="role" name="role" required onchange="toggleFields()"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Select role</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="counselor">Counselor</option>
+                </select>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                    <input type="text" id="first_name" name="first_name" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                    <input type="text" id="last_name" name="last_name" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+            </div>
+            
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                <input type="email" id="email" name="email" required
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username *</label>
+                <input type="text" id="username" name="username" required
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            
+            <div id="teacher_fields" class="hidden space-y-6">
+                <div>
+                    <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">Subjects (Optional)</label>
+                    <input type="text" id="subject" name="subject" placeholder="e.g., Mathematics, Science, English"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="text-sm text-gray-500 mt-1">Separate multiple subjects with commas. Leave blank if teacher will create their own classes</p>
+                </div>
+                
+                <div>
+                    <label for="section" class="block text-sm font-medium text-gray-700 mb-2">Sections (Optional)</label>
+                    <input type="text" id="section" name="section" placeholder="e.g., A, B, Einstein"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="text-sm text-gray-500 mt-1">Separate multiple sections with commas</p>
+                </div>
+                
+                <div>
+                    <label for="year_level" class="block text-sm font-medium text-gray-700 mb-2">Grade Level (Optional)</label>
+                    <select id="year_level" name="year_level"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Select grade level</option>
+                        <option value="7">Grade 7</option>
+                        <option value="8">Grade 8</option>
+                        <option value="9">Grade 9</option>
+                        <option value="10">Grade 10</option>
+                    </select>
+                    <p class="text-sm text-gray-500 mt-1">Grade level they teach</p>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-sm text-blue-800 font-semibold mb-2">
+                        <i class="bi bi-info-circle"></i> How Auto-Class Creation Works:
+                    </p>
+                    <ul class="text-sm text-blue-700 space-y-1 ml-5 list-disc">
+                        <li>Fill all three fields to automatically create classes</li>
+                        <li>Each subject will be created for each section</li>
+                        <li>Leave blank if teacher will create classes manually</li>
+                    </ul>
+                    <div class="mt-3 pt-3 border-t border-blue-200">
+                        <p class="text-xs text-blue-600 font-semibold mb-1">Example:</p>
+                        <p class="text-xs text-blue-700">Subjects: <span class="font-semibold">Mathematics, Science</span></p>
+                        <p class="text-xs text-blue-700">Sections: <span class="font-semibold">A, B</span></p>
+                        <p class="text-xs text-blue-700">Grade: <span class="font-semibold">Grade 7</span></p>
+                        <p class="text-xs text-green-700 font-semibold mt-2">→ Creates 4 classes:</p>
+                        <ul class="text-xs text-green-600 ml-5 mt-1 space-y-0.5">
+                            <li>• Mathematics - Section A (Grade 7)</li>
+                            <li>• Mathematics - Section B (Grade 7)</li>
+                            <li>• Science - Section A (Grade 7)</li>
+                            <li>• Science - Section B (Grade 7)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                    <input type="password" id="password" name="password" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label for="password2" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password *</label>
+                    <input type="password" id="password2" name="password2" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+            </div>
+            
+            <div class="flex gap-4">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+                    Create Account
+                </button>
+                <a href="{% url 'dashboard' %}" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleFields() {
+    const role = document.getElementById('role').value;
+    const teacherFields = document.getElementById('teacher_fields');
+    
+    if (role === 'teacher') {
+        teacherFields.classList.remove('hidden');
+    } else {
+        teacherFields.classList.add('hidden');
+    }
+}
+</script>
+{% endblock %}

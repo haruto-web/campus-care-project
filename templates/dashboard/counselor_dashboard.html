@@ -108,6 +108,7 @@
                     <h5 class="text-lg font-semibold">Quick Actions</h5>
                 </div>
                 <div class="p-6 space-y-3">
+                    <a href="{% url 'ai_assistant:counselor_chat_view' %}" class="block w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-center px-4 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 font-semibold"><i class="bi bi-robot"></i> BT AI Assistant</a>
                     <a href="{% url 'wellness:create_intervention' %}" class="block w-full bg-blue-600 text-white text-center px-4 py-2 rounded-lg hover:bg-blue-700">Create Intervention</a>
                     <a href="{% url 'wellness:at_risk_students' %}" class="block w-full border border-blue-600 text-blue-600 text-center px-4 py-2 rounded-lg hover:bg-blue-50">View All Students</a>
                     <a href="{% url 'wellness:reports' %}" class="block w-full border border-blue-600 text-blue-600 text-center px-4 py-2 rounded-lg hover:bg-blue-50">View Reports</a>

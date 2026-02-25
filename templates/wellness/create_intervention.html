@@ -1,134 +1,288 @@
 {% extends 'base.html' %}
 
-{% block title %}Create Intervention - Campus Care{% endblock %}
-
-{% block extra_css %}
-<style>
-    .student-search-wrapper {
-        position: relative;
-    }
-    .student-search-results {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        border: 1px solid #ddd;
-        border-top: none;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 1000;
-        display: none;
-    }
-    .student-search-results.show {
-        display: block;
-    }
-    .student-result-item {
-        padding: 10px;
-        cursor: pointer;
-        border-bottom: 1px solid #f0f0f0;
-    }
-    .student-result-item:hover {
-        background-color: #f8f9fa;
-    }
-    .student-result-item strong {
-        display: block;
-    }
-    .student-result-item small {
-        color: #666;
-    }
-</style>
-{% endblock %}
+{% block title %}Create Intervention - BrightTrack{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="bi bi-clipboard-plus"></i> Create Intervention</h4>
-                </div>
-                <div class="card-body">
-                    <form method="post" id="interventionForm">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Student *</label>
-                            <div class="student-search-wrapper">
-                                <input type="text" 
-                                       id="studentSearch" 
-                                       class="form-control" 
-                                       placeholder="Search student by name or email..."
-                                       autocomplete="off">
-                                <div id="searchResults" class="student-search-results"></div>
-                                <input type="hidden" name="student" id="studentId" required>
-                            </div>
-                            <small class="form-text text-muted">Type to search for a student</small>
-                            {% if form.student.errors %}
-                            <div class="text-danger">{{ form.student.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Intervention Type *</label>
-                            {{ form.intervention_type }}
-                            {% if form.intervention_type.errors %}
-                            <div class="text-danger">{{ form.intervention_type.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Description *</label>
-                            {{ form.description }}
-                            <small class="form-text text-muted">Describe the purpose and goals of this intervention</small>
-                            {% if form.description.errors %}
-                            <div class="text-danger">{{ form.description.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Scheduled Date & Time *</label>
-                            {{ form.scheduled_date }}
-                            {% if form.scheduled_date.errors %}
-                            <div class="text-danger">{{ form.scheduled_date.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Status *</label>
-                            {{ form.status }}
-                            {% if form.status.errors %}
-                            <div class="text-danger">{{ form.status.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Notes</label>
-                            {{ form.notes }}
-                            <small class="form-text text-muted">Additional notes or preparation details</small>
-                            {% if form.notes.errors %}
-                            <div class="text-danger">{{ form.notes.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Outcome</label>
-                            {{ form.outcome }}
-                            <small class="form-text text-muted">Results and follow-up actions (fill after completion)</small>
-                            {% if form.outcome.errors %}
-                            <div class="text-danger">{{ form.outcome.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i> Create Intervention
-                            </button>
-                            <a href="{% url 'wellness:interventions_list' %}" class="btn btn-secondary">Cancel</a>
-                        </div>
-                    </form>
+<div class="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-8 px-4">
+    <div class="max-w-6xl mx-auto">
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl shadow-md p-4 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total Students</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ total_students }}</p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-lg">
+                        <i class="bi bi-people text-blue-600 text-2xl"></i>
+                    </div>
                 </div>
             </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-4 border-l-4 border-red-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">High Risk Students</p>
+                        <p class="text-2xl font-bold text-red-600">{{ high_risk_count }}</p>
+                    </div>
+                    <div class="bg-red-100 p-3 rounded-lg">
+                        <i class="bi bi-exclamation-triangle text-red-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-4 border-l-4 border-orange-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Unresolved Alerts</p>
+                        <p class="text-2xl font-bold text-orange-600">{{ unresolved_alerts }}</p>
+                    </div>
+                    <div class="bg-orange-100 p-3 rounded-lg">
+                        <i class="bi bi-bell text-orange-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-4 border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Pending Sessions</p>
+                        <p class="text-2xl font-bold text-purple-600">{{ pending_interventions }}</p>
+                    </div>
+                    <div class="bg-purple-100 p-3 rounded-lg">
+                        <i class="bi bi-calendar-check text-purple-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-2xl shadow-lg p-8 text-white">
+            <div class="flex items-center space-x-4">
+                <div class="bg-white/20 backdrop-blur-sm p-4 rounded-xl">
+                    <i class="bi bi-clipboard-plus text-4xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold">Create Intervention</h1>
+                    <p class="text-purple-100 mt-1">Schedule a support session for a student</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-white rounded-b-2xl shadow-lg p-8">
+            <!-- AI Recommendations Section -->
+            {% if ai_recommendations %}
+            <div class="mb-8 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="bg-purple-600 p-3 rounded-lg">
+                        <i class="bi bi-robot text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">AI-Recommended Interventions</h3>
+                        <p class="text-sm text-gray-600">For {{ selected_student.get_full_name }}</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    {% for rec in ai_recommendations %}
+                    <div class="bg-white rounded-lg p-4 border border-purple-200 hover:shadow-md transition">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <i class="bi bi-lightbulb-fill text-yellow-500 text-xl"></i>
+                                <h4 class="font-semibold text-gray-900">{{ rec.type }}</h4>
+                            </div>
+                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                                {{ rec.success_probability|floatformat:0 }}% Success Rate
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 ml-7">{{ rec.reasoning }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-4 flex items-center space-x-2 text-sm text-gray-500">
+                    <i class="bi bi-info-circle"></i>
+                    <span>These recommendations are AI-generated based on student data and past intervention success rates.</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <form method="post" id="interventionForm" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Student Selection -->
+                {% if selected_student %}
+                <!-- Pre-selected Student (Hidden Field) -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="bi bi-person-circle text-purple-600"></i> Student
+                    </label>
+                    <div class="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-300 rounded-xl">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                                {{ selected_student.get_full_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900">{{ selected_student.get_full_name }}</p>
+                                <p class="text-sm text-gray-600">{{ selected_student.email }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="student" value="{{ selected_student.id }}">
+                </div>
+                {% else %}
+                <!-- Student Search -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="bi bi-person-circle text-purple-600"></i> Student *
+                    </label>
+                    
+                    <!-- Filter Buttons -->
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <button type="button" onclick="filterStudents('all')" 
+                                class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                            <i class="bi bi-people"></i> All Students
+                        </button>
+                        <button type="button" onclick="filterStudents('high')" 
+                                class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 transition">
+                            <i class="bi bi-exclamation-triangle-fill"></i> High Risk
+                        </button>
+                        <button type="button" onclick="filterStudents('medium')" 
+                                class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition">
+                            <i class="bi bi-exclamation-circle-fill"></i> Medium Risk
+                        </button>
+                        <select id="yearLevelFilter" onchange="filterByYearLevel()" 
+                                class="px-4 py-2 rounded-lg text-sm font-medium border-2 border-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <option value="">All Year Levels</option>
+                            <option value="7">Grade 7</option>
+                            <option value="8">Grade 8</option>
+                            <option value="9">Grade 9</option>
+                            <option value="10">Grade 10</option>
+                        </select>
+                    </div>
+                    
+                    <div class="relative">
+                        <input type="text" 
+                               id="studentSearch" 
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                               placeholder="Search student by name or email..."
+                               autocomplete="off">
+                        <div id="searchResults" class="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-xl max-h-96 overflow-y-auto z-50 hidden"></div>
+                        <input type="hidden" name="student" id="studentId" required>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">Type to search or use filters to find students</p>
+                    {% if form.student.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.student.errors }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Intervention Type -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="bi bi-tag text-purple-600"></i> Intervention Type *
+                    </label>
+                    <select name="intervention_type" required
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
+                        <option value="">Select intervention type</option>
+                        <option value="counseling">Counseling Session</option>
+                        <option value="tutoring">Academic Tutoring</option>
+                        <option value="parent_meeting">Parent Meeting</option>
+                        <option value="behavioral">Behavioral Support</option>
+                        <option value="wellness">Wellness Check</option>
+                        <option value="other">Other</option>
+                    </select>
+                    {% if form.intervention_type.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.intervention_type.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="bi bi-file-text text-purple-600"></i> Description *
+                    </label>
+                    <textarea name="description" rows="4" required
+                              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition resize-none"
+                              placeholder="Describe the purpose and goals of this intervention..."></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Describe the purpose and goals of this intervention</p>
+                    {% if form.description.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.description.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Date & Time and Status Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Scheduled Date & Time -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="bi bi-calendar-event text-purple-600"></i> Scheduled Date & Time *
+                        </label>
+                        <input type="datetime-local" name="scheduled_date" required
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
+                        {% if form.scheduled_date.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ form.scheduled_date.errors }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Status -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="bi bi-check-circle text-purple-600"></i> Status *
+                        </label>
+                        <select name="status" required
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
+                            <option value="scheduled">Scheduled</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        {% if form.status.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ form.status.errors }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="bi bi-sticky text-purple-600"></i> Notes
+                    </label>
+                    <textarea name="notes" rows="3"
+                              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition resize-none"
+                              placeholder="Additional notes or preparation details..."></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Additional notes or preparation details</p>
+                    {% if form.notes.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.notes.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Outcome -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="bi bi-clipboard-check text-purple-600"></i> Outcome
+                    </label>
+                    <textarea name="outcome" rows="3"
+                              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition resize-none"
+                              placeholder="Results and follow-up actions (fill after completion)..."></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Results and follow-up actions (fill after completion)</p>
+                    {% if form.outcome.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.outcome.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                    <button type="submit" 
+                            class="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transform hover:-translate-y-0.5 transition duration-200 shadow-lg hover:shadow-xl">
+                        <i class="bi bi-check-circle"></i> Create Intervention
+                    </button>
+                    <a href="{% url 'wellness:interventions_list' %}" 
+                       class="flex-1 bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transform hover:-translate-y-0.5 transition duration-200 text-center">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -139,58 +293,188 @@
 const searchInput = document.getElementById('studentSearch');
 const searchResults = document.getElementById('searchResults');
 const studentIdInput = document.getElementById('studentId');
+const yearLevelFilter = document.getElementById('yearLevelFilter');
 let students = [];
+let currentFilter = 'all';
+let currentYearLevel = '';
 
 // Fetch all students on page load
 fetch('{% url "wellness:api_students" %}')
     .then(response => response.json())
     .then(data => {
         students = data;
+        console.log('Loaded students:', students.length);
+        // Sort by risk level (high first)
+        students.sort((a, b) => {
+            const riskOrder = { 'high': 0, 'medium': 1, 'low': 2, null: 3 };
+            return riskOrder[a.risk_level] - riskOrder[b.risk_level];
+        });
+    })
+    .catch(error => console.error('Error loading students:', error));
+
+function getRiskBadge(riskLevel) {
+    if (riskLevel === 'high') {
+        return '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700 animate-pulse"><i class="bi bi-exclamation-triangle-fill"></i> HIGH RISK</span>';
+    } else if (riskLevel === 'medium') {
+        return '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700"><i class="bi bi-exclamation-circle-fill"></i> Medium</span>';
+    } else if (riskLevel === 'low') {
+        return '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Low</span>';
+    }
+    return '';
+}
+
+function getYearLevelBadge(yearLevel) {
+    if (yearLevel) {
+        return `<span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">Grade ${yearLevel}</span>`;
+    }
+    return '';
+}
+
+function filterStudents(filter) {
+    console.log('Filter clicked:', filter, 'Total students:', students.length);
+    currentFilter = filter;
+    searchInput.value = '';
+    studentIdInput.value = '';
+    
+    // Update button styles
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-purple-500');
     });
+    if (event && event.target) {
+        event.target.classList.add('ring-2', 'ring-purple-500');
+    }
+    
+    displayFilteredStudents();
+}
+
+function filterByYearLevel() {
+    currentYearLevel = yearLevelFilter.value;
+    searchInput.value = '';
+    studentIdInput.value = '';
+    displayFilteredStudents();
+}
+
+function displayFilteredStudents() {
+    console.log('Displaying filtered students. Filter:', currentFilter, 'Year:', currentYearLevel);
+    let filtered = students;
+    
+    // Apply risk filter
+    if (currentFilter !== 'all') {
+        filtered = filtered.filter(s => s.risk_level === currentFilter);
+    }
+    
+    // Apply year level filter
+    if (currentYearLevel) {
+        filtered = filtered.filter(s => s.year_level == currentYearLevel);
+    }
+    
+    console.log('Filtered count:', filtered.length);
+    
+    if (filtered.length > 0) {
+        searchResults.innerHTML = filtered.slice(0, 50).map(student => {
+            const bgClass = student.risk_level === 'high' ? 'bg-red-50 border-l-4 border-red-500' : 
+                           student.risk_level === 'medium' ? 'bg-yellow-50 border-l-4 border-yellow-500' : '';
+            return `
+                <div class="px-4 py-3 hover:bg-purple-50 cursor-pointer border-b border-gray-100 transition duration-150 ${bgClass}" data-id="${student.id}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full flex items-center justify-center text-white font-semibold">
+                                ${student.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900">${student.name}</p>
+                                <p class="text-sm text-gray-500">${student.email}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end space-y-1">
+                            ${getRiskBadge(student.risk_level)}
+                            ${getYearLevelBadge(student.year_level)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        if (filtered.length > 50) {
+            searchResults.innerHTML += '<div class="px-4 py-3 text-gray-500 text-center text-sm">Showing first 50 of ' + filtered.length + ' students</div>';
+        }
+        searchResults.classList.remove('hidden');
+        attachClickHandlers();
+    } else {
+        searchResults.innerHTML = '<div class="px-4 py-3 text-gray-500 text-center">No students found</div>';
+        searchResults.classList.remove('hidden');
+    }
+}
 
 // Search functionality
 searchInput.addEventListener('input', function() {
     const query = this.value.toLowerCase().trim();
     
     if (query.length < 2) {
-        searchResults.classList.remove('show');
+        searchResults.classList.add('hidden');
         return;
     }
     
-    const filtered = students.filter(student => 
+    let filtered = students.filter(student => 
         student.name.toLowerCase().includes(query) || 
         student.email.toLowerCase().includes(query)
     );
     
+    // Apply current filters
+    if (currentFilter !== 'all') {
+        filtered = filtered.filter(s => s.risk_level === currentFilter);
+    }
+    if (currentYearLevel) {
+        filtered = filtered.filter(s => s.year_level == currentYearLevel);
+    }
+    
     if (filtered.length > 0) {
-        searchResults.innerHTML = filtered.map(student => `
-            <div class="student-result-item" data-id="${student.id}">
-                <strong>${student.name}</strong>
-                <small>${student.email}</small>
-            </div>
-        `).join('');
-        searchResults.classList.add('show');
-        
-        // Add click handlers
-        document.querySelectorAll('.student-result-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const id = this.dataset.id;
-                const name = this.querySelector('strong').textContent;
-                searchInput.value = name;
-                studentIdInput.value = id;
-                searchResults.classList.remove('show');
-            });
-        });
+        searchResults.innerHTML = filtered.map(student => {
+            const bgClass = student.risk_level === 'high' ? 'bg-red-50 border-l-4 border-red-500' : 
+                           student.risk_level === 'medium' ? 'bg-yellow-50 border-l-4 border-yellow-500' : '';
+            return `
+                <div class="px-4 py-3 hover:bg-purple-50 cursor-pointer border-b border-gray-100 transition duration-150 ${bgClass}" data-id="${student.id}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full flex items-center justify-center text-white font-semibold">
+                                ${student.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900">${student.name}</p>
+                                <p class="text-sm text-gray-500">${student.email}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end space-y-1">
+                            ${getRiskBadge(student.risk_level)}
+                            ${getYearLevelBadge(student.year_level)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        searchResults.classList.remove('hidden');
+        attachClickHandlers();
     } else {
-        searchResults.innerHTML = '<div class="student-result-item">No students found</div>';
-        searchResults.classList.add('show');
+        searchResults.innerHTML = '<div class="px-4 py-3 text-gray-500 text-center">No students found</div>';
+        searchResults.classList.remove('hidden');
     }
 });
 
+function attachClickHandlers() {
+    document.querySelectorAll('[data-id]').forEach(item => {
+        item.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const name = this.querySelector('p').textContent;
+            searchInput.value = name;
+            studentIdInput.value = id;
+            searchResults.classList.add('hidden');
+        });
+    });
+}
+
 // Close results when clicking outside
 document.addEventListener('click', function(e) {
-    if (!e.target.closest('.student-search-wrapper')) {
-        searchResults.classList.remove('show');
+    if (!searchInput.contains(e.target) && !searchResults.contains(e.target) && !e.target.classList.contains('filter-btn')) {
+        searchResults.classList.add('hidden');
     }
 });
 </script>

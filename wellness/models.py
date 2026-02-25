@@ -10,6 +10,7 @@ class WellnessCheckIn(models.Model):
     sleep_quality = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
     need_help = models.BooleanField(default=False)
     comments = models.TextField(blank=True)
+    text_response = models.TextField(blank=True, null=True, help_text="Optional: How are you feeling today?")
     
     def __str__(self):
         return f"{self.student.username} - {self.date.strftime('%Y-%m-%d')}"
@@ -93,6 +94,8 @@ class Alert(models.Model):
         ('low_attendance', 'Low Attendance'),
         ('wellness_concern', 'Wellness Concern'),
         ('teacher_concern', 'Teacher Concern'),
+        ('emotional_distress', 'Emotional Distress'),
+        ('ai_intervention', 'AI Intervention Created'),
     ]
     SEVERITY_LEVELS = [
         ('critical', 'Critical'),

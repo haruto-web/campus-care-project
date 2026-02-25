@@ -3,209 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BrightTrack - Student Support Monitoring System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>BrightTrack - Learning Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
-    <style>
-        :root {
-            --primary: #4A90E2;
-            --success: #50C878;
-            --danger: #E74C3C;
-        }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .navbar-custom { background: white; border-bottom: 1px solid #dee2e6; padding: 1rem 0; }
-        .hero-section { background: linear-gradient(135deg, #e7f1ff 0%, #ffffff 100%); padding: 5rem 0; }
-        .hero-title { font-size: 3.5rem; font-weight: 700; line-height: 1.2; }
-        .hero-subtitle { color: var(--primary); font-size: 2rem; font-weight: 600; }
-        .hero-image { border-radius: 1rem; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
-        .feature-card { border: 2px solid #e9ecef; border-radius: 0.5rem; padding: 2rem; transition: all 0.3s; }
-        .feature-card:hover { border-color: var(--primary); box-shadow: 0 8px 24px rgba(13,110,253,0.15); }
-        .feature-icon { width: 56px; height: 56px; border-radius: 50%; background: #e7f1ff; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
-        .role-card { text-align: center; padding: 2rem; border-radius: 0.5rem; border: 1px solid #dee2e6; }
-        .role-icon { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
-        .cta-section { background: var(--primary); color: white; padding: 5rem 0; }
-        .btn-custom { padding: 0.75rem 2rem; font-size: 1.125rem; border-radius: 0.5rem; }
-        footer { background: #212529; color: white; padding: 3rem 0; }
-    </style>
 </head>
-<body>
+<body class="bg-white">
     <!-- Navigation -->
-    <nav class="navbar-custom">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center w-100">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-heart-pulse fs-2 text-primary"></i>
-                    <span class="fs-3 fw-bold">BrightTrack</span>
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <i class="bi bi-heart-pulse text-3xl text-red-600"></i>
+                    <span class="text-2xl font-bold text-gray-900">BrightTrack</span>
                 </div>
-                <div class="d-flex gap-3">
-                    <a href="{% url 'login' %}" class="btn btn-outline-primary btn-custom">Login</a>
-                    <a href="{% url 'register' %}" class="btn btn-primary btn-custom">Get Started</a>
+                <div class="flex items-center gap-4">
+                    <a href="{% url 'login' %}" class="text-gray-700 hover:text-gray-900 font-medium">Log In</a>
+                    <a href="{% url 'register' %}" class="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition font-medium">Get Started</a>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="container">
-            <div class="row align-items-center g-5">
-                <div class="col-lg-6">
-                    <h1 class="hero-title mb-4">Welcome to BrightTrack</h1>
-                    <h2 class="hero-subtitle mb-4">Student Support Starts Here</h2>
-                    <p class="fs-5 text-muted mb-4 lh-lg">
-                        A comprehensive monitoring system designed to identify at-risk students, 
-                        facilitate early intervention, and promote student success through data-driven insights.
+    <section class="bg-gradient-to-b from-gray-50 to-white py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h1 class="text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                        Empower Learning.<br>Track Success.
+                    </h1>
+                    <p class="text-xl text-gray-600 mb-8 leading-relaxed">
+                        BrightTrack is a comprehensive learning management system designed to support student success through intelligent monitoring, early intervention, and data-driven insights.
                     </p>
-                    <div class="d-flex gap-3 flex-wrap">
-                        <a href="{% url 'register' %}" class="btn btn-primary btn-lg btn-custom">
-                            Get Started Today <i class="bi bi-arrow-right ms-2"></i>
+                    <div class="flex gap-4">
+                        <a href="{% url 'register' %}" class="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 transition font-semibold text-lg">
+                            Start Free Today
                         </a>
-                        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg btn-custom">Sign In</a>
+                        <a href="{% url 'login' %}" class="border-2 border-gray-300 text-gray-700 px-8 py-3 rounded-lg hover:border-gray-400 transition font-semibold text-lg">
+                            Sign In
+                        </a>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="hero-image">
-                        <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800" 
-                             alt="Students collaborating" class="img-fluid">
-                    </div>
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop" 
+                         alt="Students learning" 
+                         class="rounded-lg shadow-2xl">
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section class="py-5 bg-white">
-        <div class="container py-5">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">Why Choose BrightTrack?</h2>
-                <p class="fs-5 text-muted">Our platform combines cutting-edge technology with proven student support methodologies</p>
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">Everything You Need to Succeed</h2>
+                <p class="text-xl text-gray-600">Powerful tools for students, teachers, and counselors</p>
             </div>
             
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-3">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-graph-up-arrow fs-3 text-primary"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3">Real-time Monitoring</h5>
-                        <p class="text-muted">Track student attendance, grades, and engagement patterns to identify at-risk students early.</p>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center p-8">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="bi bi-book text-3xl text-blue-600"></i>
                     </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Course Management</h3>
+                    <p class="text-gray-600">Create, organize, and manage courses with ease. Upload materials, create assignments, and track student progress.</p>
                 </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-people fs-3 text-primary"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3">Collaborative Support</h5>
-                        <p class="text-muted">Connect teachers, counselors, and students in one unified platform for better communication.</p>
+                
+                <div class="text-center p-8">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="bi bi-graph-up text-3xl text-green-600"></i>
                     </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Real-Time Analytics</h3>
+                    <p class="text-gray-600">Monitor student performance, attendance, and engagement with comprehensive analytics and reporting tools.</p>
                 </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-shield-check fs-3 text-primary"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3">Privacy Focused</h5>
-                        <p class="text-muted">Your data is secure with enterprise-grade encryption and compliance standards.</p>
+                
+                <div class="text-center p-8">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="bi bi-heart text-3xl text-purple-600"></i>
                     </div>
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="feature-card h-100">
-                        <div class="feature-icon">
-                            <i class="bi bi-check-circle fs-3 text-primary"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3">Intervention Tools</h5>
-                        <p class="text-muted">Create and manage personalized intervention plans to help students succeed.</p>
-                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Student Wellness</h3>
+                    <p class="text-gray-600">Track student wellbeing with check-ins, identify at-risk students early, and provide timely interventions.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Who It's For Section -->
-    <section class="py-5 bg-light">
-        <div class="container py-5">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">Built For Everyone in Education</h2>
-                <p class="fs-5 text-muted">Tailored experiences for students, teachers, and counselors</p>
+    <!-- Roles Section -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">Built for Your Role</h2>
+                <p class="text-xl text-gray-600">Tailored experiences for every user</p>
             </div>
-
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="role-card h-100">
-                        <div class="role-icon" style="background: #50C878;">
-                            <i class="bi bi-people fs-1 text-white"></i>
-                        </div>
-                        <h3 class="h4 fw-bold mb-3">For Students</h3>
-                        <p class="text-muted mb-4">Track your progress, manage assignments, and access wellness resources all in one place.</p>
-                        <ul class="list-unstyled text-start">
-                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>View classes & assignments</li>
-                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Wellness check-ins</li>
-                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Performance analytics</li>
-                        </ul>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-lg p-8 shadow-sm hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
+                        <i class="bi bi-person text-2xl text-white"></i>
                     </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Students</h3>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>Access courses and materials</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>Submit assignments online</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>Track grades and progress</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>Wellness check-ins</span>
+                        </li>
+                    </ul>
                 </div>
-                <div class="col-md-4">
-                    <div class="role-card h-100">
-                        <div class="role-icon" style="background: #4A90E2;">
-                            <i class="bi bi-person-workspace fs-1 text-white"></i>
-                        </div>
-                        <h3 class="h4 fw-bold mb-3">For Teachers</h3>
-                        <p class="text-muted mb-4">Monitor student engagement and identify those who need extra support early on.</p>
-                        <ul class="list-unstyled text-start">
-                            <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>At-risk student alerts</li>
-                            <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>Attendance tracking</li>
-                            <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i>Quick reporting tools</li>
-                        </ul>
+                
+                <div class="bg-white rounded-lg p-8 shadow-sm hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center mb-4">
+                        <i class="bi bi-person-workspace text-2xl text-white"></i>
                     </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Teachers</h3>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>Create and manage courses</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>Grade assignments efficiently</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>Track attendance</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>Identify at-risk students</span>
+                        </li>
+                    </ul>
                 </div>
-                <div class="col-md-4">
-                    <div class="role-card h-100">
-                        <div class="role-icon" style="background: #E74C3C;">
-                            <i class="bi bi-heart-pulse fs-1 text-white"></i>
-                        </div>
-                        <h3 class="h4 fw-bold mb-3">For Counselors</h3>
-                        <p class="text-muted mb-4">Comprehensive dashboards to manage interventions and track student wellbeing.</p>
-                        <ul class="list-unstyled text-start">
-                            <li class="mb-2"><i class="bi bi-check-circle-fill text-danger me-2"></i>Risk assessment tools</li>
-                            <li class="mb-2"><i class="bi bi-check-circle-fill text-danger me-2"></i>Intervention management</li>
-                            <li class="mb-2"><i class="bi bi-check-circle-fill text-danger me-2"></i>Analytics & reporting</li>
-                        </ul>
+                
+                <div class="bg-white rounded-lg p-8 shadow-sm hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mb-4">
+                        <i class="bi bi-heart-pulse text-2xl text-white"></i>
                     </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Counselors</h3>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>Monitor student wellbeing</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>Create interventions</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>View analytics and reports</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-green-600 mt-1"></i>
+                            <span>Manage alerts</span>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="container text-center">
-            <h2 class="display-5 fw-bold mb-4">Ready to Transform Student Support?</h2>
-            <p class="fs-5 mb-5 opacity-75">Join thousands of educators already using BrightTrack to make a difference in students' lives</p>
-            <div class="d-flex gap-3 justify-content-center flex-wrap">
-                <a href="{% url 'register' %}" class="btn btn-light btn-lg btn-custom">
-                    Create Your Account <i class="bi bi-arrow-right ms-2"></i>
+    <section class="py-20 bg-red-600">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl font-bold text-white mb-6">Ready to Get Started?</h2>
+            <p class="text-xl text-red-100 mb-8">Join thousands of educators and students using BrightTrack to achieve academic success.</p>
+            <div class="flex gap-4 justify-center">
+                <a href="{% url 'register' %}" class="bg-white text-red-600 px-8 py-3 rounded-lg hover:bg-gray-100 transition font-semibold text-lg">
+                    Create Free Account
                 </a>
-                <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg btn-custom">Sign In</a>
+                <a href="{% url 'login' %}" class="border-2 border-white text-white px-8 py-3 rounded-lg hover:bg-red-700 transition font-semibold text-lg">
+                    Sign In
+                </a>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2 mb-3 mb-md-0">
-                    <i class="bi bi-heart-pulse fs-3"></i>
-                    <span class="fs-4 fw-bold">BrightTrack</span>
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center gap-2 mb-4 md:mb-0">
+                    <i class="bi bi-heart-pulse text-3xl text-red-600"></i>
+                    <span class="text-2xl font-bold">BrightTrack</span>
                 </div>
-                <p class="text-white-50 mb-0">© 2026 BrightTrack. Student Support Monitoring System.</p>
+                <p class="text-gray-400">© 2026 BrightTrack. Learning Management System.</p>
             </div>
         </div>
     </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

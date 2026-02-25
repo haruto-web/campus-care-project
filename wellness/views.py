@@ -101,9 +101,28 @@ def at_risk_students_list(request):
 
 @login_required
 def create_intervention(request, student_id=None):
-    if request.user.role not in ['counselor', 'admin']:
-        messages.error(request, 'Only counselors can create interventions.')
+    if request.user.role not in ['counselor', 'admin', 'teacher']:
+        messages.error(request, 'Permission denied.')
         return redirect('dashboard')
+    
+    # Get AI recommendations if student_id provided
+    ai_recommendations = None
+    selected_student = None
+    if student_id:
+        selected_student = get_object_or_404(User, id=student_id, role='student')
+        risk_assessment = RiskAssessment.objects.filter(student=selected_student).order_by('-date').first()
+        
+        if risk_assessment and risk_assessment.risk_level in ['medium', 'high']:
+            try:
+                from ml_models.gemini_client import GeminiClient
+                from ml_models.utils import get_student_profile_for_intervention
+                
+                client = GeminiClient()
+                profile = get_student_profile_for_intervention(selected_student)
+                result = client.recommend_intervention(profile)
+                ai_recommendations = result.get('recommendations', [])
+            except:
+                pass
     
     if request.method == 'POST':
         form = InterventionForm(request.POST)
@@ -115,14 +134,28 @@ def create_intervention(request, student_id=None):
             return redirect('wellness:interventions_list')
     else:
         if student_id:
-            student = get_object_or_404(User, id=student_id, role='student')
-            form = InterventionForm(initial={'student': student})
+            form = InterventionForm(initial={'student': selected_student})
         else:
             form = InterventionForm()
         
         form.fields['student'].queryset = User.objects.filter(role='student')
     
-    return render(request, 'wellness/create_intervention.html', {'form': form})
+    # Statistics
+    total_students = User.objects.filter(role='student').count()
+    high_risk_count = RiskAssessment.objects.filter(risk_level='high').values('student').distinct().count()
+    unresolved_alerts = Alert.objects.filter(resolved=False, severity__in=['critical', 'high']).count()
+    pending_interventions = Intervention.objects.filter(status='scheduled').count()
+    
+    context = {
+        'form': form,
+        'total_students': total_students,
+        'high_risk_count': high_risk_count,
+        'unresolved_alerts': unresolved_alerts,
+        'pending_interventions': pending_interventions,
+        'ai_recommendations': ai_recommendations,
+        'selected_student': selected_student,
+    }
+    return render(request, 'wellness/create_intervention.html', context)
 
 @login_required
 def interventions_list(request):
@@ -136,7 +169,9 @@ def interventions_list(request):
     status_filter = request.GET.get('status', '')
     year_level_filter = request.GET.get('year_level', '')
     
-    if status_filter:
+    if status_filter == 'history':
+        interventions = interventions.filter(status__in=['completed', 'cancelled'])
+    elif status_filter:
         interventions = interventions.filter(status=status_filter)
     
     if year_level_filter:
@@ -413,20 +448,34 @@ def generate_report(request):
 @login_required
 def api_students(request):
     """API endpoint to get all students for search"""
-    if request.user.role not in ['counselor', 'admin']:
+    if request.user.role not in ['counselor', 'admin', 'teacher']:
         from django.http import JsonResponse
         return JsonResponse({'error': 'Permission denied'}, status=403)
     
     from django.http import JsonResponse
-    students = User.objects.filter(role='student').values('id', 'first_name', 'last_name', 'email')
-    students_list = [
-        {
+    students = User.objects.filter(role='student').values(
+        'id', 'first_name', 'last_name', 'email', 'year_level', 'section', 'gender'
+    )
+    
+    students_list = []
+    for s in students:
+        # Get risk level for student
+        try:
+            risk_assessment = RiskAssessment.objects.filter(student_id=s['id']).latest('date')
+            risk_level = risk_assessment.risk_level
+        except RiskAssessment.DoesNotExist:
+            risk_level = None
+        
+        students_list.append({
             'id': s['id'],
             'name': f"{s['first_name']} {s['last_name']}",
-            'email': s['email']
-        }
-        for s in students
-    ]
+            'email': s['email'],
+            'year_level': s['year_level'],
+            'section': s.get('section', ''),
+            'gender': s.get('gender', ''),
+            'risk_level': risk_level
+        })
+    
     return JsonResponse(students_list, safe=False)
 
 @login_required
@@ -443,15 +492,43 @@ def wellness_checkin(request):
         need_help = request.POST.get('need_help') == 'true'
         comments = request.POST.get('comments', '')
         
-        WellnessCheckIn.objects.create(
+        checkin = WellnessCheckIn.objects.create(
             student=request.user,
             stress_level=int(stress_level),
             motivation_level=int(motivation_level),
             workload_level=int(workload_level),
             sleep_quality=int(sleep_quality),
             need_help=need_help,
-            comments=comments
+            text_response=comments
         )
+        
+        # AI Sentiment Analysis
+        if comments:
+            try:
+                from ml_models.gemini_client import GeminiClient
+                from ml_models.models import SentimentAnalysis
+                
+                client = GeminiClient()
+                result = client.analyze_sentiment(comments)
+                
+                SentimentAnalysis.objects.create(
+                    wellness_checkin=checkin,
+                    sentiment=result['sentiment'],
+                    confidence=result['confidence'],
+                    alert_level=result['alert_level'],
+                    concerning_phrases=result.get('concerning_phrases', [])
+                )
+                
+                # Create alert if high distress
+                if result['alert_level'] in ['high', 'critical']:
+                    Alert.objects.create(
+                        student=request.user,
+                        alert_type='emotional_distress',
+                        severity='high',
+                        description=f"Emotional distress detected in wellness check-in"
+                    )
+            except Exception as e:
+                pass  # Fail silently if AI analysis fails
         
         messages.success(request, 'Wellness check-in submitted successfully! Thank you for sharing.')
         return redirect('dashboard')

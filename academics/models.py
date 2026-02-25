@@ -2,14 +2,22 @@ from django.db import models
 from django.conf import settings
 
 class Class(models.Model):
+    YEAR_LEVEL_CHOICES = [
+        ('7', 'Grade 7'),
+        ('8', 'Grade 8'),
+        ('9', 'Grade 9'),
+        ('10', 'Grade 10'),
+    ]
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=20, unique=True)
     description = models.TextField(blank=True)
-    teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='classes_taught')
+    teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='classes_taught', null=True, blank=True)
     students = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='enrolled_classes', blank=True)
     semester = models.CharField(max_length=50)
     schedule = models.CharField(max_length=200, blank=True, help_text='e.g., MWF 9:00-10:00 AM')
     room = models.CharField(max_length=50, blank=True)
+    section = models.CharField(max_length=50, blank=True)
+    year_level = models.CharField(max_length=2, choices=YEAR_LEVEL_CHOICES, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

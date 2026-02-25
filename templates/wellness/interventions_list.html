@@ -18,6 +18,7 @@
                 <option value="scheduled" {% if status_filter == 'scheduled' %}selected{% endif %}>Scheduled</option>
                 <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
                 <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                <option value="history" {% if status_filter == 'history' %}selected{% endif %}>History (Completed + Cancelled)</option>
             </select>
             <select name="year_level" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="">All Grades</option>

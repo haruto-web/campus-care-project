@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Class - BrightTrack{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Class</h2>
+        
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Class Name
+                </label>
+                <input type="text" id="name" name="name" value="{{ class.name }}" required
+                       class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+            </div>
+            
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Description (Optional)
+                </label>
+                <textarea id="description" name="description" rows="3"
+                          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">{{ class.description }}</textarea>
+            </div>
+            
+            <div>
+                <label for="schedule" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Schedule (Optional)
+                </label>
+                <input type="text" id="schedule" name="schedule" value="{{ class.schedule }}" placeholder="e.g., MWF 9:00-10:00 AM"
+                       class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+            </div>
+            
+            <div>
+                <label for="room" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Room (Optional)
+                </label>
+                <input type="text" id="room" name="room" value="{{ class.room }}" placeholder="e.g., Room 101"
+                       class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+            </div>
+            
+            <div class="flex gap-4">
+                <button type="submit" 
+                        class="flex-1 bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition duration-200">
+                    Save Changes
+                </button>
+                <a href="{% url 'academics:class_detail' class.id %}" 
+                   class="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200 text-center">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -24,7 +24,7 @@ def register_view(request):
         password2 = request.POST.get('password2')
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
-        role = request.POST.get('role')
+        role = 'student'  # Only students can register
         phone = request.POST.get('phone', '')
         year_level = request.POST.get('year_level', '')
         gender = request.POST.get('gender', '')
@@ -51,8 +51,8 @@ def register_view(request):
             phone=phone
         )
         
-        # Set year_level only for students
-        if role == 'student' and year_level:
+        # Set year_level for students
+        if year_level:
             user.year_level = year_level
         
         # Set gender
@@ -61,8 +61,12 @@ def register_view(request):
         
         user.save()
         
-        messages.success(request, 'Account created successfully! Please login.')
-        return redirect('login')
+        # Log the user in automatically
+        login(request, user)
+        
+        # Students go to profile completion
+        messages.success(request, 'Account created successfully! Please complete your profile.')
+        return redirect('complete_profile')
     
     return render(request, 'accounts/register.html')
 
@@ -90,6 +94,10 @@ def logout_view(request):
 @login_required
 def dashboard_view(request):
     user = request.user
+    
+    # Only students need profile completion
+    if not user.profile_completed and user.role == 'student':
+        return redirect('complete_profile')
     
     if user.role == 'student':
         return student_dashboard(request)
@@ -125,19 +133,10 @@ def student_dashboard(request):
     # Get last wellness check-in
     last_checkin = WellnessCheckIn.objects.filter(student=user).order_by('-date').first()
     
-    # Calculate stats
-    attendance_records = Attendance.objects.filter(student=user)
-    if attendance_records.exists():
-        attendance_rate = (attendance_records.filter(status='present').count() / attendance_records.count()) * 100
-    else:
-        attendance_rate = None
-    
-    # Get GPA
-    latest_assessment = RiskAssessment.objects.filter(student=user).order_by('-date').first()
-    gpa = latest_assessment.gpa if latest_assessment else None
-    
-    # Missing assignments
-    missing_assignments = latest_assessment.missing_assignments if latest_assessment else 0
+    # Count missing assignments
+    all_assignments = Assignment.objects.filter(class_obj__in=classes)
+    submitted_ids = Submission.objects.filter(student=user).values_list('assignment_id', flat=True)
+    missing_assignments = all_assignments.exclude(id__in=submitted_ids).count()
     
     context = {
         'classes': classes,
@@ -145,8 +144,6 @@ def student_dashboard(request):
         'announcements': announcements,
         'recently_graded': recently_graded,
         'last_checkin': last_checkin,
-        'attendance_rate': round(attendance_rate, 1) if attendance_rate else None,
-        'gpa': gpa,
         'missing_assignments': missing_assignments,
     }
     return render(request, 'dashboard/student_dashboard.html', context)
@@ -223,6 +220,15 @@ def counselor_dashboard(request):
 def admin_dashboard(request):
     from django.db.models import Count
     from datetime import datetime, timedelta
+    from django.core.management import call_command
+    
+    # Auto-calculate risk assessments if none exist or if last calculation was > 1 day ago
+    latest_assessment = RiskAssessment.objects.order_by('-date').first()
+    if not latest_assessment or (datetime.now().date() - latest_assessment.date).days > 0:
+        try:
+            call_command('calculate_risk')
+        except:
+            pass
     
     # User statistics
     total_users = User.objects.count()
@@ -335,6 +341,13 @@ def student_profile_view(request, student_id):
     # Get risk assessment
     risk_assessment = RiskAssessment.objects.filter(student=student).order_by('-date').first()
     
+    # Get AI prediction
+    from ml_models.models import PredictionLog
+    ai_prediction = PredictionLog.objects.filter(
+        student=student,
+        prediction_type='risk'
+    ).first()
+    
     # Calculate attendance rate
     attendance_records = Attendance.objects.filter(student=student)
     if attendance_records.exists():
@@ -355,10 +368,33 @@ def student_profile_view(request, student_id):
     # Get interventions
     interventions = Intervention.objects.filter(student=student).order_by('-scheduled_date')[:10]
     
+    # Get AI intervention recommendations if student is at risk
+    ai_recommendations = None
+    academic_pattern = None
+    if request.user.role == 'counselor' and risk_assessment and risk_assessment.risk_level in ['medium', 'high']:
+        from ml_models.gemini_client import GeminiClient
+        from ml_models.utils import get_student_profile_for_intervention, get_student_academic_pattern_data
+        try:
+            client = GeminiClient()
+            profile = get_student_profile_for_intervention(student)
+            result = client.recommend_intervention(profile)
+            ai_recommendations = result.get('recommendations', [])
+            
+            # Get academic pattern analysis
+            pattern_data = get_student_academic_pattern_data(student)
+            if pattern_data['assignment_scores']:  # Only analyze if there's data
+                pattern_result = client.analyze_academic_pattern(pattern_data)
+                academic_pattern = pattern_result
+        except:
+            pass
+    
     context = {
         'student': student,
         'enrolled_classes': enrolled_classes,
         'risk_assessment': risk_assessment,
+        'ai_prediction': ai_prediction,
+        'ai_recommendations': ai_recommendations,
+        'academic_pattern': academic_pattern,
         'attendance_rate': attendance_rate,
         'recent_attendance': recent_attendance,
         'wellness_checkins': wellness_checkins,
@@ -433,3 +469,50 @@ def students_list_view(request):
         'year_level_filter': year_level_filter,
     }
     return render(request, 'accounts/students_list.html', context)
+
+
+@login_required
+def complete_profile_view(request):
+    if request.user.profile_completed:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        user = request.user
+        user.phone = request.POST.get('phone', '')
+        user.date_of_birth = request.POST.get('date_of_birth') if request.POST.get('date_of_birth') else None
+        
+        # Student-specific fields
+        if user.role == 'student':
+            user.student_number = request.POST.get('student_number', '')
+            user.section = request.POST.get('section', '')
+            if request.FILES.get('id_picture'):
+                user.id_picture = request.FILES['id_picture']        
+        if request.FILES.get('profile_picture'):
+            user.profile_picture = request.FILES['profile_picture']
+        
+        user.profile_completed = True
+        user.save()
+        
+        # Auto-enroll student in ALL classes with matching section AND year_level
+        if user.role == 'student' and user.section and user.year_level:
+            section_classes = Class.objects.filter(
+                section__iexact=user.section,
+                year_level=user.year_level
+            )
+            for section_class in section_classes:
+                section_class.students.add(user)
+        
+        messages.success(request, 'Profile completed successfully!')
+        return redirect('dashboard')
+    
+    # Route to role-specific template
+    if request.user.role == 'student':
+        template = 'accounts/complete_profile_student.html'
+    elif request.user.role == 'teacher':
+        template = 'accounts/complete_profile_teacher.html'
+    elif request.user.role == 'counselor':
+        template = 'accounts/complete_profile_counselor.html'
+    else:
+        template = 'accounts/complete_profile.html'
+    
+    return render(request, template)

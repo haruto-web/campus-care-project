@@ -3,61 +3,119 @@
 {% block title %}Report Concern{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-warning text-dark">
-                    <h4><i class="bi bi-flag-fill"></i> Report Student Concern</h4>
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4">
+            <h2 class="text-2xl font-bold text-white flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                Report Student Concern
+            </h2>
+            <p class="text-orange-100 mt-1">Use this form to report concerns about students who may need additional support</p>
+        </div>
+
+        <!-- Form -->
+        <div class="p-6">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Student Selection -->
+                <div>
+                    <label for="{{ form.student.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Student <span class="text-red-500">*</span>
+                    </label>
+                    <select name="{{ form.student.name }}" id="{{ form.student.id_for_label }}" 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+                        <option value="">Select a student...</option>
+                        {% for value, label in form.student.field.choices %}
+                            {% if value %}
+                            <option value="{{ value }}" {% if form.student.value == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <p class="text-sm text-gray-500 mt-1">Only students in your classes are shown</p>
                 </div>
-                <div class="card-body">
-                    <p class="text-muted">Use this form to report concerns about students who may need additional support.</p>
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.student.id_for_label }}" class="form-label">Student *</label>
-                            {{ form.student }}
-                            <small class="text-muted">Only students in your classes are shown</small>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.concern_type.id_for_label }}" class="form-label">Concern Type *</label>
-                                {{ form.concern_type }}
-                            </div>
+                <!-- Concern Type and Severity -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.concern_type.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Concern Type <span class="text-red-500">*</span>
+                        </label>
+                        <select name="{{ form.concern_type.name }}" id="{{ form.concern_type.id_for_label }}" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+                            <option value="">Select type...</option>
+                            {% for value, label in form.concern_type.field.choices %}
+                                {% if value %}
+                                <option value="{{ value }}" {% if form.concern_type.value == value %}selected{% endif %}>{{ label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.severity.id_for_label }}" class="form-label">Severity *</label>
-                                {{ form.severity }}
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.date_observed.id_for_label }}" class="form-label">Date Observed *</label>
-                            {{ form.date_observed }}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">Description *</label>
-                            {{ form.description }}
-                            <small class="text-muted">Please provide specific details about the concern</small>
-                        </div>
-
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> This concern will be reviewed by counselors and appropriate support will be provided to the student.
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-warning">
-                                <i class="bi bi-send"></i> Submit Concern
-                            </button>
-                            <a href="{% url 'wellness:view_concerns' %}" class="btn btn-secondary">Cancel</a>
-                        </div>
-                    </form>
+                    <div>
+                        <label for="{{ form.severity.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Severity <span class="text-red-500">*</span>
+                        </label>
+                        <select name="{{ form.severity.name }}" id="{{ form.severity.id_for_label }}" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+                            <option value="">Select severity...</option>
+                            {% for value, label in form.severity.field.choices %}
+                                {% if value %}
+                                <option value="{{ value }}" {% if form.severity.value == value %}selected{% endif %}>{{ label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
-            </div>
+
+                <!-- Date Observed -->
+                <div>
+                    <label for="{{ form.date_observed.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Date Observed <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" name="{{ form.date_observed.name }}" id="{{ form.date_observed.id_for_label }}" 
+                           value="{{ form.date_observed.value|default:'' }}"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Description <span class="text-red-500">*</span>
+                    </label>
+                    <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" 
+                              rows="6" 
+                              placeholder="Please provide specific details about the concern..."
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">{{ form.description.value|default:'' }}</textarea>
+                    <p class="text-sm text-gray-500 mt-1">Please provide specific details about the concern</p>
+                </div>
+
+                <!-- Info Alert -->
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-blue-500 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                        <p class="text-sm text-blue-700">This concern will be reviewed by counselors and appropriate support will be provided to the student.</p>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-600 transition font-semibold flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+                        </svg>
+                        Submit Concern
+                    </button>
+                    <a href="{% url 'wellness:view_concerns' %}" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition font-semibold">
+                        Cancel
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 </div>

@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Users - Admin{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800"><i class="bi bi-people-fill"></i> Manage All Users</h2>
+            <p class="text-gray-600">View and manage all user accounts</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="mb-6 flex gap-2">
+        <a href="?role=all" class="px-4 py-2 rounded-lg {% if role_filter == 'all' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+            All Users ({{ total_count }})
+        </a>
+        <a href="?role=student" class="px-4 py-2 rounded-lg {% if role_filter == 'student' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+            Students ({{ student_count }})
+        </a>
+        <a href="?role=teacher" class="px-4 py-2 rounded-lg {% if role_filter == 'teacher' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+            Teachers ({{ teacher_count }})
+        </a>
+        <a href="?role=counselor" class="px-4 py-2 rounded-lg {% if role_filter == 'counselor' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+            Counselors ({{ counselor_count }})
+        </a>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Name, email, username..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                <select name="role" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="all" {% if role_filter == 'all' %}selected{% endif %}>All Roles</option>
+                    <option value="student" {% if role_filter == 'student' %}selected{% endif %}>Student</option>
+                    <option value="teacher" {% if role_filter == 'teacher' %}selected{% endif %}>Teacher</option>
+                    <option value="counselor" {% if role_filter == 'counselor' %}selected{% endif %}>Counselor</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Year Level</label>
+                <select name="year_level" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Levels</option>
+                    <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
+                    <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
+                    <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
+                    <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Section</label>
+                <input type="text" name="section" value="{{ section_filter }}" placeholder="e.g., A, B, Apple"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <div class="md:col-span-4 flex gap-2">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    <i class="bi bi-search"></i> Apply Filters
+                </button>
+                <a href="{% url 'admin_manage_users' %}" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300">
+                    <i class="bi bi-x-circle"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year Level</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Section</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for user in users %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" class="rounded-full mr-3" width="40" height="40" style="object-fit: cover;">
+                                    {% else %}
+                                    <div class="rounded-full bg-gray-300 mr-3 flex items-center justify-center" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-person-fill text-gray-600"></i>
+                                    </div>
+                                    {% endif %}
+                                    <span class="font-medium text-gray-900">{{ user.get_full_name }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ user.email }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ user.username }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                    {% if user.role == 'student' %}bg-blue-100 text-blue-800
+                                    {% elif user.role == 'teacher' %}bg-green-100 text-green-800
+                                    {% elif user.role == 'counselor' %}bg-purple-100 text-purple-800
+                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                    {{ user.role|title }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {% if user.year_level %}
+                                    Grade {{ user.year_level }}
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {% if user.section %}
+                                    {{ user.section }}
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if user.role != 'admin' %}
+                                <button onclick="confirmDelete('{{ user.id }}', '{{ user.get_full_name }}', '{{ user.role }}')" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                                    <i class="bi bi-trash"></i> Remove
+                                </button>
+                                {% else %}
+                                <span class="text-gray-400 text-sm">Protected</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(userId, userName, userRole) {
+    if (confirm(`Are you sure you want to remove ${userName} (${userRole})? This will delete their account and all associated data.`)) {
+        window.location.href = `/manage/user/${userId}/delete/`;
+    }
+}
+</script>
+{% endblock %}

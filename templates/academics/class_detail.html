@@ -25,6 +25,9 @@
     <div class="bg-white rounded-lg shadow p-4">
         <div class="flex flex-wrap gap-3">
             {% if user.role == 'teacher' and class.teacher == user %}
+            <a href="{% url 'academics:edit_class' class.id %}" class="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                <i class="bi bi-pencil"></i> Edit Class
+            </a>
             <a href="{% url 'academics:manage_students' class.id %}" class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                 <i class="bi bi-people"></i> Manage Students
             </a>

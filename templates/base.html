@@ -1,53 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Campus Care{% endblock %}</title>
+    <title>{% block title %}BrightTrack{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+        // Load saved theme immediately
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     {% if user.is_authenticated %}
-    <nav class="bg-blue-600 text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4">
+    <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-8">
-                    <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 text-xl font-bold">
-                        <i class="bi bi-heart-pulse"></i>
+                    <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 text-xl font-bold text-gray-900 dark:text-white">
+                        <i class="bi bi-heart-pulse text-red-600"></i>
                         <span>BrightTrack</span>
                     </a>
-                    <div class="hidden md:flex space-x-4">
-                        <a href="{% url 'dashboard' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Dashboard</a>
+                    <div class="hidden md:flex space-x-1">
+                        <a href="{% url 'dashboard' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">Dashboard</a>
                         {% if user.role == 'student' %}
-                        <a href="{% url 'academics:my_classes' %}" class="hover:bg-blue-700 px-3 py-2 rounded">My Classes</a>
-                        <a href="{% url 'academics:student_assignments' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Assignments</a>
+                        <a href="{% url 'academics:my_classes' %}" class="text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">My Classes</a>
+                        <a href="{% url 'academics:student_assignments' %}" class="text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">Assignments</a>
                         {% elif user.role == 'teacher' %}
-                        <a href="{% url 'academics:my_classes' %}" class="hover:bg-blue-700 px-3 py-2 rounded">My Classes</a>
-                        <a href="{% url 'students_list' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Students</a>
+                        <a href="{% url 'academics:my_classes' %}" class="text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">My Classes</a>
+                        <a href="{% url 'students_list' %}" class="text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">Students</a>
                         {% elif user.role == 'counselor' %}
-                        <a href="{% url 'wellness:at_risk_students' %}" class="hover:bg-blue-700 px-3 py-2 rounded">At-Risk Students</a>
-                        <a href="{% url 'wellness:interventions_list' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Interventions</a>
-                        <a href="{% url 'wellness:alerts_list' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Alerts</a>
-                        <a href="{% url 'wellness:reports' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Reports</a>
+                        <a href="{% url 'wellness:at_risk_students' %}" class="text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">At-Risk Students</a>
+                        <a href="{% url 'wellness:interventions_list' %}" class="text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">Interventions</a>
+                        <a href="{% url 'wellness:alerts_list' %}" class="text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">Alerts</a>
+                        <a href="{% url 'wellness:reports' %}" class="text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">Reports</a>
                         {% elif user.role == 'admin' %}
-                        <a href="{% url 'admin_teachers_list' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Teachers</a>
-                        <a href="{% url 'admin_create_class' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Create Class</a>
-                        <a href="{% url 'admin_enroll_student' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Enroll Student</a>
+                        <a href="{% url 'admin_teachers_list' %}" class="text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">Teachers</a>
+                        <a href="{% url 'admin_create_class' %}" class="text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">Create Class</a>
+                        <a href="{% url 'admin_enroll_student' %}" class="text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">Enroll Student</a>
                         {% endif %}
                     </div>
                 </div>
-                <div class="relative group">
-                    <button class="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded">
+                <div class="relative">
+                    <button onclick="toggleDropdown()" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded font-medium">
                         <i class="bi bi-person-circle text-xl"></i>
                         <span>{{ user.get_full_name }}</span>
                         <i class="bi bi-chevron-down text-sm"></i>
                     </button>
-                    <div class="hidden group-hover:block absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                        <a href="{% url 'profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                    <div id="userDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                        <div class="px-4 py-2 border-b border-gray-200">
+                            <p class="text-xs text-gray-500 uppercase font-semibold">Settings</p>
+                        </div>
+                        <a href="{% url 'profile' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                            <i class="bi bi-person mr-3"></i>
+                            <span>Profile</span>
+                        </a>
+                        <button onclick="toggleTheme()" class="w-full flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                            <i class="bi bi-moon mr-3" id="themeIcon"></i>
+                            <span id="themeText">Dark Mode</span>
+                        </button>
                         <hr class="my-1">
-                        <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Logout</a>
+                        <a href="{% url 'logout' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                            <i class="bi bi-box-arrow-right mr-3"></i>
+                            <span>Logout</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -58,7 +80,7 @@
     <main class="{% if user.is_authenticated %}max-w-7xl mx-auto px-4 py-6{% endif %}">
         {% if messages %}
             {% for message in messages %}
-            <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+            <div class="mb-4 p-4 rounded-lg border {% if message.tags == 'success' %}bg-green-50 text-green-800 border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-800 border-red-200{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border-yellow-200{% else %}bg-blue-50 text-blue-800 border-blue-200{% endif %}">
                 {{ message }}
             </div>
             {% endfor %}
@@ -68,5 +90,51 @@
     </main>
 
     {% block extra_js %}{% endblock %}
+    <script>
+    // Dropdown toggle
+    function toggleDropdown() {
+        const dropdown = document.getElementById('userDropdown');
+        dropdown.classList.toggle('hidden');
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('userDropdown');
+        const button = event.target.closest('button');
+        
+        if (dropdown && !dropdown.contains(event.target) && !button) {
+            dropdown.classList.add('hidden');
+        }
+    });
+    
+    // Theme toggle
+    function toggleTheme() {
+        const html = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+        
+        if (html.classList.contains('dark')) {
+            html.classList.remove('dark');
+            themeIcon.className = 'bi bi-moon mr-3';
+            themeText.textContent = 'Dark Mode';
+            localStorage.setItem('theme', 'light');
+        } else {
+            html.classList.add('dark');
+            themeIcon.className = 'bi bi-sun mr-3';
+            themeText.textContent = 'Light Mode';
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+    
+    // Load saved theme
+    document.addEventListener('DOMContentLoaded', function() {
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+        if (localStorage.getItem('theme') === 'dark' && themeIcon && themeText) {
+            themeIcon.className = 'bi bi-sun mr-3';
+            themeText.textContent = 'Light Mode';
+        }
+    });
+    </script>
 </body>
 </html>

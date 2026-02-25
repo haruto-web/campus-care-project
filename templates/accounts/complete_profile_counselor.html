@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Complete Your Profile - BrightTrack{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl w-full">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full mb-4">
+                    <i class="bi bi-person-check text-red-600 dark:text-red-400 text-3xl"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Complete Your Profile</h2>
+                <p class="text-gray-600 dark:text-gray-400 mt-2">Just a few more details to get started</p>
+            </div>
+            
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                
+                <div>
+                    <label for="profile_picture" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Profile Picture (Optional)
+                    </label>
+                    <input type="file" id="profile_picture" name="profile_picture" accept="image/*"
+                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+                </div>
+                
+                <div>
+                    <label for="date_of_birth" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Date of Birth (Optional)
+                    </label>
+                    <input type="date" id="date_of_birth" name="date_of_birth"
+                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+                </div>
+                
+                <div class="flex gap-4">
+                    <button type="submit" 
+                            class="flex-1 bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition duration-200">
+                        Complete Profile
+                    </button>
+                    <a href="{% url 'dashboard' %}" 
+                       class="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200 text-center">
+                        Skip for Now
+                    </a>
+                </div>
+            </form>
+            
+            <p class="text-sm text-gray-500 dark:text-gray-400 text-center mt-6">
+                You can always update your profile later from the settings menu.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
