@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import admin_views
+from allauth.socialaccount.providers.google.views import oauth2_login
 
 urlpatterns = [
     path('', views.landing_view, name='landing'),
@@ -12,6 +13,7 @@ urlpatterns = [
     path('complete-profile/', views.complete_profile_view, name='complete_profile'),
     path('students/', views.students_list_view, name='students_list'),
     path('student/<int:student_id>/', views.student_profile_view, name='student_profile'),
+    path('google/login/', oauth2_login, name='google_login'),
     
     # Admin URLs
     path('manage/users/', admin_views.admin_manage_users, name='admin_manage_users'),
