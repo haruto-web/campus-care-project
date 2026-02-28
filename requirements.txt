@@ -1,5 +1,5 @@
 Django==5.0
-psycopg[binary]==3.2.3
+psycopg[binary]==3.2.10
 python-decouple==3.8
 Pillow==12.1.1
 whitenoise==6.7.0
