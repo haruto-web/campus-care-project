@@ -506,6 +506,8 @@ def complete_profile_view(request):
         if user.role == 'student':
             user.student_number = request.POST.get('student_number', '')
             user.section = request.POST.get('section', '')
+            if request.POST.get('year_level'):
+                user.year_level = request.POST.get('year_level')
             if request.FILES.get('id_picture'):
                 try:
                     user.id_picture = request.FILES['id_picture']
