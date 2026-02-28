@@ -507,9 +507,15 @@ def complete_profile_view(request):
             user.student_number = request.POST.get('student_number', '')
             user.section = request.POST.get('section', '')
             if request.FILES.get('id_picture'):
-                user.id_picture = request.FILES['id_picture']        
+                try:
+                    user.id_picture = request.FILES['id_picture']
+                except Exception:
+                    pass
         if request.FILES.get('profile_picture'):
-            user.profile_picture = request.FILES['profile_picture']
+            try:
+                user.profile_picture = request.FILES['profile_picture']
+            except Exception:
+                pass
         
         user.profile_completed = True
         user.save()
