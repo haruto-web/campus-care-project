@@ -2,7 +2,9 @@ import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
 from django.db.models import Q
+from django.views.decorators.http import require_POST
 from .models import Conversation, Message
 from accounts.models import User
 
@@ -41,13 +43,23 @@ def conversation(request, conv_id):
         body = request.POST.get('body', '').strip()
         attachment = request.FILES.get('attachment')
         if body or attachment:
-            Message.objects.create(
+            msg = Message.objects.create(
                 conversation=conv,
                 sender=request.user,
                 body=body,
                 attachment=attachment
             )
             conv.save()
+            # AJAX send — return JSON
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'id': msg.id,
+                    'body': msg.body,
+                    'attachment_url': msg.attachment.url if msg.attachment else None,
+                    'is_image': msg.is_image() if msg.attachment else False,
+                    'created_at': msg.created_at.strftime('%b %d, %I:%M %p'),
+                    'is_mine': True,
+                })
         return redirect('messaging:conversation', conv_id=conv.id)
 
     other = conv.get_other_participant(request.user)
@@ -56,6 +68,31 @@ def conversation(request, conv_id):
         'other': other,
         'msgs': conv.messages.all(),
     })
+
+
+@login_required
+def poll_messages(request, conv_id):
+    """Return messages newer than ?after=<message_id> as JSON."""
+    conv = get_object_or_404(Conversation, id=conv_id)
+    if request.user not in conv.participants.all():
+        return JsonResponse({'error': 'denied'}, status=403)
+
+    after_id = int(request.GET.get('after', 0))
+    new_msgs = conv.messages.filter(id__gt=after_id).select_related('sender')
+    # Mark incoming as read
+    new_msgs.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+
+    data = []
+    for msg in new_msgs:
+        data.append({
+            'id': msg.id,
+            'body': msg.body,
+            'attachment_url': msg.attachment.url if msg.attachment else None,
+            'is_image': msg.is_image() if msg.attachment else False,
+            'created_at': msg.created_at.strftime('%b %d, %I:%M %p'),
+            'is_mine': msg.sender == request.user,
+        })
+    return JsonResponse({'messages': data})
 
 
 @login_required

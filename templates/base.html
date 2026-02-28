@@ -52,10 +52,21 @@
                     <!-- Messages icon -->
                     <a href="{% url 'messaging:inbox' %}" class="relative hidden md:flex items-center p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                         <i class="bi bi-chat-dots text-xl"></i>
-                        {% if unread_messages_count > 0 %}
-                        <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">{{ unread_messages_count }}</span>
-                        {% endif %}
+                        <span id="msgBadge" class="{% if unread_messages_count == 0 %}hidden{% endif %} absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">{{ unread_messages_count }}</span>
                     </a>
+                    <!-- Notification Bell -->
+                    <div class="relative hidden md:block">
+                        <button onclick="toggleNotifDropdown()" class="relative p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                            <i class="bi bi-bell text-xl"></i>
+                            <span id="notifBadge" class="hidden absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">0</span>
+                        </button>
+                        <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                            <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold text-sm text-gray-700 dark:text-gray-300">Notifications</div>
+                            <div id="notifList" class="max-h-64 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+                                <p class="text-sm text-gray-400 text-center py-4">No new notifications</p>
+                            </div>
+                        </div>
+                    </div>
                     <div class="relative hidden md:block">
                         <button onclick="toggleDropdown()" class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">
                             <i class="bi bi-person-circle text-xl"></i>
@@ -109,7 +120,7 @@
                 <hr class="border-gray-200 dark:border-gray-700 my-2">
                 <a href="{% url 'messaging:inbox' %}" class="flex items-center justify-between px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">
                     <span><i class="bi bi-chat-dots mr-2"></i>Messages</span>
-                    {% if unread_messages_count > 0 %}<span class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">{{ unread_messages_count }}</span>{% endif %}
+                    <span id="msgBadgeMobile" class="{% if unread_messages_count == 0 %}hidden{% endif %} bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">{{ unread_messages_count }}</span>
                 </a>
                 <a href="{% url 'profile' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Profile</a>
                 <button onclick="toggleTheme()" class="w-full text-left px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">
@@ -169,5 +180,88 @@
         updateThemeIcons(localStorage.getItem('theme') === 'dark');
     });
     </script>
+
+    {% if user.is_authenticated %}
+    <!-- Toast container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none"></div>
+
+    <script>
+    // Notification bell dropdown
+    function toggleNotifDropdown() {
+        document.getElementById('notifDropdown').classList.toggle('hidden');
+    }
+    document.addEventListener('click', function(e) {
+        const nd = document.getElementById('notifDropdown');
+        if (nd && !nd.contains(e.target) && !e.target.closest('[onclick="toggleNotifDropdown()"]')) {
+            nd.classList.add('hidden');
+        }
+    });
+
+    // Toast helper
+    function showToast(msg, color) {
+        const t = document.createElement('div');
+        t.className = `pointer-events-auto px-4 py-3 rounded-lg shadow-lg text-white text-sm font-medium flex items-center gap-2 ${color}`;
+        t.innerHTML = msg;
+        document.getElementById('toastContainer').appendChild(t);
+        setTimeout(() => t.remove(), 5000);
+    }
+
+    // Global notification polling
+    let prevCounts = {messages: {{ unread_messages_count }}, announcements: 0, grades: 0, alerts: 0};
+    let notifItems = [];
+
+    function updateNotifUI(data) {
+        // Message badge
+        const mb = document.getElementById('msgBadge');
+        const mbm = document.getElementById('msgBadgeMobile');
+        if (mb) { mb.textContent = data.messages; mb.classList.toggle('hidden', data.messages === 0); }
+        if (mbm) { mbm.textContent = data.messages; mbm.classList.toggle('hidden', data.messages === 0); }
+
+        // Bell badge
+        const nb = document.getElementById('notifBadge');
+        const nonMsg = data.announcements + data.grades + data.alerts;
+        if (nb) { nb.textContent = nonMsg; nb.classList.toggle('hidden', nonMsg === 0); }
+
+        // Toasts for new items
+        if (data.messages > prevCounts.messages) {
+            showToast('<i class="bi bi-chat-dots"></i> New message received', 'bg-blue-600');
+            addNotifItem('<i class="bi bi-chat-dots mr-2 text-blue-500"></i> New message', '/messages/');
+        }
+        if (data.announcements > prevCounts.announcements) {
+            showToast('<i class="bi bi-megaphone"></i> New announcement posted', 'bg-indigo-600');
+            addNotifItem('<i class="bi bi-megaphone mr-2 text-indigo-500"></i> New announcement', '/class/announcements/');
+        }
+        if (data.grades > prevCounts.grades) {
+            showToast('<i class="bi bi-trophy"></i> Assignment graded!', 'bg-purple-600');
+            addNotifItem('<i class="bi bi-trophy mr-2 text-purple-500"></i> Assignment graded', '/class/grades/');
+        }
+        if (data.alerts > prevCounts.alerts) {
+            showToast('<i class="bi bi-exclamation-triangle"></i> New alert requires attention', 'bg-red-600');
+            addNotifItem('<i class="bi bi-exclamation-triangle mr-2 text-red-500"></i> New alert', '/wellness/alerts/');
+        }
+
+        prevCounts = {messages: data.messages, announcements: data.announcements, grades: data.grades, alerts: data.alerts};
+    }
+
+    function addNotifItem(html, url) {
+        notifItems.unshift({html, url});
+        if (notifItems.length > 10) notifItems.pop();
+        const list = document.getElementById('notifList');
+        if (!list) return;
+        list.innerHTML = notifItems.map(n =>
+            `<a href="${n.url}" class="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">${n.html}</a>`
+        ).join('') || '<p class="text-sm text-gray-400 text-center py-4">No new notifications</p>';
+    }
+
+    function pollNotifications() {
+        fetch('/notifications/poll/')
+            .then(r => r.json())
+            .then(data => updateNotifUI(data))
+            .catch(() => {});
+    }
+    // Poll every 5 seconds
+    setInterval(pollNotifications, 5000);
+    </script>
+    {% endif %}
 </body>
 </html>

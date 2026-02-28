@@ -11,28 +11,27 @@
             {{ other.first_name|first|upper }}{{ other.last_name|first|upper }}
         </div>
         <div>
-            <p class="font-bold text-gray-800">{{ other.get_full_name }}</p>
+            <p class="font-bold text-gray-800 dark:text-white">{{ other.get_full_name }}</p>
             <p class="text-xs text-gray-400 capitalize">{{ other.role }}</p>
         </div>
+        <span class="ml-auto flex items-center gap-1 text-xs text-green-500 font-medium">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Live
+        </span>
     </div>
 
     <!-- Messages -->
-    <div class="bg-white rounded-xl shadow p-5 space-y-3 min-h-[300px] max-h-[60vh] overflow-y-auto" id="msgContainer">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5 space-y-3 min-h-[300px] max-h-[60vh] overflow-y-auto" id="msgContainer">
         {% for msg in msgs %}
-        <div class="flex {% if msg.sender == request.user %}justify-end{% else %}justify-start{% endif %}">
+        <div class="flex {% if msg.sender == request.user %}justify-end{% else %}justify-start{% endif %}" data-msg-id="{{ msg.id }}">
             <div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-sm
                 {% if msg.sender == request.user %}bg-blue-600 text-white rounded-br-sm
-                {% else %}bg-gray-100 text-gray-800 rounded-bl-sm{% endif %}">
+                {% else %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm{% endif %}">
                 {% if msg.body %}<p class="mb-1">{{ msg.body }}</p>{% endif %}
                 {% if msg.attachment %}
                     {% if msg.is_image %}
-                    <img src="{{ msg.attachment.url }}" alt="image"
-                         class="max-w-[240px] rounded-lg mt-1 cursor-pointer"
-                         onclick="window.open('{{ msg.attachment.url }}','_blank')">
+                    <img src="{{ msg.attachment.url }}" alt="image" class="max-w-[240px] rounded-lg mt-1 cursor-pointer" onclick="window.open('{{ msg.attachment.url }}','_blank')">
                     {% else %}
-                    <a href="{{ msg.attachment.url }}" target="_blank"
-                       class="flex items-center gap-2 mt-1 px-3 py-2 rounded-lg
-                           {% if msg.sender == request.user %}bg-blue-700 hover:bg-blue-800{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                    <a href="{{ msg.attachment.url }}" target="_blank" class="flex items-center gap-2 mt-1 px-3 py-2 rounded-lg {% if msg.sender == request.user %}bg-blue-700 hover:bg-blue-800{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
                         <i class="bi bi-file-earmark text-base"></i>
                         <span class="text-xs truncate max-w-[160px]">{{ msg.attachment.name|slice:"22:" }}</span>
                         <i class="bi bi-download text-xs ml-auto"></i>
@@ -45,53 +44,112 @@
             </div>
         </div>
         {% empty %}
-        <p class="text-center text-gray-400 text-sm py-8">No messages yet. Say hello!</p>
+        <p class="text-center text-gray-400 text-sm py-8" id="emptyMsg">No messages yet. Say hello!</p>
         {% endfor %}
     </div>
 
     <!-- Reply box -->
-    <form method="post" enctype="multipart/form-data" class="space-y-2">
+    <form id="msgForm" enctype="multipart/form-data" class="space-y-2">
         {% csrf_token %}
-        <!-- File preview -->
         <div id="filePreview" class="hidden items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600">
             <i class="bi bi-paperclip"></i>
             <span id="fileName" class="truncate flex-1"></span>
-            <button type="button" onclick="clearFile()" class="text-gray-400 hover:text-red-500 flex-shrink-0">
-                <i class="bi bi-x-lg"></i>
-            </button>
+            <button type="button" onclick="clearFile()" class="text-gray-400 hover:text-red-500 flex-shrink-0"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="flex gap-2 items-end">
-            <label class="cursor-pointer p-2.5 text-gray-400 hover:text-blue-600 flex-shrink-0" title="Attach file or image">
+            <label class="cursor-pointer p-2.5 text-gray-400 hover:text-blue-600 flex-shrink-0">
                 <i class="bi bi-paperclip text-xl"></i>
                 <input type="file" name="attachment" id="attachmentInput" class="hidden"
-                       accept="image/*,.pdf,.doc,.docx,.txt,.xlsx,.pptx"
-                       onchange="showPreview(this)">
+                       accept="image/*,.pdf,.doc,.docx,.txt,.xlsx,.pptx" onchange="showPreview(this)">
             </label>
-            <textarea name="body" rows="2" placeholder="Type a message..."
-                class="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.form.submit();}"></textarea>
-            <button type="submit"
+            <textarea name="body" id="msgBody" rows="2" placeholder="Type a message..."
+                class="flex-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+            <button type="button" onclick="sendMessage()"
                 class="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold text-sm self-end flex-shrink-0">
                 <i class="bi bi-send"></i>
             </button>
         </div>
     </form>
 </div>
-<script>
-    const c = document.getElementById('msgContainer');
-    if (c) c.scrollTop = c.scrollHeight;
 
-    function showPreview(input) {
-        if (input.files && input.files[0]) {
-            document.getElementById('fileName').textContent = input.files[0].name;
-            document.getElementById('filePreview').classList.remove('hidden');
-            document.getElementById('filePreview').classList.add('flex');
+<script>
+const convId = {{ conv.id }};
+const csrfToken = '{{ csrf_token }}';
+const container = document.getElementById('msgContainer');
+let lastMsgId = {% if msgs %}{{ msgs.last.id|default:0 }}{% else %}0{% endif %};
+
+function scrollBottom(force) {
+    const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    if (force || nearBottom) container.scrollTop = container.scrollHeight;
+}
+scrollBottom(true);
+
+function buildBubble(msg) {
+    const wrap = document.createElement('div');
+    wrap.className = `flex ${msg.is_mine ? 'justify-end' : 'justify-start'}`;
+    wrap.dataset.msgId = msg.id;
+    let inner = `<div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${msg.is_mine ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}">`;
+    if (msg.body) inner += `<p class="mb-1">${msg.body}</p>`;
+    if (msg.attachment_url) {
+        if (msg.is_image) {
+            inner += `<img src="${msg.attachment_url}" class="max-w-[240px] rounded-lg mt-1 cursor-pointer" onclick="window.open('${msg.attachment_url}','_blank')">`;
+        } else {
+            inner += `<a href="${msg.attachment_url}" target="_blank" class="flex items-center gap-2 mt-1 px-3 py-2 rounded-lg ${msg.is_mine ? 'bg-blue-700' : 'bg-gray-200'}"><i class="bi bi-file-earmark"></i><i class="bi bi-download ml-auto text-xs"></i></a>`;
         }
     }
-    function clearFile() {
-        document.getElementById('attachmentInput').value = '';
-        document.getElementById('filePreview').classList.add('hidden');
-        document.getElementById('filePreview').classList.remove('flex');
+    inner += `<p class="text-xs mt-1 ${msg.is_mine ? 'text-blue-200' : 'text-gray-400'}">${msg.created_at}</p></div>`;
+    wrap.innerHTML = inner;
+    return wrap;
+}
+
+function appendMessages(msgs) {
+    const empty = document.getElementById('emptyMsg');
+    if (empty && msgs.length) empty.remove();
+    msgs.forEach(msg => {
+        if (!document.querySelector(`[data-msg-id="${msg.id}"]`)) {
+            container.appendChild(buildBubble(msg));
+            lastMsgId = Math.max(lastMsgId, msg.id);
+        }
+    });
+    scrollBottom(false);
+}
+
+// Poll every 3 seconds for new messages
+setInterval(() => {
+    fetch(`/messages/${convId}/poll/?after=${lastMsgId}`)
+        .then(r => r.json())
+        .then(data => { if (data.messages && data.messages.length) appendMessages(data.messages); })
+        .catch(() => {});
+}, 3000);
+
+// AJAX send
+function sendMessage() {
+    const body = document.getElementById('msgBody').value.trim();
+    const file = document.getElementById('attachmentInput').files[0];
+    if (!body && !file) return;
+    const fd = new FormData(document.getElementById('msgForm'));
+    fetch(`/messages/${convId}/`, {
+        method: 'POST',
+        headers: {'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken},
+        body: fd,
+    })
+    .then(r => r.json())
+    .then(msg => { appendMessages([msg]); document.getElementById('msgBody').value = ''; clearFile(); })
+    .catch(() => {});
+}
+
+function showPreview(input) {
+    if (input.files && input.files[0]) {
+        document.getElementById('fileName').textContent = input.files[0].name;
+        document.getElementById('filePreview').classList.remove('hidden');
+        document.getElementById('filePreview').classList.add('flex');
     }
+}
+function clearFile() {
+    document.getElementById('attachmentInput').value = '';
+    document.getElementById('filePreview').classList.add('hidden');
+    document.getElementById('filePreview').classList.remove('flex');
+}
 </script>
 {% endblock %}

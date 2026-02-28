@@ -15,6 +15,51 @@ def landing_view(request):
     return render(request, 'landing.html')
 
 
+from django.http import JsonResponse
+
+@login_required
+def notifications_poll(request):
+    """Single endpoint polled by base.html every 5s for all notification counts."""
+    from messaging.models import Message
+    from academics.models import Announcement, Submission
+    from wellness.models import Alert
+    from django.db.models import Q
+
+    user = request.user
+    data = {}
+
+    # Unread messages
+    data['messages'] = Message.objects.filter(
+        conversation__participants=user, is_read=False
+    ).exclude(sender=user).count()
+
+    # New unread announcements (student/teacher)
+    if user.role == 'student':
+        classes = user.enrolled_classes.all()
+        data['announcements'] = Announcement.objects.filter(
+            Q(class_obj__in=classes) | Q(class_obj__isnull=True)
+        ).exclude(read_by=user).count()
+        # New grades (submissions graded in last 24h not yet seen)
+        from datetime import timedelta
+        from django.utils import timezone
+        data['grades'] = Submission.objects.filter(
+            student=user, score__isnull=False,
+            graded_at__gte=timezone.now() - timedelta(hours=24)
+        ).count()
+    else:
+        data['announcements'] = 0
+        data['grades'] = 0
+
+    # Unread alerts (counselor/admin)
+    if user.role in ['counselor', 'admin']:
+        data['alerts'] = Alert.objects.filter(is_read=False, resolved=False).count()
+    else:
+        data['alerts'] = 0
+
+    data['total'] = data['messages'] + data['announcements'] + data['grades'] + data['alerts']
+    return JsonResponse(data)
+
+
 def fix_site_domain(request):
     """Temporary view to fix Site domain for OAuth - admin only"""
     if not request.user.is_authenticated or not request.user.is_superuser:
