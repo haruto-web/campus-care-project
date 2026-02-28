@@ -14,6 +14,7 @@ urlpatterns = [
     path('students/', views.students_list_view, name='students_list'),
     path('student/<int:student_id>/', views.student_profile_view, name='student_profile'),
     path('google/login/', oauth2_login, name='google_login'),
+    path('fix-site/', views.fix_site_domain, name='fix_site_domain'),
     
     # Admin URLs
     path('manage/users/', admin_views.admin_manage_users, name='admin_manage_users'),

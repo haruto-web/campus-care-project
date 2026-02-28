@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import HttpResponse
 from django.db.models import Count, Avg, Q
 from datetime import datetime, timedelta
 from academics.models import Class, Assignment, Submission, Attendance, Grade
@@ -12,6 +13,21 @@ def landing_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     return render(request, 'landing.html')
+
+
+def fix_site_domain(request):
+    """Temporary view to fix Site domain for OAuth - admin only"""
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return HttpResponse('Forbidden', status=403)
+    from django.contrib.sites.models import Site
+    import os
+    hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME', 'localhost:8000')
+    site = Site.objects.get_current()
+    old = site.domain
+    site.domain = hostname
+    site.name = 'BrightTrack LMS'
+    site.save()
+    return HttpResponse(f'Site domain updated: {old} → {hostname}')
 
 def register_view(request):
     if request.user.is_authenticated:
