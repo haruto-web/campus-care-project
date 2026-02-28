@@ -8,7 +8,8 @@
     
     <!-- Quick Stats Cards -->
     <div class="grid grid-cols-2 gap-4">
-        <div class="bg-white rounded-lg shadow p-6">
+        <!-- Classes Card - clickable, expands list -->
+        <div class="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-md transition" onclick="togglePanel('classesPanel')">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-500 text-sm">Classes</p>
@@ -17,7 +18,8 @@
                 <i class="bi bi-book text-3xl text-purple-600"></i>
             </div>
         </div>
-        <div class="bg-white rounded-lg shadow p-6">
+        <!-- Missing Card - clickable, expands list -->
+        <div class="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-md transition" onclick="togglePanel('missingPanel')">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-500 text-sm">Missing</p>
@@ -25,6 +27,66 @@
                 </div>
                 <i class="bi bi-exclamation-triangle text-3xl text-red-600"></i>
             </div>
+        </div>
+    </div>
+
+    <!-- Classes Panel -->
+    <div id="classesPanel" class="hidden bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-purple-600 text-white px-6 py-3 flex justify-between items-center">
+            <h5 class="font-semibold flex items-center"><i class="bi bi-book mr-2"></i> My Classes</h5>
+            <button onclick="togglePanel('classesPanel')" class="text-white/80 hover:text-white"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="p-4 space-y-3">
+            {% if classes %}
+                {% for class in classes %}
+                <a href="{% url 'academics:class_detail' class.id %}" class="flex items-center justify-between p-4 border rounded-lg hover:bg-purple-50 hover:border-purple-300 transition">
+                    <div>
+                        <p class="font-semibold text-gray-800">{{ class.name }}</p>
+                        <p class="text-sm text-gray-500">{{ class.code }} &bull; {{ class.teacher.get_full_name }}</p>
+                    </div>
+                    <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">{{ class.semester }}</span>
+                </a>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-500 text-center py-4">No classes enrolled yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Missing Assignments Panel -->
+    <div id="missingPanel" class="hidden bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-red-600 text-white px-6 py-3 flex justify-between items-center">
+            <h5 class="font-semibold flex items-center"><i class="bi bi-exclamation-triangle mr-2"></i> Missing Assignments by Subject</h5>
+            <button onclick="togglePanel('missingPanel')" class="text-white/80 hover:text-white"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="p-4 space-y-4">
+            {% if classes %}
+                {% for class in classes %}
+                    {% with missing=class.missing_for_student %}
+                    {% if missing %}
+                    <div>
+                        <p class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            <span class="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+                            {{ class.name }} <span class="text-xs text-gray-400">({{ class.code }})</span>
+                        </p>
+                        <div class="space-y-2 pl-4">
+                            {% for assignment in missing %}
+                            <a href="{% url 'academics:submit_assignment' assignment.id %}" class="flex items-center justify-between p-3 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition">
+                                <span class="text-sm text-gray-800">{{ assignment.title }}</span>
+                                <span class="text-xs text-red-600">Due {{ assignment.due_date|date:"M d" }}</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                {% endfor %}
+                {% if missing_assignments == 0 %}
+                <p class="text-gray-500 text-center py-4">No missing assignments!</p>
+                {% endif %}
+            {% else %}
+                <p class="text-gray-500 text-center py-4">No classes enrolled yet.</p>
+            {% endif %}
         </div>
     </div>
 
@@ -220,6 +282,14 @@
 </div>
 
 <script>
+function togglePanel(id) {
+    const panel = document.getElementById(id);
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {

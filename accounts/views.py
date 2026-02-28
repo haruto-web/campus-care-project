@@ -128,6 +128,13 @@ def student_dashboard(request):
     user = request.user
     classes = user.enrolled_classes.all()
     
+    # Attach missing assignments per class for the dashboard panel
+    submitted_ids = Submission.objects.filter(student=user).values_list('assignment_id', flat=True)
+    for cls in classes:
+        cls.missing_for_student = cls.assignment_set.filter(
+            due_date__lt=datetime.now()
+        ).exclude(id__in=submitted_ids)
+    
     # Get upcoming assignments
     assignments = Assignment.objects.filter(
         class_obj__in=classes,
@@ -151,7 +158,6 @@ def student_dashboard(request):
     
     # Count missing assignments
     all_assignments = Assignment.objects.filter(class_obj__in=classes)
-    submitted_ids = Submission.objects.filter(student=user).values_list('assignment_id', flat=True)
     missing_assignments = all_assignments.exclude(id__in=submitted_ids).count()
     
     context = {
