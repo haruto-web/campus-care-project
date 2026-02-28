@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-6">
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-3xl font-bold text-gray-800">My Classes</h2>
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">My Classes</h2>
         {% if user.role == 'teacher' %}
         <a href="{% url 'academics:create_class' %}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
             <i class="bi bi-plus-circle"></i> Create New Class
