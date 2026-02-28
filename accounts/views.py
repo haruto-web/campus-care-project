@@ -476,6 +476,11 @@ def complete_profile_view(request):
     if request.user.profile_completed:
         return redirect('dashboard')
     
+    if request.GET.get('skip'):
+        request.user.profile_completed = True
+        request.user.save()
+        return redirect('dashboard')
+    
     if request.method == 'POST':
         user = request.user
         user.phone = request.POST.get('phone', '')
