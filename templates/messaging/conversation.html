@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Chat with {{ other.get_full_name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-4">
+    <!-- Header -->
+    <div class="flex items-center gap-3">
+        <a href="{% url 'messaging:inbox' %}" class="text-gray-500 hover:text-gray-700">
+            <i class="bi bi-arrow-left text-xl"></i>
+        </a>
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold">
+            {{ other.first_name|first|upper }}{{ other.last_name|first|upper }}
+        </div>
+        <div>
+            <p class="font-bold text-gray-800">{{ other.get_full_name }}</p>
+            <p class="text-xs text-gray-400 capitalize">{{ other.role }}</p>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="bg-white rounded-xl shadow p-5 space-y-3 min-h-[300px] max-h-[60vh] overflow-y-auto" id="msgContainer">
+        {% for msg in msgs %}
+        <div class="flex {% if msg.sender == request.user %}justify-end{% else %}justify-start{% endif %}">
+            <div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-sm
+                {% if msg.sender == request.user %}bg-blue-600 text-white rounded-br-sm
+                {% else %}bg-gray-100 text-gray-800 rounded-bl-sm{% endif %}">
+                {% if msg.body %}<p class="mb-1">{{ msg.body }}</p>{% endif %}
+                {% if msg.attachment %}
+                    {% if msg.is_image %}
+                    <img src="{{ msg.attachment.url }}" alt="image"
+                         class="max-w-[240px] rounded-lg mt-1 cursor-pointer"
+                         onclick="window.open('{{ msg.attachment.url }}','_blank')">
+                    {% else %}
+                    <a href="{{ msg.attachment.url }}" target="_blank"
+                       class="flex items-center gap-2 mt-1 px-3 py-2 rounded-lg
+                           {% if msg.sender == request.user %}bg-blue-700 hover:bg-blue-800{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                        <i class="bi bi-file-earmark text-base"></i>
+                        <span class="text-xs truncate max-w-[160px]">{{ msg.attachment.name|slice:"22:" }}</span>
+                        <i class="bi bi-download text-xs ml-auto"></i>
+                    </a>
+                    {% endif %}
+                {% endif %}
+                <p class="text-xs mt-1 {% if msg.sender == request.user %}text-blue-200{% else %}text-gray-400{% endif %}">
+                    {{ msg.created_at|date:"M d, g:i A" }}
+                </p>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center text-gray-400 text-sm py-8">No messages yet. Say hello!</p>
+        {% endfor %}
+    </div>
+
+    <!-- Reply box -->
+    <form method="post" enctype="multipart/form-data" class="space-y-2">
+        {% csrf_token %}
+        <!-- File preview -->
+        <div id="filePreview" class="hidden items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600">
+            <i class="bi bi-paperclip"></i>
+            <span id="fileName" class="truncate flex-1"></span>
+            <button type="button" onclick="clearFile()" class="text-gray-400 hover:text-red-500 flex-shrink-0">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="flex gap-2 items-end">
+            <label class="cursor-pointer p-2.5 text-gray-400 hover:text-blue-600 flex-shrink-0" title="Attach file or image">
+                <i class="bi bi-paperclip text-xl"></i>
+                <input type="file" name="attachment" id="attachmentInput" class="hidden"
+                       accept="image/*,.pdf,.doc,.docx,.txt,.xlsx,.pptx"
+                       onchange="showPreview(this)">
+            </label>
+            <textarea name="body" rows="2" placeholder="Type a message..."
+                class="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.form.submit();}"></textarea>
+            <button type="submit"
+                class="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold text-sm self-end flex-shrink-0">
+                <i class="bi bi-send"></i>
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+    const c = document.getElementById('msgContainer');
+    if (c) c.scrollTop = c.scrollHeight;
+
+    function showPreview(input) {
+        if (input.files && input.files[0]) {
+            document.getElementById('fileName').textContent = input.files[0].name;
+            document.getElementById('filePreview').classList.remove('hidden');
+            document.getElementById('filePreview').classList.add('flex');
+        }
+    }
+    function clearFile() {
+        document.getElementById('attachmentInput').value = '';
+        document.getElementById('filePreview').classList.add('hidden');
+        document.getElementById('filePreview').classList.remove('flex');
+    }
+</script>
+{% endblock %}

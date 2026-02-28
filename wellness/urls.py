@@ -20,6 +20,7 @@ urlpatterns = [
     
     # Counselor - Alerts
     path('alerts/', views.alerts_list, name='alerts_list'),
+    path('alerts/bulk-intervene/', views.bulk_create_interventions, name='bulk_create_interventions'),
     path('alert/<int:alert_id>/read/', views.mark_alert_read, name='mark_alert_read'),
     path('alert/<int:alert_id>/resolve/', views.resolve_alert, name='resolve_alert'),
     

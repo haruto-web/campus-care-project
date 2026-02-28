@@ -26,6 +26,7 @@ urlpatterns = [
     path('class/', include('academics.urls')),
     path('wellness/', include('wellness.urls')),
     path('ai/', include('ai_assistant.urls')),
+    path('messages/', include('messaging.urls')),
 ]
 
 if settings.DEBUG:

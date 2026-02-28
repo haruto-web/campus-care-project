@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'ai_assistant',
     'cloudinary',
     'cloudinary_storage',
+    'messaging',
 ]
 
 MIDDLEWARE = [
@@ -86,6 +87,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.request',
+                'messaging.context_processors.unread_messages_count',
             ],
         },
     },
@@ -159,12 +161,12 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
 }
 
-if config('CLOUDINARY_CLOUD_NAME', default=''):
+if config('CLOUDINARY_CLOUD_NAME', default='') and not DEBUG:
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     MEDIA_URL = '/media/'
 else:
-    MEDIA_URL = 'media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
+    MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
