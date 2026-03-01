@@ -122,8 +122,8 @@ def register_view(request):
         
         user.save()
         
-        # Log the user in automatically
-        login(request, user)
+        # Log the user in automatically (bypass allauth backend)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         
         # Students go to profile completion
         messages.success(request, 'Account created successfully! Please complete your profile.')
