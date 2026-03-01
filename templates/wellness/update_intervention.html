@@ -1,91 +1,129 @@
 {% extends 'base.html' %}
 
-{% block title %}Update Intervention - Campus Care{% endblock %}
+{% block title %}Update Intervention{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="bi bi-pencil-square"></i> Update Intervention</h4>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info mb-4">
-                        <strong>Student:</strong> {{ intervention.student.get_full_name }}<br>
-                        <strong>Created:</strong> {{ intervention.created_at|date:"M d, Y g:i A" }}
-                    </div>
+<div class="max-w-3xl mx-auto space-y-6">
 
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Student *</label>
-                            {{ form.student }}
-                            {% if form.student.errors %}
-                            <div class="text-danger">{{ form.student.errors }}</div>
-                            {% endif %}
-                        </div>
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white shadow-lg">
+        <div class="flex items-center gap-3 mb-1">
+            <i class="bi bi-pencil-square text-2xl"></i>
+            <h2 class="text-2xl font-bold">Update Intervention</h2>
+        </div>
+        <p class="text-blue-100 text-sm">Editing intervention for <strong>{{ intervention.student.get_full_name }}</strong></p>
+    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Intervention Type *</label>
-                            {{ form.intervention_type }}
-                            {% if form.intervention_type.errors %}
-                            <div class="text-danger">{{ form.intervention_type.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Description *</label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                            <div class="text-danger">{{ form.description.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Scheduled Date & Time *</label>
-                            {{ form.scheduled_date }}
-                            {% if form.scheduled_date.errors %}
-                            <div class="text-danger">{{ form.scheduled_date.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Status *</label>
-                            {{ form.status }}
-                            {% if form.status.errors %}
-                            <div class="text-danger">{{ form.status.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Notes</label>
-                            {{ form.notes }}
-                            {% if form.notes.errors %}
-                            <div class="text-danger">{{ form.notes.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Outcome</label>
-                            {{ form.outcome }}
-                            <small class="form-text text-muted">Document the results and any follow-up actions needed</small>
-                            {% if form.outcome.errors %}
-                            <div class="text-danger">{{ form.outcome.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i> Update Intervention
-                            </button>
-                            <a href="{% url 'wellness:interventions_list' %}" class="btn btn-secondary">Cancel</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
+    <!-- Student Info Card -->
+    <div class="bg-white rounded-xl shadow p-5 flex items-center gap-4 border-l-4 border-blue-500">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+            {{ intervention.student.first_name|first|upper }}{{ intervention.student.last_name|first|upper }}
+        </div>
+        <div>
+            <p class="font-bold text-gray-800 text-lg">{{ intervention.student.get_full_name }}</p>
+            <p class="text-sm text-gray-500">
+                Grade {{ intervention.student.year_level }} 
+                {% if intervention.student.section %}· Section {{ intervention.student.section }}{% endif %}
+                · Created {{ intervention.created_at|date:"M d, Y g:i A" }}
+            </p>
+        </div>
+        <div class="ml-auto">
+            {% if intervention.status == 'scheduled' %}
+            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">Scheduled</span>
+            {% elif intervention.status == 'completed' %}
+            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">Completed</span>
+            {% else %}
+            <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Cancelled</span>
+            {% endif %}
         </div>
     </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-xl shadow p-6">
+        <form method="post" class="space-y-5">
+            {% csrf_token %}
+
+            <!-- Student & Type row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Student <span class="text-red-500">*</span></label>
+                    {{ form.student }}
+                    {% if form.student.errors %}<p class="text-red-500 text-xs mt-1">{{ form.student.errors }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Intervention Type <span class="text-red-500">*</span></label>
+                    {{ form.intervention_type }}
+                    {% if form.intervention_type.errors %}<p class="text-red-500 text-xs mt-1">{{ form.intervention_type.errors }}</p>{% endif %}
+                </div>
+            </div>
+
+            <!-- Scheduled Date & Status row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Scheduled Date & Time <span class="text-red-500">*</span></label>
+                    {{ form.scheduled_date }}
+                    {% if form.scheduled_date.errors %}<p class="text-red-500 text-xs mt-1">{{ form.scheduled_date.errors }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Status <span class="text-red-500">*</span></label>
+                    {{ form.status }}
+                    {% if form.status.errors %}<p class="text-red-500 text-xs mt-1">{{ form.status.errors }}</p>{% endif %}
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Description <span class="text-red-500">*</span></label>
+                {{ form.description }}
+                {% if form.description.errors %}<p class="text-red-500 text-xs mt-1">{{ form.description.errors }}</p>{% endif %}
+            </div>
+
+            <!-- Notes -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Session Notes</label>
+                {{ form.notes }}
+                {% if form.notes.errors %}<p class="text-red-500 text-xs mt-1">{{ form.notes.errors }}</p>{% endif %}
+            </div>
+
+            <!-- Outcome -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Outcome</label>
+                {{ form.outcome }}
+                <p class="text-xs text-gray-400 mt-1">Document the results and any follow-up actions needed</p>
+                {% if form.outcome.errors %}<p class="text-red-500 text-xs mt-1">{{ form.outcome.errors }}</p>{% endif %}
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3 pt-2">
+                <button type="submit"
+                    class="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition shadow">
+                    <i class="bi bi-check-circle"></i> Save Changes
+                </button>
+                <a href="{% url 'wellness:interventions_list' %}"
+                    class="flex items-center gap-2 px-6 py-2.5 border border-gray-300 text-gray-600 rounded-lg font-semibold hover:bg-gray-50 transition">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
 </div>
+
+<style>
+    select, textarea, input[type="datetime-local"] {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #374151;
+        background-color: #fff;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    select:focus, textarea:focus, input[type="datetime-local"]:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+</style>
 {% endblock %}

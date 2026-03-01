@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import HttpResponse
 from django.db.models import Count, Avg, Q
 from datetime import datetime, timedelta
 from academics.models import Class, Assignment, Submission, Attendance, Grade
@@ -12,6 +13,66 @@ def landing_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     return render(request, 'landing.html')
+
+
+from django.http import JsonResponse
+
+@login_required
+def notifications_poll(request):
+    """Single endpoint polled by base.html every 5s for all notification counts."""
+    from messaging.models import Message
+    from academics.models import Announcement, Submission
+    from wellness.models import Alert
+    from django.db.models import Q
+
+    user = request.user
+    data = {}
+
+    # Unread messages
+    data['messages'] = Message.objects.filter(
+        conversation__participants=user, is_read=False
+    ).exclude(sender=user).count()
+
+    # New unread announcements (student/teacher)
+    if user.role == 'student':
+        classes = user.enrolled_classes.all()
+        data['announcements'] = Announcement.objects.filter(
+            Q(class_obj__in=classes) | Q(class_obj__isnull=True)
+        ).exclude(read_by=user).count()
+        # New grades (submissions graded in last 24h not yet seen)
+        from datetime import timedelta
+        from django.utils import timezone
+        data['grades'] = Submission.objects.filter(
+            student=user, score__isnull=False,
+            graded_at__gte=timezone.now() - timedelta(hours=24)
+        ).count()
+    else:
+        data['announcements'] = 0
+        data['grades'] = 0
+
+    # Unread alerts (counselor/admin)
+    if user.role in ['counselor', 'admin']:
+        data['alerts'] = Alert.objects.filter(is_read=False, resolved=False).count()
+    else:
+        data['alerts'] = 0
+
+    data['total'] = data['messages'] + data['announcements'] + data['grades'] + data['alerts']
+    return JsonResponse(data)
+
+
+def fix_site_domain(request):
+    """Temporary view to fix Site domain for OAuth - admin only"""
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return HttpResponse('Forbidden', status=403)
+    from django.contrib.sites.models import Site
+    import os
+    hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME', 'localhost:8000')
+    site = Site.objects.get_current()
+    old = site.domain
+    site.domain = hostname
+    site.name = 'BrightTrack LMS'
+    site.save()
+    return HttpResponse(f'Site domain updated: {old} → {hostname}')
 
 def register_view(request):
     if request.user.is_authenticated:
@@ -112,6 +173,13 @@ def student_dashboard(request):
     user = request.user
     classes = user.enrolled_classes.all()
     
+    # Attach missing assignments per class for the dashboard panel
+    submitted_ids = Submission.objects.filter(student=user).values_list('assignment_id', flat=True)
+    for cls in classes:
+        cls.missing_for_student = cls.assignment_set.filter(
+            due_date__lt=datetime.now()
+        ).exclude(id__in=submitted_ids)
+    
     # Get upcoming assignments
     assignments = Assignment.objects.filter(
         class_obj__in=classes,
@@ -135,7 +203,6 @@ def student_dashboard(request):
     
     # Count missing assignments
     all_assignments = Assignment.objects.filter(class_obj__in=classes)
-    submitted_ids = Submission.objects.filter(student=user).values_list('assignment_id', flat=True)
     missing_assignments = all_assignments.exclude(id__in=submitted_ids).count()
     
     context = {
@@ -490,10 +557,18 @@ def complete_profile_view(request):
         if user.role == 'student':
             user.student_number = request.POST.get('student_number', '')
             user.section = request.POST.get('section', '')
+            if request.POST.get('year_level'):
+                user.year_level = request.POST.get('year_level')
             if request.FILES.get('id_picture'):
-                user.id_picture = request.FILES['id_picture']        
+                try:
+                    user.id_picture = request.FILES['id_picture']
+                except Exception:
+                    pass
         if request.FILES.get('profile_picture'):
-            user.profile_picture = request.FILES['profile_picture']
+            try:
+                user.profile_picture = request.FILES['profile_picture']
+            except Exception:
+                pass
         
         user.profile_completed = True
         user.save()

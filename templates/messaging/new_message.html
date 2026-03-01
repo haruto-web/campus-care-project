@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}New Message{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto space-y-4">
+    <div class="flex items-center gap-3">
+        <a href="{% url 'messaging:inbox' %}" class="text-gray-500 hover:text-gray-700">
+            <i class="bi bi-arrow-left text-xl"></i>
+        </a>
+        <h2 class="text-2xl font-bold text-gray-800">New Message</h2>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-6 space-y-4">
+
+        <!-- Role filter -->
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Filter by Role</label>
+            <div class="flex flex-wrap gap-2" id="roleFilters">
+                <button type="button" onclick="filterRole('all')"
+                    class="role-btn px-3 py-1.5 rounded-lg text-sm font-semibold border border-blue-600 bg-blue-600 text-white" data-role="all">All</button>
+                {% for role in available_roles %}
+                <button type="button" onclick="filterRole('{{ role }}')"
+                    class="role-btn px-3 py-1.5 rounded-lg text-sm font-semibold border border-gray-300 text-gray-600 hover:border-blue-500 hover:text-blue-600 capitalize" data-role="{{ role }}">{{ role|capfirst }}</button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Student sub-filters (section + year level) -->
+        <div id="studentFilters" class="hidden grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Year Level</label>
+                <select id="yearFilter" onchange="applyStudentFilters()"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Grades</option>
+                    {% for y in year_levels %}<option value="{{ y }}">Grade {{ y }}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Section</label>
+                <select id="sectionFilter" onchange="applyStudentFilters()"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Sections</option>
+                    {% for s in sections %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">To <span class="text-red-500">*</span></label>
+                <select name="recipient" id="recipientSelect" required
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Select recipient --</option>
+                    {% for r in recipients %}
+                    <option value="{{ r.id }}"
+                        data-role="{{ r.role }}"
+                        data-year="{{ r.year_level|default:'' }}"
+                        data-section="{{ r.section|default:'' }}"
+                        {% if selected_recipient and selected_recipient.id == r.id %}selected{% endif %}>
+                        {{ r.get_full_name }} ({{ r.role }}{% if r.year_level %} · Gr.{{ r.year_level }}{% endif %}{% if r.section %} {{ r.section }}{% endif %})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Message <span class="text-red-500">*</span></label>
+                <textarea name="body" rows="5" required placeholder="Write your message..."
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Attachment <span class="text-gray-400 font-normal">(optional)</span></label>
+                <div id="filePreview" class="hidden items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600 mb-2">
+                    <i class="bi bi-paperclip"></i>
+                    <span id="fileName" class="truncate flex-1"></span>
+                    <button type="button" onclick="clearFile()" class="text-gray-400 hover:text-red-500"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <label class="flex items-center gap-2 cursor-pointer border border-dashed border-gray-300 rounded-lg px-4 py-3 hover:border-blue-400 hover:bg-blue-50 transition text-sm text-gray-500">
+                    <i class="bi bi-paperclip text-lg"></i> Click to attach a file or image
+                    <input type="file" name="attachment" id="attachmentInput" class="hidden"
+                           accept="image/*,.pdf,.doc,.docx,.txt,.xlsx,.pptx"
+                           onchange="showPreview(this)">
+                </label>
+            </div>
+            <div class="flex gap-3">
+                <button type="submit"
+                    class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-sm">
+                    <i class="bi bi-send mr-1"></i> Send
+                </button>
+                <a href="{% url 'messaging:inbox' %}"
+                    class="px-6 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-semibold text-sm">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentRole = 'all';
+
+function filterRole(role) {
+    currentRole = role;
+
+    // Update button styles
+    document.querySelectorAll('.role-btn').forEach(btn => {
+        const active = btn.dataset.role === role;
+        btn.className = `role-btn px-3 py-1.5 rounded-lg text-sm font-semibold border capitalize ${
+            active ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 text-gray-600 hover:border-blue-500 hover:text-blue-600'
+        }`;
+    });
+
+    // Show/hide student sub-filters
+    const sf = document.getElementById('studentFilters');
+    if (role === 'student') {
+        sf.classList.remove('hidden');
+        sf.classList.add('grid');
+    } else {
+        sf.classList.add('hidden');
+        sf.classList.remove('grid');
+        document.getElementById('yearFilter').value = '';
+        document.getElementById('sectionFilter').value = '';
+    }
+
+    applyStudentFilters();
+}
+
+function applyStudentFilters() {
+    const year = document.getElementById('yearFilter').value;
+    const section = document.getElementById('sectionFilter').value.toLowerCase();
+    const select = document.getElementById('recipientSelect');
+
+    Array.from(select.options).forEach(opt => {
+        if (!opt.value) return; // keep placeholder
+        const role = opt.dataset.role;
+        const optYear = opt.dataset.year;
+        const optSection = (opt.dataset.section || '').toLowerCase();
+
+        let show = currentRole === 'all' || role === currentRole;
+        if (show && currentRole === 'student') {
+            if (year && optYear !== year) show = false;
+            if (section && optSection !== section) show = false;
+        }
+        opt.hidden = !show;
+    });
+
+    // Reset selection if current selection is now hidden
+    const sel = select.options[select.selectedIndex];
+    if (sel && sel.hidden) select.value = '';
+}
+</script>
+<script>
+    function showPreview(input) {
+        if (input.files && input.files[0]) {
+            document.getElementById('fileName').textContent = input.files[0].name;
+            document.getElementById('filePreview').classList.remove('hidden');
+            document.getElementById('filePreview').classList.add('flex');
+        }
+    }
+    function clearFile() {
+        document.getElementById('attachmentInput').value = '';
+        document.getElementById('filePreview').classList.add('hidden');
+        document.getElementById('filePreview').classList.remove('flex');
+    }
+</script>
+{% endblock %}

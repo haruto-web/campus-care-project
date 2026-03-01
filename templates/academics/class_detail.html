@@ -5,15 +5,15 @@
 {% block content %}
 <div class="max-w-7xl mx-auto space-y-6">
     <!-- Class Header with Gradient -->
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-8 text-white">
-        <div class="flex justify-between items-start">
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 sm:p-8 text-white">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
             <div>
-                <h2 class="text-3xl font-bold mb-2">{{ class.code }}</h2>
-                <p class="text-xl text-blue-100 mb-4">{{ class.name }}</p>
-                <p class="text-blue-100">{{ class.description }}</p>
+                <h2 class="text-2xl sm:text-3xl font-bold mb-2">{{ class.code }}</h2>
+                <p class="text-lg sm:text-xl text-blue-100 mb-2">{{ class.name }}</p>
+                <p class="text-blue-100 text-sm">{{ class.description }}</p>
             </div>
-            <div class="text-right">
-                <div class="bg-white/20 backdrop-blur rounded-lg px-4 py-2">
+            <div class="sm:text-right">
+                <div class="bg-white/20 backdrop-blur rounded-lg px-4 py-2 inline-block">
                     <p class="text-sm text-blue-100">Students Enrolled</p>
                     <p class="text-3xl font-bold">{{ class.students.count }}</p>
                 </div>
@@ -22,33 +22,33 @@
     </div>
 
     <!-- Quick Actions Bar -->
-    <div class="bg-white rounded-lg shadow p-4">
-        <div class="flex flex-wrap gap-3">
+    <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+        <div class="flex flex-wrap gap-2">
             {% if user.role == 'teacher' and class.teacher == user %}
-            <a href="{% url 'academics:edit_class' class.id %}" class="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
-                <i class="bi bi-pencil"></i> Edit Class
+            <a href="{% url 'academics:edit_class' class.id %}" class="flex items-center gap-1.5 bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition text-sm">
+                <i class="bi bi-pencil"></i> <span class="hidden sm:inline">Edit Class</span><span class="sm:hidden">Edit</span>
             </a>
-            <a href="{% url 'academics:manage_students' class.id %}" class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                <i class="bi bi-people"></i> Manage Students
+            <a href="{% url 'academics:manage_students' class.id %}" class="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
+                <i class="bi bi-people"></i> <span class="hidden sm:inline">Manage Students</span><span class="sm:hidden">Students</span>
             </a>
-            <a href="{% url 'academics:create_assignment' class.id %}" class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
-                <i class="bi bi-plus-circle"></i> New Assignment
+            <a href="{% url 'academics:create_assignment' class.id %}" class="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition text-sm">
+                <i class="bi bi-plus-circle"></i> <span class="hidden sm:inline">New Assignment</span><span class="sm:hidden">Assign</span>
             </a>
-            <a href="{% url 'academics:mark_attendance' class.id %}" class="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
-                <i class="bi bi-check2-square"></i> Mark Attendance
+            <a href="{% url 'academics:mark_attendance' class.id %}" class="flex items-center gap-1.5 bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition text-sm">
+                <i class="bi bi-check2-square"></i> <span class="hidden sm:inline">Mark Attendance</span><span class="sm:hidden">Attend</span>
             </a>
-            <a href="{% url 'academics:create_announcement' class.id %}" class="flex items-center gap-2 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition">
-                <i class="bi bi-megaphone"></i> Post Announcement
+            <a href="{% url 'academics:create_announcement' class.id %}" class="flex items-center gap-1.5 bg-yellow-600 text-white px-3 py-2 rounded-lg hover:bg-yellow-700 transition text-sm">
+                <i class="bi bi-megaphone"></i> <span class="hidden sm:inline">Post Announcement</span><span class="sm:hidden">Announce</span>
             </a>
-            <a href="{% url 'academics:upload_material' class.id %}" class="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-                <i class="bi bi-upload"></i> Upload Material
+            <a href="{% url 'academics:upload_material' class.id %}" class="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition text-sm">
+                <i class="bi bi-upload"></i> <span class="hidden sm:inline">Upload Material</span><span class="sm:hidden">Upload</span>
             </a>
             {% endif %}
         </div>
     </div>
 
     <!-- Class Info Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
             <div class="flex items-center gap-3">
                 <div class="bg-blue-100 p-3 rounded-lg">

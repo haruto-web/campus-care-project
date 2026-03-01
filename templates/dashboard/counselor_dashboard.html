@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="space-y-6">
-    <h2 class="text-3xl font-bold text-gray-800">Counselor Dashboard</h2>
+    <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">Counselor Dashboard</h2>
     
     <!-- Warning Banner for Unnoticed Violations -->
     {% if unread_alerts > 0 %}
@@ -36,7 +36,7 @@
         </p>
     </div>
     
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-lg shadow p-6 text-center">
             <h3 class="text-3xl font-bold text-red-600">{{ high_risk_count }}</h3>
             <p class="text-gray-600">High Risk</p>
@@ -66,8 +66,8 @@
                     {% if high_risk_students %}
                         <div class="space-y-3">
                         {% for assessment in high_risk_students|slice:":5" %}
-                            <a href="{% url 'student_profile' assessment.student.id %}" class="block p-4 border border-red-200 rounded-lg hover:bg-red-50 transition">
-                                <h6 class="font-semibold text-gray-800">{{ assessment.student.get_full_name }}</h6>
+                            <a href="{% url 'student_profile' assessment.student.id %}" class="block p-4 border border-red-200 rounded-lg hover:bg-red-50 hover:border-red-400 transition cursor-pointer">
+                                <h6 class="font-semibold text-blue-600 hover:underline">{{ assessment.student.get_full_name }}</h6>
                                 <p class="text-sm text-gray-600">Risk Score: {{ assessment.risk_score }} | GPA: {{ assessment.gpa|default:"N/A" }} | Attendance: {{ assessment.attendance_rate|default:"N/A" }}%</p>
                                 <p class="text-sm text-red-600">Missing {{ assessment.missing_assignments }} assignment(s)</p>
                             </a>
@@ -88,11 +88,20 @@
                     {% if alerts %}
                         <div class="space-y-3">
                         {% for alert in alerts|slice:":5" %}
-                            <div class="p-4 border rounded-lg">
-                                <h6 class="font-semibold text-gray-800">{{ alert.get_alert_type_display }}</h6>
+                            <a href="{% url 'wellness:alerts_list' %}?severity={{ alert.severity }}" class="block p-4 border rounded-lg hover:bg-yellow-50 transition">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="px-2 py-0.5 text-xs font-bold rounded-full
+                                        {% if alert.severity == 'critical' %}bg-red-600 text-white
+                                        {% elif alert.severity == 'high' %}bg-orange-500 text-white
+                                        {% elif alert.severity == 'medium' %}bg-yellow-500 text-white
+                                        {% else %}bg-blue-500 text-white{% endif %}">
+                                        {{ alert.severity|upper }}
+                                    </span>
+                                    <h6 class="font-semibold text-gray-800">{{ alert.get_alert_type_display }}</h6>
+                                </div>
                                 <p class="text-sm text-gray-600">{{ alert.message }}</p>
                                 <p class="text-sm text-gray-500">{{ alert.student.get_full_name }} - {{ alert.created_at|date:"M d, Y" }}</p>
-                            </div>
+                            </a>
                         {% endfor %}
                         </div>
                     {% else %}

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Count, Avg
+from django.utils import timezone
 from datetime import datetime, timedelta
 from .models import TeacherConcern, Intervention, Alert, RiskAssessment, WellnessCheckIn
 from .forms import TeacherConcernForm, InterventionForm
@@ -245,6 +246,57 @@ def alerts_list(request):
     return render(request, 'wellness/alerts_list.html', context)
 
 @login_required
+def bulk_create_interventions(request):
+    from django.utils import timezone as tz
+    from datetime import timedelta as td
+    if request.user.role not in ['counselor', 'admin']:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    # Get all students with unresolved critical/high alerts who don't have a scheduled intervention
+    urgent_alerts = Alert.objects.filter(
+        severity__in=['critical', 'high'],
+        resolved=False
+    ).select_related('student').values_list('student', flat=True).distinct()
+
+    students = User.objects.filter(id__in=urgent_alerts, role='student')
+    created_count = 0
+
+    for student in students:
+        # Skip if already has a scheduled intervention
+        if Intervention.objects.filter(student=student, status='scheduled').exists():
+            continue
+
+        risk = RiskAssessment.objects.filter(student=student).order_by('-date').first()
+        intervention_type = 'counseling'
+        if risk and risk.missing_assignments >= 3:
+            intervention_type = 'tutoring'
+
+        Intervention.objects.create(
+            student=student,
+            counselor=request.user,
+            intervention_type=intervention_type,
+            description=f'Auto-created intervention for {student.get_full_name()} due to critical/high risk alert.',
+            scheduled_date=tz.now() + td(days=1),
+            status='scheduled',
+        )
+        # Mark this student's critical/high alerts as read
+        Alert.objects.filter(
+            student=student,
+            severity__in=['critical', 'high'],
+            resolved=False
+        ).update(is_read=True)
+        created_count += 1
+
+    if created_count > 0:
+        messages.success(request, f'✅ Done! {created_count} intervention(s) created and alerts marked as read.')
+    else:
+        messages.info(request, 'All critical/high risk students already have scheduled interventions.')
+
+    return redirect('wellness:alerts_list')
+
+
+@login_required
 def mark_alert_read(request, alert_id):
     if request.user.role not in ['counselor', 'admin']:
         messages.error(request, 'Permission denied.')
@@ -253,8 +305,11 @@ def mark_alert_read(request, alert_id):
     alert = get_object_or_404(Alert, id=alert_id)
     alert.is_read = True
     alert.save()
-    messages.success(request, 'Alert marked as read.')
-    return redirect('wellness:alerts_list')
+    
+    from django.urls import reverse
+    params = request.GET.urlencode()
+    url = reverse('wellness:alerts_list')
+    return redirect(f'{url}?{params}' if params else url)
 
 @login_required
 def resolve_alert(request, alert_id):
@@ -266,8 +321,11 @@ def resolve_alert(request, alert_id):
     alert.resolved = True
     alert.is_read = True
     alert.save()
-    messages.success(request, 'Alert resolved successfully.')
-    return redirect('wellness:alerts_list')
+    
+    from django.urls import reverse
+    params = request.GET.urlencode()
+    url = reverse('wellness:alerts_list')
+    return redirect(f'{url}?{params}' if params else url)
 
 @login_required
 def reports_view(request):
