@@ -60,6 +60,42 @@
                     </div>
                 </div>
 
+                <!-- Submission Type -->
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">
+                        Submission Type <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-400 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <input type="radio" name="submission_type" value="file_upload" class="mt-1" checked>
+                            <div>
+                                <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="bi bi-file-earmark-arrow-up text-blue-600"></i> File Upload
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Student uploads a file (PDF, Word, etc.)</p>
+                            </div>
+                        </label>
+                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-400 transition has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
+                            <input type="radio" name="submission_type" value="text_entry" class="mt-1">
+                            <div>
+                                <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="bi bi-pencil-square text-green-600"></i> Text Entry
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Student types their answer directly</p>
+                            </div>
+                        </label>
+                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-400 transition has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+                            <input type="radio" name="submission_type" value="both" class="mt-1">
+                            <div>
+                                <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="bi bi-layers text-purple-600"></i> File or Text
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Student can upload a file or type an answer</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="flex gap-3">
                     <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
                         <i class="bi bi-check-circle"></i> Create Assignment

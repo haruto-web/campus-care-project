@@ -52,12 +52,20 @@ def conversation(request, conv_id):
                 return redirect('messaging:conversation', conv_id=conv.id)
         
         if body or attachment:
-            msg = Message.objects.create(
-                conversation=conv,
-                sender=request.user,
-                body=body,
-                attachment=attachment
-            )
+            try:
+                msg = Message.objects.create(
+                    conversation=conv,
+                    sender=request.user,
+                    body=body,
+                    attachment=attachment
+                )
+            except Exception:
+                msg = Message.objects.create(
+                    conversation=conv,
+                    sender=request.user,
+                    body=body
+                )
+                messages.warning(request, 'File attachment failed to upload. Message sent without attachment.')
             conv.save()
             # AJAX send — return JSON
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -150,7 +158,11 @@ def new_message(request, recipient_id=None):
             conv.participants.add(request.user, recipient)
 
         if body or attachment:
-            Message.objects.create(conversation=conv, sender=request.user, body=body, attachment=attachment)
+            try:
+                Message.objects.create(conversation=conv, sender=request.user, body=body, attachment=attachment)
+            except Exception:
+                Message.objects.create(conversation=conv, sender=request.user, body=body)
+                messages.warning(request, 'File attachment failed to upload. Message sent without attachment.')
             conv.save()
 
         return redirect('messaging:conversation', conv_id=conv.id)

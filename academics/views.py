@@ -535,44 +535,52 @@ def submit_assignment(request, assignment_id):
     existing_submission = Submission.objects.filter(assignment=assignment, student=request.user).first()
     assignment.is_overdue = assignment.due_date < timezone.now()
     
-    if request.method == 'POST':
-        file = request.FILES.get('file')
-        comments = request.POST.get('comments', '')
-        
-        if file:
-            if existing_submission:
-                existing_submission.file = file
-                existing_submission.submitted_at = timezone.now()
-                existing_submission.save()
-                messages.success(request, 'Assignment resubmitted successfully!')
-            else:
-                Submission.objects.create(
-                    assignment=assignment,
-                    student=request.user,
-                    file=file
-                )
-                # Send notification to teacher
-                year_level = request.user.year_level if request.user.year_level else 'N/A'
-                messages.success(
-                    request, 
-                    f'Assignment submitted successfully! Your teacher has been notified.'
-                )
-                # Add notification for teacher
-                from django.contrib import messages as django_messages
-                teacher = assignment.class_obj.teacher
-                notification_msg = f'New submission: {request.user.get_full_name()} (Grade {year_level}) submitted "{assignment.title}" for {assignment.class_obj.code} - {assignment.class_obj.name}'
-                # Store in session for teacher
-                from django.contrib.sessions.models import Session
-                request.session[f'teacher_notification_{teacher.id}'] = notification_msg
-                
-            return redirect('academics:student_assignments')
-        else:
-            messages.error(request, 'Please upload a file.')
-    
     context = {
         'assignment': assignment,
         'existing_submission': existing_submission,
     }
+    
+    if request.method == 'POST':
+        file = request.FILES.get('file')
+        text_content = request.POST.get('text_content', '').strip()
+        sub_type = assignment.submission_type
+        
+        # Validate based on submission type
+        if sub_type == 'file_upload' and not file:
+            messages.error(request, 'Please upload a file.')
+        elif sub_type == 'text_entry' and not text_content:
+            messages.error(request, 'Please enter your answer.')
+        elif sub_type == 'both' and not file and not text_content:
+            messages.error(request, 'Please upload a file or enter your answer.')
+        else:
+            if existing_submission:
+                try:
+                    if file:
+                        existing_submission.file = file
+                    if text_content:
+                        existing_submission.text_content = text_content
+                    existing_submission.score = None
+                    existing_submission.feedback = ''
+                    existing_submission.graded_at = None
+                    existing_submission.save()
+                except Exception:
+                    messages.error(request, 'File upload failed. Please try again.')
+                    return render(request, 'academics/submit_assignment.html', context)
+                messages.success(request, 'Assignment resubmitted successfully!')
+            else:
+                try:
+                    Submission.objects.create(
+                        assignment=assignment,
+                        student=request.user,
+                        file=file if file else None,
+                        text_content=text_content,
+                    )
+                except Exception:
+                    messages.error(request, 'File upload failed. Please try again.')
+                    return render(request, 'academics/submit_assignment.html', context)
+                messages.success(request, 'Assignment submitted successfully!')
+            return redirect('academics:student_assignments')
+    
     return render(request, 'academics/submit_assignment.html', context)
 
 @login_required
@@ -702,6 +710,19 @@ def student_attendance(request):
         'overall_rate': round(overall_rate, 1),
     }
     return render(request, 'academics/student_attendance.html', context)
+
+@login_required
+def delete_assignment(request, assignment_id):
+    assignment = get_object_or_404(Assignment, id=assignment_id)
+    
+    if request.user.role != 'teacher' or assignment.class_obj.teacher != request.user:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    class_id = assignment.class_obj.id
+    assignment.delete()
+    messages.success(request, f'Assignment "{assignment.title}" deleted.')
+    return redirect('academics:class_detail', class_id=class_id)
 
 @login_required
 def edit_class(request, class_id):

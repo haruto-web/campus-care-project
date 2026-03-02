@@ -175,15 +175,17 @@ def student_dashboard(request):
     
     # Attach missing assignments per class for the dashboard panel
     submitted_ids = Submission.objects.filter(student=user).values_list('assignment_id', flat=True)
+    from django.utils import timezone as tz
+    now = tz.now()
     for cls in classes:
         cls.missing_for_student = cls.assignment_set.filter(
-            due_date__lt=datetime.now()
+            due_date__lt=now
         ).exclude(id__in=submitted_ids)
     
     # Get upcoming assignments
     assignments = Assignment.objects.filter(
         class_obj__in=classes,
-        due_date__gte=datetime.now()
+        due_date__gte=now
     ).order_by('due_date')[:5]
     
     # Get recent announcements (unread only)

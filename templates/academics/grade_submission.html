@@ -62,9 +62,11 @@
                     </h3>
                 </div>
                 <div class="p-6">
+                    {% if submission.text_content %}
                     <div class="bg-gradient-to-br from-gray-50 to-blue-50 border-2 border-gray-200 rounded-lg p-6 text-gray-700 leading-relaxed">
-                        {{ submission.content|linebreaks }}
+                        {{ submission.text_content|linebreaks }}
                     </div>
+                    {% endif %}
                     {% if submission.file %}
                     <div class="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
                         <div class="flex items-center justify-between">

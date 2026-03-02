@@ -43,19 +43,39 @@
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             
+            {% if assignment.submission_type == 'file_upload' or assignment.submission_type == 'both' %}
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Submission File <span class="text-red-600">*</span>
+                    <i class="bi bi-file-earmark-arrow-up text-blue-600 mr-1"></i>
+                    Upload File {% if assignment.submission_type == 'file_upload' %}<span class="text-red-600">*</span>{% endif %}
                 </label>
-                <input type="file" 
-                       name="file" 
-                       required
+                <input type="file" name="file"
+                       {% if assignment.submission_type == 'file_upload' %}required{% endif %}
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <p class="text-sm text-gray-500 mt-2">
-                    <i class="bi bi-info-circle mr-1"></i>
-                    Accepted formats: PDF, DOC, DOCX, TXT, ZIP (Max 10MB)
-                </p>
+                <p class="text-xs text-gray-500 mt-1">Accepted: PDF, DOC, DOCX, TXT, ZIP (Max 10MB)</p>
             </div>
+            {% endif %}
+
+            {% if assignment.submission_type == 'both' %}
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-1 border-t border-gray-200"></div>
+                <span class="text-sm text-gray-500 font-medium">OR</span>
+                <div class="flex-1 border-t border-gray-200"></div>
+            </div>
+            {% endif %}
+
+            {% if assignment.submission_type == 'text_entry' or assignment.submission_type == 'both' %}
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="bi bi-pencil-square text-green-600 mr-1"></i>
+                    Your Answer {% if assignment.submission_type == 'text_entry' %}<span class="text-red-600">*</span>{% endif %}
+                </label>
+                <textarea name="text_content" rows="8"
+                          {% if assignment.submission_type == 'text_entry' %}required{% endif %}
+                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Type your answer here...">{{ existing_submission.text_content|default:'' }}</textarea>
+            </div>
+            {% endif %}
 
             <div class="flex gap-4">
                 <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
@@ -81,6 +101,12 @@
                     <i class="bi bi-file-earmark mr-1"></i>
                     File: <a href="{{ existing_submission.file.url }}" class="text-blue-600 hover:underline" download>Download</a>
                 </p>
+                {% endif %}
+                {% if existing_submission.text_content %}
+                <div class="mt-2 mb-2">
+                    <p class="text-sm font-medium text-gray-700 mb-1"><i class="bi bi-pencil-square mr-1"></i>Previous Answer:</p>
+                    <div class="bg-white border border-gray-200 rounded p-3 text-sm text-gray-700 whitespace-pre-wrap">{{ existing_submission.text_content }}</div>
+                </div>
                 {% endif %}
                 {% if existing_submission.score is not None %}
                 <p class="text-sm text-gray-700">

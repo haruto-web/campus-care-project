@@ -27,11 +27,17 @@ class Class(models.Model):
         return f"{self.code} - {self.name}"
 
 class Assignment(models.Model):
+    SUBMISSION_TYPE_CHOICES = [
+        ('file_upload', 'File Upload'),
+        ('text_entry', 'Text Entry'),
+        ('both', 'File or Text'),
+    ]
     class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='assignments')
     title = models.CharField(max_length=200)
     description = models.TextField()
     due_date = models.DateTimeField()
     total_points = models.IntegerField()
+    submission_type = models.CharField(max_length=20, choices=SUBMISSION_TYPE_CHOICES, default='file_upload')
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -41,7 +47,7 @@ class Submission(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='submissions')
     submitted_at = models.DateTimeField(auto_now_add=True)
-    content = models.TextField(blank=True)
+    text_content = models.TextField(blank=True)
     file = models.FileField(upload_to='submissions/', blank=True, null=True)
     score = models.IntegerField(null=True, blank=True)
     feedback = models.TextField(blank=True)
