@@ -725,6 +725,18 @@ def delete_assignment(request, assignment_id):
     return redirect('academics:class_detail', class_id=class_id)
 
 @login_required
+def comment_submission(request, submission_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    submission = get_object_or_404(Submission, id=submission_id)
+    if request.user.role != 'teacher' or submission.assignment.class_obj.teacher != request.user:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    comment = request.POST.get('comment', '').strip()
+    submission.feedback = comment
+    submission.save(update_fields=['feedback'])
+    return JsonResponse({'success': True, 'comment': comment})
+
+@login_required
 def edit_class(request, class_id):
     class_obj = get_object_or_404(Class, id=class_id)
     
