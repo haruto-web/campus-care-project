@@ -82,6 +82,21 @@
                             <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                                 <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">Settings</p>
                             </div>
+                            {% if user.role == 'student' %}
+                            <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">Quick Actions</p>
+                            </div>
+                            <a href="{% url 'academics:student_assignments' %}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <i class="bi bi-clipboard-check mr-3"></i><span>View All Assignments</span>
+                            </a>
+                            <a href="{% url 'academics:student_grades' %}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <i class="bi bi-bar-chart mr-3"></i><span>Check My Grades</span>
+                            </a>
+                            <a href="{% url 'wellness:wellness_checkin' %}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <i class="bi bi-heart mr-3"></i><span>Wellness Check-in</span>
+                            </a>
+                            <hr class="my-1 border-gray-200 dark:border-gray-700">
+                            {% endif %}
                             <a href="{% url 'profile' %}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                 <i class="bi bi-person mr-3"></i><span>Profile</span>
                             </a>
@@ -121,6 +136,15 @@
                 <a href="{% url 'admin_teachers_list' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Teachers</a>
                 <a href="{% url 'admin_create_class' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Create Class</a>
                 <a href="{% url 'admin_enroll_student' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Enroll Student</a>
+                {% endif %}
+                {% if user.role == 'student' %}
+                <hr class="border-gray-200 dark:border-gray-700 my-2">
+                <div class="px-3 py-1">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">Quick Actions</p>
+                </div>
+                <a href="{% url 'academics:student_assignments' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium"><i class="bi bi-clipboard-check mr-2"></i>View All Assignments</a>
+                <a href="{% url 'academics:student_grades' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium"><i class="bi bi-bar-chart mr-2"></i>Check My Grades</a>
+                <a href="{% url 'wellness:wellness_checkin' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium"><i class="bi bi-heart mr-2"></i>Wellness Check-in</a>
                 {% endif %}
                 <hr class="border-gray-200 dark:border-gray-700 my-2">
                 <a href="{% url 'messaging:inbox' %}" class="flex items-center justify-between px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">
