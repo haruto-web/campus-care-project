@@ -26,4 +26,5 @@ urlpatterns = [
     path('manage/create-class/', admin_views.admin_create_class, name='admin_create_class'),
     path('manage/enroll-student/', admin_views.admin_enroll_student, name='admin_enroll_student'),
     path('manage/cleanup-users/', admin_views.admin_cleanup_users, name='admin_cleanup_users'),
+    path('manage/create-superuser/', admin_views.admin_create_superuser, name='admin_create_superuser'),
 ]
