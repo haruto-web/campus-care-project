@@ -25,4 +25,5 @@ urlpatterns = [
     path('manage/teacher/<int:teacher_id>/dashboard/', admin_views.admin_teacher_dashboard, name='admin_teacher_dashboard'),
     path('manage/create-class/', admin_views.admin_create_class, name='admin_create_class'),
     path('manage/enroll-student/', admin_views.admin_enroll_student, name='admin_enroll_student'),
+    path('manage/cleanup-users/', admin_views.admin_cleanup_users, name='admin_cleanup_users'),
 ]
