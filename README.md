@@ -499,3 +499,5 @@ python manage.py create_superuser || true
 - ✅ Web-based admin tools
 
 **Live URL:** https://bright-track-project.onrender.com 🎉
+
+# env update
