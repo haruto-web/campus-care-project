@@ -6,146 +6,565 @@
 <div class="space-y-6">
     <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">Counselor Dashboard</h2>
     
-    <!-- Warning Banner for Unnoticed Violations -->
-    {% if unread_alerts > 0 %}
-    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-        <div class="flex items-center">
-            <i class="bi bi-exclamation-triangle-fill text-red-500 text-2xl mr-3"></i>
-            <div>
-                <h3 class="text-red-800 font-semibold">⚠️ Attention Required!</h3>
-                <p class="text-red-700">You have <strong>{{ unread_alerts }}</strong> unread alert(s) requiring immediate attention.</p>
+    <!-- Mobile Quick Actions - Top Priority -->
+    <div class="lg:hidden bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3">
+            <div class="flex items-center">
+                <i class="bi bi-lightning-charge-fill text-xl mr-2"></i>
+                <h5 class="font-bold">Quick Actions</h5>
+            </div>
+        </div>
+        <div class="p-4 grid grid-cols-2 gap-3">
+            <a href="{% url 'ai_assistant:counselor_chat_view' %}" class="flex flex-col items-center p-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                <i class="bi bi-robot text-2xl mb-1"></i>
+                <span class="text-xs font-medium text-center">AI Assistant</span>
+            </a>
+            <a href="{% url 'wellness:create_intervention' %}" class="flex flex-col items-center p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                <i class="bi bi-plus-circle text-2xl mb-1"></i>
+                <span class="text-xs font-medium text-center">Create Intervention</span>
+            </a>
+            <a href="{% url 'wellness:at_risk_students' %}" class="flex flex-col items-center p-3 border-2 border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition">
+                <i class="bi bi-people text-2xl mb-1"></i>
+                <span class="text-xs font-medium text-center">View Students</span>
+            </a>
+            <a href="{% url 'wellness:alerts_list' %}" class="flex flex-col items-center p-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">
+                <i class="bi bi-bell text-2xl mb-1"></i>
+                <span class="text-xs font-medium text-center">View Alerts</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation Tabs -->
+    <div class="lg:hidden bg-white rounded-lg shadow overflow-hidden">
+        <div class="flex">
+            <button onclick="showMobileSection('overview')" id="tab-overview" class="flex-1 px-4 py-3 text-sm font-medium bg-blue-600 text-white">
+                Overview
+            </button>
+            <button onclick="showMobileSection('alerts')" id="tab-alerts" class="flex-1 px-4 py-3 text-sm font-medium bg-gray-100 text-gray-700">
+                Alerts
+            </button>
+            <button onclick="showMobileSection('interventions')" id="tab-interventions" class="flex-1 px-4 py-3 text-sm font-medium bg-gray-100 text-gray-700">
+                Meetings
+            </button>
+        </div>
+    </div>
+    
+    <!-- Mobile Content Sections -->
+    <div class="lg:hidden">
+        <!-- Overview Section -->
+        <div id="mobile-overview" class="mobile-section">
+            <!-- Statistics -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 rounded-lg mb-4">
+                <h3 class="text-blue-900 font-bold text-lg mb-2">📊 Status Overview</h3>
+                <div class="bg-white p-3 rounded-lg border border-blue-100">
+                    <p class="text-blue-800 text-sm">
+                        {% if high_risk_count > 10 %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-2">CRITICAL</span>
+                            <strong>{{ high_risk_count }} students need immediate attention.</strong>
+                        {% elif high_risk_count > 5 %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-2">MODERATE</span>
+                            <strong>{{ high_risk_count }} students require close monitoring.</strong>
+                        {% else %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-2">GOOD</span>
+                            <strong>Low risk levels detected.</strong>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <h3 class="text-2xl font-bold text-red-600">{{ high_risk_count }}</h3>
+                    <p class="text-gray-600 text-sm">High Risk</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <h3 class="text-2xl font-bold text-yellow-600">{{ medium_risk_count }}</h3>
+                    <p class="text-gray-600 text-sm">Medium Risk</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <h3 class="text-2xl font-bold text-blue-600">{{ pending_interventions }}</h3>
+                    <p class="text-gray-600 text-sm">Pending</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <h3 class="text-2xl font-bold text-purple-600">{{ unread_alerts }}</h3>
+                    <p class="text-gray-600 text-sm">Alerts</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Section -->
+        <div id="mobile-alerts" class="mobile-section hidden">
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-3">
+                    <h5 class="font-bold">Recent System Alerts</h5>
+                </div>
+                <div class="p-4 max-h-96 overflow-y-auto">
+                    {% if alerts %}
+                        <div class="space-y-3">
+                        {% for alert in alerts|slice:":10" %}
+                            <div class="border rounded-lg p-3">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="px-2 py-0.5 text-xs font-bold rounded-full
+                                                {% if alert.severity == 'critical' %}bg-red-600 text-white
+                                                {% elif alert.severity == 'high' %}bg-orange-500 text-white
+                                                {% elif alert.severity == 'medium' %}bg-yellow-500 text-white
+                                                {% else %}bg-blue-500 text-white{% endif %}">
+                                                {{ alert.severity|upper }}
+                                            </span>
+                                        </div>
+                                        <h6 class="font-semibold text-gray-800 text-sm">{{ alert.get_alert_type_display }}</h6>
+                                        <p class="text-sm text-gray-600 mb-1">{{ alert.message|truncatechars:60 }}</p>
+                                        <p class="text-xs text-gray-500">{{ alert.student.get_full_name }} • {{ alert.created_at|date:"M d" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i class="bi bi-check-circle text-4xl text-green-500 mb-3"></i>
+                            <p class="text-gray-600 font-medium">No recent alerts</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Interventions Section -->
+        <div id="mobile-interventions" class="mobile-section hidden">
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-3">
+                    <h5 class="font-bold">Upcoming Interventions</h5>
+                </div>
+                <div class="p-4 max-h-96 overflow-y-auto">
+                    {% if upcoming_interventions %}
+                        <div class="space-y-3">
+                        {% for intervention in upcoming_interventions|slice:":10" %}
+                            <div class="border border-purple-200 rounded-lg p-3 bg-purple-50">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                            {{ intervention.student.get_full_name|slice:":1"|upper }}
+                                        </div>
+                                        <div>
+                                            <h6 class="font-bold text-gray-900 text-sm">{{ intervention.student.get_full_name }}</h6>
+                                            <p class="text-xs text-gray-600">{{ intervention.get_intervention_type_display }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-sm font-bold text-purple-700">{{ intervention.scheduled_date|date:"M d" }}</div>
+                                        <div class="text-xs text-purple-600">{{ intervention.scheduled_date|date:"g:i A" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i class="bi bi-calendar-x text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-600 font-medium">No upcoming interventions</p>
+                            <a href="{% url 'wellness:create_intervention' %}" class="inline-block mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium">
+                                Create Intervention
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-    {% endif %}
-    
-    <!-- Statistics with Interpretation -->
-    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-        <h3 class="text-blue-900 font-semibold mb-2">📊 Statistics Interpretation</h3>
-        <p class="text-blue-800 text-sm">
-            {% if high_risk_count > 10 %}
-                <strong>Critical:</strong> High number of at-risk students ({{ high_risk_count }}). Immediate intervention recommended.
-            {% elif high_risk_count > 5 %}
-                <strong>Moderate:</strong> {{ high_risk_count }} students need attention. Monitor closely.
-            {% else %}
-                <strong>Good:</strong> Low number of high-risk students. Continue current support strategies.
-            {% endif %}
-            {% if pending_interventions > 5 %}
-                {{ pending_interventions }} pending interventions - prioritize scheduling.
-            {% endif %}
-        </p>
-    </div>
+    <!-- Desktop Layout (Hidden on Mobile) -->
+    <div class="hidden lg:block">
+        <!-- Warning Banner for Unnoticed Violations -->
+        {% if unread_alerts > 0 %}
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+            <div class="flex items-center">
+                <i class="bi bi-exclamation-triangle-fill text-red-500 text-2xl mr-3"></i>
+                <div>
+                    <h3 class="text-red-800 font-semibold">⚠️ Attention Required!</h3>
+                    <p class="text-red-700">You have <strong>{{ unread_alerts }}</strong> unread alert(s) requiring immediate attention.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <!-- Statistics with Interpretation -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-6 rounded-lg">
+            <div class="flex items-center mb-3">
+                <i class="bi bi-bar-chart-fill text-blue-600 text-2xl mr-3"></i>
+                <h3 class="text-blue-900 font-bold text-lg">📊 Current Status Overview</h3>
+            </div>
+            <div class="bg-white p-4 rounded-lg border border-blue-100">
+                <p class="text-blue-800 text-sm leading-relaxed">
+                    {% if high_risk_count > 10 %}
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-2">
+                            <i class="bi bi-exclamation-triangle-fill mr-1"></i>CRITICAL
+                        </span>
+                        <strong>{{ high_risk_count }} students need immediate attention.</strong> Consider scheduling urgent interventions and reviewing support strategies.
+                    {% elif high_risk_count > 5 %}
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-2">
+                            <i class="bi bi-exclamation-circle-fill mr-1"></i>MODERATE
+                        </span>
+                        <strong>{{ high_risk_count }} students require close monitoring.</strong> Regular check-ins and targeted support recommended.
+                    {% else %}
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-2">
+                            <i class="bi bi-check-circle-fill mr-1"></i>GOOD
+                        </span>
+                        <strong>Low risk levels detected.</strong> Current support strategies are effective - continue monitoring.
+                    {% endif %}
+                    {% if pending_interventions > 5 %}
+                        <br><strong>{{ pending_interventions }} interventions pending</strong> - prioritize scheduling to prevent escalation.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
     
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-white rounded-lg shadow p-6 text-center">
+        <div class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer" onclick="window.location.href='{% url 'wellness:at_risk_students' %}?risk_level=high'">
             <h3 class="text-3xl font-bold text-red-600">{{ high_risk_count }}</h3>
             <p class="text-gray-600">High Risk</p>
         </div>
-        <div class="bg-white rounded-lg shadow p-6 text-center">
+        <div class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer" onclick="window.location.href='{% url 'wellness:at_risk_students' %}?risk_level=medium'">
             <h3 class="text-3xl font-bold text-yellow-600">{{ medium_risk_count }}</h3>
             <p class="text-gray-600">Medium Risk</p>
         </div>
-        <div class="bg-white rounded-lg shadow p-6 text-center">
+        <a href="{% url 'wellness:interventions_list' %}" class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block">
             <h3 class="text-3xl font-bold text-blue-600">{{ pending_interventions }}</h3>
-            <p class="text-gray-600">Pending Interventions</p>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <p class="text-gray-600">Pending</p>
+        </a>
+        <a href="{% url 'wellness:alerts_list' %}" class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block">
             <h3 class="text-3xl font-bold text-purple-600">{{ unread_alerts }}</h3>
-            <p class="text-gray-600">Unread Alerts</p>
+            <p class="text-gray-600">Alerts</p>
+        </a>
+    </div>
+    
+    <!-- Section Breakdown Panels -->
+    <div id="highrisk-breakdown" class="hidden bg-white rounded-lg shadow p-6">
+        <h5 class="text-lg font-semibold mb-4">High Risk Students by Section</h5>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for section_data in highrisk_by_section %}
+            <div class="p-4 border rounded-lg">
+                <h6 class="font-semibold text-gray-800">{{ section_data.section }}</h6>
+                <p class="text-2xl font-bold text-red-600">{{ section_data.count }}</p>
+                <p class="text-sm text-gray-600">high risk</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div id="mediumrisk-breakdown" class="hidden bg-white rounded-lg shadow p-6">
+        <h5 class="text-lg font-semibold mb-4">Medium Risk Students by Section</h5>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for section_data in mediumrisk_by_section %}
+            <div class="p-4 border rounded-lg">
+                <h6 class="font-semibold text-gray-800">{{ section_data.section }}</h6>
+                <p class="text-2xl font-bold text-yellow-600">{{ section_data.count }}</p>
+                <p class="text-sm text-gray-600">medium risk</p>
+            </div>
+            {% endfor %}
         </div>
     </div>
     
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
-            <div class="bg-white rounded-lg shadow">
-                <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
-                    <h5 class="text-lg font-semibold">High-Risk Students</h5>
-                    <a href="{% url 'wellness:at_risk_students' %}" class="text-sm hover:underline">View All ›</a>
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-4 flex justify-between items-center">
+                    <div class="flex items-center">
+                        <i class="bi bi-exclamation-triangle-fill text-2xl mr-3"></i>
+                        <div>
+                            <h5 class="text-lg font-bold">Students Requiring Immediate Attention</h5>
+                            <p class="text-red-100 text-sm">High-risk students who need urgent support</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'wellness:at_risk_students' %}" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded-lg text-sm font-medium transition">
+                        View All ›
+                    </a>
                 </div>
                 <div class="p-6">
                     {% if high_risk_students %}
-                        <div class="space-y-3">
-                        {% for assessment in high_risk_students|slice:":5" %}
-                            <a href="{% url 'student_profile' assessment.student.id %}" class="block p-4 border border-red-200 rounded-lg hover:bg-red-50 hover:border-red-400 transition cursor-pointer">
-                                <h6 class="font-semibold text-blue-600 hover:underline">{{ assessment.student.get_full_name }}</h6>
-                                <p class="text-sm text-gray-600">Risk Score: {{ assessment.risk_score }} | GPA: {{ assessment.gpa|default:"N/A" }} | Attendance: {{ assessment.attendance_rate|default:"N/A" }}%</p>
-                                <p class="text-sm text-red-600">Missing {{ assessment.missing_assignments }} assignment(s)</p>
-                            </a>
-                        {% endfor %}
+                        <div class="h-64 overflow-y-auto pr-2">
+                            <div class="space-y-3">
+                            {% for assessment in high_risk_students|slice:":5" %}
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-4 hover:bg-red-100 transition">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center mb-2">
+                                                <div class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                                                    {{ assessment.student.get_full_name|slice:":1"|upper }}
+                                                </div>
+                                                <div>
+                                                    <h6 class="font-bold text-gray-900">{{ assessment.student.get_full_name }}</h6>
+                                                    <p class="text-xs text-gray-600">Grade {{ assessment.student.year_level|default:"?" }} - {{ assessment.student.section|default:"No Section" }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-3 gap-2 text-xs">
+                                                <div class="bg-white p-2 rounded border">
+                                                    <span class="text-gray-500">Risk Score</span>
+                                                    <p class="font-bold text-red-600">{{ assessment.risk_score }}</p>
+                                                </div>
+                                                <div class="bg-white p-2 rounded border">
+                                                    <span class="text-gray-500">GPA</span>
+                                                    <p class="font-bold">{{ assessment.gpa|default:"N/A" }}</p>
+                                                </div>
+                                                <div class="bg-white p-2 rounded border">
+                                                    <span class="text-gray-500">Attendance</span>
+                                                    <p class="font-bold">{{ assessment.attendance_rate|default:"N/A" }}%</p>
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-red-700 mt-2 font-medium">
+                                                <i class="bi bi-clipboard-x mr-1"></i>{{ assessment.missing_assignments }} missing assignment(s)
+                                            </p>
+                                        </div>
+                                        <a href="{% url 'student_profile' assessment.student.id %}" class="ml-3 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium">
+                                            View Profile
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            </div>
                         </div>
                     {% else %}
-                        <p class="text-gray-500">No high-risk students at this time.</p>
+                        <div class="text-center py-8">
+                            <i class="bi bi-check-circle text-4xl text-green-500 mb-3"></i>
+                            <p class="text-gray-600 font-medium">Great news! No high-risk students at this time.</p>
+                            <p class="text-gray-500 text-sm">Your support strategies are working effectively.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
             
-            <div class="bg-white rounded-lg shadow">
-                <div class="bg-yellow-500 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
-                    <h5 class="text-lg font-semibold">Recent Alerts</h5>
-                    <a href="{% url 'wellness:alerts_list' %}" class="text-sm hover:underline">View All ›</a>
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-4 flex justify-between items-center">
+                    <div class="flex items-center">
+                        <i class="bi bi-bell-fill text-2xl mr-3"></i>
+                        <div>
+                            <h5 class="text-lg font-bold">Recent System Alerts</h5>
+                            <p class="text-yellow-100 text-sm">Automated notifications requiring attention</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'wellness:alerts_list' %}" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded-lg text-sm font-medium transition">
+                        View All ›
+                    </a>
                 </div>
                 <div class="p-6">
                     {% if alerts %}
                         <div class="space-y-3">
                         {% for alert in alerts|slice:":5" %}
-                            <a href="{% url 'wellness:alerts_list' %}?severity={{ alert.severity }}" class="block p-4 border rounded-lg hover:bg-yellow-50 transition">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="px-2 py-0.5 text-xs font-bold rounded-full
-                                        {% if alert.severity == 'critical' %}bg-red-600 text-white
-                                        {% elif alert.severity == 'high' %}bg-orange-500 text-white
-                                        {% elif alert.severity == 'medium' %}bg-yellow-500 text-white
-                                        {% else %}bg-blue-500 text-white{% endif %}">
-                                        {{ alert.severity|upper }}
-                                    </span>
-                                    <h6 class="font-semibold text-gray-800">{{ alert.get_alert_type_display }}</h6>
+                            <div class="border rounded-lg p-4 hover:bg-gray-50 transition">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex items-start space-x-3 flex-1">
+                                        <div class="flex-shrink-0">
+                                            {% if alert.severity == 'critical' %}
+                                                <div class="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
+                                            {% elif alert.severity == 'high' %}
+                                                <div class="w-3 h-3 bg-orange-500 rounded-full"></div>
+                                            {% elif alert.severity == 'medium' %}
+                                                <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                            {% else %}
+                                                <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="px-2 py-0.5 text-xs font-bold rounded-full
+                                                    {% if alert.severity == 'critical' %}bg-red-600 text-white
+                                                    {% elif alert.severity == 'high' %}bg-orange-500 text-white
+                                                    {% elif alert.severity == 'medium' %}bg-yellow-500 text-white
+                                                    {% else %}bg-blue-500 text-white{% endif %}">
+                                                    {{ alert.severity|upper }}
+                                                </span>
+                                                <h6 class="font-semibold text-gray-800 text-sm">{{ alert.get_alert_type_display }}</h6>
+                                            </div>
+                                            <p class="text-sm text-gray-600 mb-1">{{ alert.message|truncatechars:80 }}</p>
+                                            <div class="flex items-center text-xs text-gray-500">
+                                                <i class="bi bi-person mr-1"></i>
+                                                <span class="font-medium">{{ alert.student.get_full_name }}</span>
+                                                <span class="mx-2">•</span>
+                                                <i class="bi bi-clock mr-1"></i>
+                                                <span>{{ alert.created_at|date:"M d, g:i A" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <a href="{% url 'wellness:alerts_list' %}?severity={{ alert.severity }}" class="ml-3 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs font-medium text-gray-700">
+                                        View
+                                    </a>
                                 </div>
-                                <p class="text-sm text-gray-600">{{ alert.message }}</p>
-                                <p class="text-sm text-gray-500">{{ alert.student.get_full_name }} - {{ alert.created_at|date:"M d, Y" }}</p>
-                            </a>
+                            </div>
                         {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-gray-500">No recent alerts.</p>
+                        <div class="text-center py-8">
+                            <i class="bi bi-check-circle text-4xl text-green-500 mb-3"></i>
+                            <p class="text-gray-600 font-medium">No recent alerts</p>
+                            <p class="text-gray-500 text-sm">System is running smoothly</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
         </div>
         
         <div class="space-y-6">
-            <div class="bg-white rounded-lg shadow">
-                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
-                    <h5 class="text-lg font-semibold">Quick Actions</h5>
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4">
+                    <div class="flex items-center">
+                        <i class="bi bi-lightning-charge-fill text-2xl mr-3"></i>
+                        <div>
+                            <h5 class="text-lg font-bold">Quick Actions</h5>
+                            <p class="text-blue-100 text-sm">Common tasks and tools</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="p-6 space-y-3">
-                    <a href="{% url 'ai_assistant:counselor_chat_view' %}" class="block w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-center px-4 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 font-semibold"><i class="bi bi-robot"></i> BT AI Assistant</a>
-                    <a href="{% url 'wellness:create_intervention' %}" class="block w-full bg-blue-600 text-white text-center px-4 py-2 rounded-lg hover:bg-blue-700">Create Intervention</a>
-                    <a href="{% url 'wellness:at_risk_students' %}" class="block w-full border border-blue-600 text-blue-600 text-center px-4 py-2 rounded-lg hover:bg-blue-50">View All Students</a>
-                    <a href="{% url 'wellness:reports' %}" class="block w-full border border-blue-600 text-blue-600 text-center px-4 py-2 rounded-lg hover:bg-blue-50">View Reports</a>
+                    <a href="{% url 'ai_assistant:counselor_chat_view' %}" class="flex items-center w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 font-semibold transition group">
+                        <i class="bi bi-robot text-xl mr-3"></i>
+                        <div class="flex-1 text-left">
+                            <div class="font-bold">AI Assistant</div>
+                            <div class="text-xs text-purple-100">Get help with interventions</div>
+                        </div>
+                        <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </a>
+                    <a href="{% url 'wellness:create_intervention' %}" class="flex items-center w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-semibold transition group">
+                        <i class="bi bi-plus-circle text-xl mr-3"></i>
+                        <div class="flex-1 text-left">
+                            <div class="font-bold">Create Intervention</div>
+                            <div class="text-xs text-blue-100">Schedule student support</div>
+                        </div>
+                        <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </a>
+                    <a href="{% url 'wellness:at_risk_students' %}" class="flex items-center w-full border-2 border-blue-200 text-blue-700 px-4 py-3 rounded-lg hover:bg-blue-50 hover:border-blue-300 font-semibold transition group">
+                        <i class="bi bi-people text-xl mr-3"></i>
+                        <div class="flex-1 text-left">
+                            <div class="font-bold">View All Students</div>
+                            <div class="text-xs text-blue-500">Browse student profiles</div>
+                        </div>
+                        <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </a>
+                    <a href="{% url 'wellness:reports' %}" class="flex items-center w-full border-2 border-blue-200 text-blue-700 px-4 py-3 rounded-lg hover:bg-blue-50 hover:border-blue-300 font-semibold transition group">
+                        <i class="bi bi-graph-up text-xl mr-3"></i>
+                        <div class="flex-1 text-left">
+                            <div class="font-bold">View Reports</div>
+                            <div class="text-xs text-blue-500">Analytics & insights</div>
+                        </div>
+                        <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </a>
                 </div>
             </div>
             
-            <div class="bg-white rounded-lg shadow">
-                <div class="bg-purple-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
-                    <h5 class="text-lg font-semibold">Upcoming Interventions</h5>
-                    <a href="{% url 'wellness:interventions_list' %}" class="text-sm hover:underline">View All ›</a>
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-4 flex justify-between items-center">
+                    <div class="flex items-center">
+                        <i class="bi bi-calendar-check text-2xl mr-3"></i>
+                        <div>
+                            <h5 class="text-lg font-bold">Upcoming Interventions</h5>
+                            <p class="text-purple-100 text-sm">Scheduled student meetings</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'wellness:interventions_list' %}" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded-lg text-sm font-medium transition">
+                        View All ›
+                    </a>
                 </div>
                 <div class="p-6">
                     {% if upcoming_interventions %}
                         <div class="space-y-3">
                         {% for intervention in upcoming_interventions|slice:":5" %}
-                            <div class="p-3 border rounded-lg">
-                                <h6 class="font-semibold text-gray-800">{{ intervention.student.get_full_name }}</h6>
-                                <p class="text-sm text-gray-600">{{ intervention.get_intervention_type_display }}</p>
-                                <p class="text-sm text-purple-600">{{ intervention.scheduled_date|date:"M d, Y g:i A" }}</p>
+                            <div class="border border-purple-200 rounded-lg p-4 bg-purple-50 hover:bg-purple-100 transition">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                            {{ intervention.student.get_full_name|slice:":1"|upper }}
+                                        </div>
+                                        <div>
+                                            <h6 class="font-bold text-gray-900">{{ intervention.student.get_full_name }}</h6>
+                                            <div class="flex items-center text-sm text-gray-600">
+                                                <i class="bi bi-tag mr-1"></i>
+                                                <span class="font-medium">{{ intervention.get_intervention_type_display }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="flex items-center text-sm font-bold text-purple-700">
+                                            <i class="bi bi-clock mr-1"></i>
+                                            {{ intervention.scheduled_date|date:"M d" }}
+                                        </div>
+                                        <div class="text-xs text-purple-600">
+                                            {{ intervention.scheduled_date|date:"g:i A" }}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-gray-500">No upcoming interventions.</p>
+                        <div class="text-center py-8">
+                            <i class="bi bi-calendar-x text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-600 font-medium">No upcoming interventions</p>
+                            <p class="text-gray-500 text-sm">Schedule meetings with at-risk students</p>
+                            <a href="{% url 'wellness:create_intervention' %}" class="inline-block mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
+                                <i class="bi bi-plus-circle mr-1"></i>Create Intervention
+                            </a>
+                        </div>
                     {% endif %}
                 </div>
+            </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mobile section switching
+function showMobileSection(section) {
+    // Hide all mobile sections
+    document.querySelectorAll('.mobile-section').forEach(el => {
+        el.classList.add('hidden');
+    });
+    
+    // Reset all tab buttons
+    document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-gray-100', 'text-gray-700');
+    });
+    
+    // Show selected section
+    document.getElementById('mobile-' + section).classList.remove('hidden');
+    
+    // Activate selected tab
+    const activeTab = document.getElementById('tab-' + section);
+    activeTab.classList.remove('bg-gray-100', 'text-gray-700');
+    activeTab.classList.add('bg-blue-600', 'text-white');
+}
+
+// Desktop functions
+function toggleHighRiskBySection() {
+    const panel = document.getElementById('highrisk-breakdown');
+    const otherPanels = ['mediumrisk-breakdown'];
+    
+    // Hide other panels
+    otherPanels.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    
+    // Toggle current panel
+    if (panel) panel.classList.toggle('hidden');
+}
+
+function toggleMediumRiskBySection() {
+    const panel = document.getElementById('mediumrisk-breakdown');
+    const otherPanels = ['highrisk-breakdown'];
+    
+    // Hide other panels
+    otherPanels.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    
+    
+    // Toggle current panel
+    if (panel) panel.classList.toggle('hidden');
+}
+</script>
 {% endblock %}

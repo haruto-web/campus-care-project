@@ -7,13 +7,14 @@ from django.db.models import Q
 from django.views.decorators.http import require_POST
 from .models import Conversation, Message
 from accounts.models import User
+from .content_filter import contains_inappropriate_content, filter_message_content
 
 # Role-based allowed recipients
 ALLOWED_RECIPIENTS = {
     'admin':    ['counselor', 'teacher', 'student'],
     'counselor':['admin', 'counselor', 'teacher', 'student'],
     'teacher':  ['counselor', 'admin', 'student'],
-    'student':  ['counselor', 'teacher'],
+    'student':  ['counselor', 'teacher', 'student'],  # Added student-to-student messaging
 }
 
 
@@ -42,6 +43,14 @@ def conversation(request, conv_id):
     if request.method == 'POST':
         body = request.POST.get('body', '').strip()
         attachment = request.FILES.get('attachment')
+        
+        # Content filtering for students
+        if request.user.role == 'student' and body:
+            is_inappropriate, found_words = contains_inappropriate_content(body)
+            if is_inappropriate:
+                messages.error(request, f'Your message contains inappropriate language and cannot be sent. Please use respectful language.')
+                return redirect('messaging:conversation', conv_id=conv.id)
+        
         if body or attachment:
             msg = Message.objects.create(
                 conversation=conv,
@@ -99,6 +108,16 @@ def poll_messages(request, conv_id):
 def new_message(request, recipient_id=None):
     allowed_roles = ALLOWED_RECIPIENTS.get(request.user.role, [])
     recipients_qs = User.objects.filter(role__in=allowed_roles).exclude(id=request.user.id)
+    
+    # Build recipients list with section/year data for JS filtering
+    recipients_data = list(recipients_qs.values('id', 'first_name', 'last_name', 'role', 'year_level', 'section'))
+    for r in recipients_data:
+        r['full_name'] = f"{r['first_name']} {r['last_name']}"
+
+    # Get unique sections and year levels from students
+    students = recipients_qs.filter(role='student')
+    sections = sorted(set(s.section for s in students if s.section))
+    year_levels = sorted(set(s.year_level for s in students if s.year_level))
 
     if request.method == 'POST':
         recipient_id = request.POST.get('recipient') or recipient_id
@@ -109,6 +128,20 @@ def new_message(request, recipient_id=None):
         if recipient.role not in allowed_roles:
             messages.error(request, 'You cannot message this user.')
             return redirect('messaging:inbox')
+        
+        # Content filtering for students
+        if request.user.role == 'student' and body:
+            is_inappropriate, found_words = contains_inappropriate_content(body)
+            if is_inappropriate:
+                messages.error(request, f'Your message contains inappropriate language and cannot be sent. Please use respectful language.')
+                return render(request, 'messaging/new_message.html', {
+                    'recipients_json': recipients_data,
+                    'recipients': recipients_qs,
+                    'selected_recipient': recipient,
+                    'sections': sections,
+                    'year_levels': year_levels,
+                    'available_roles': sorted(set(allowed_roles)),
+                })
 
         # Find existing conversation between these two users
         conv = Conversation.objects.filter(participants=request.user).filter(participants=recipient).first()
@@ -125,16 +158,6 @@ def new_message(request, recipient_id=None):
     selected_recipient = None
     if recipient_id:
         selected_recipient = get_object_or_404(User, id=recipient_id)
-
-    # Build recipients list with section/year data for JS filtering
-    recipients_data = list(recipients_qs.values('id', 'first_name', 'last_name', 'role', 'year_level', 'section'))
-    for r in recipients_data:
-        r['full_name'] = f"{r['first_name']} {r['last_name']}"
-
-    # Get unique sections and year levels from students
-    students = recipients_qs.filter(role='student')
-    sections = sorted(set(s.section for s in students if s.section))
-    year_levels = sorted(set(s.year_level for s in students if s.year_level))
 
     return render(request, 'messaging/new_message.html', {
         'recipients_json': recipients_data,

@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'wellness',
     'ml_models',
     'ai_assistant',
+
     'cloudinary',
     'cloudinary_storage',
     'messaging',
