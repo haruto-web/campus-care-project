@@ -436,7 +436,10 @@ def profile_view(request):
         request.user.phone = request.POST.get('phone', '')
         
         if request.FILES.get('profile_picture'):
-            request.user.profile_picture = request.FILES['profile_picture']
+            try:
+                request.user.profile_picture = request.FILES['profile_picture']
+            except Exception:
+                messages.warning(request, 'Profile picture upload failed. Other changes saved.')
         
         request.user.save()
         messages.success(request, 'Profile updated successfully!')
@@ -639,7 +642,7 @@ def complete_profile_view(request):
             try:
                 user.profile_picture = request.FILES['profile_picture']
             except Exception:
-                pass
+                messages.warning(request, 'Profile picture upload failed. Other changes saved.')
         
         user.profile_completed = True
         user.save()
