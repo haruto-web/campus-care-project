@@ -626,7 +626,7 @@ def student_grades(request):
                     'submission': submission,
                     'score': None,
                     'percentage': None,
-                    'feedback': None,
+                    'feedback': submission.feedback,
                 })
         
         class_average = (class_score / class_points * 100) if class_points > 0 else None
