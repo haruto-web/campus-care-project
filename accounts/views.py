@@ -189,11 +189,13 @@ def student_dashboard(request):
         due_date__gte=now
     ).order_by('due_date')[:5]
     
-    # Get recent announcements (unread only)
+    # Get recent announcements (all, with read status)
     from academics.models import Announcement
     announcements = Announcement.objects.filter(
         Q(class_obj__in=classes) | Q(class_obj__isnull=True)
-    ).exclude(read_by=user).order_by('-created_at')[:3]
+    ).order_by('-created_at')[:6]
+    for a in announcements:
+        a.is_read = a.read_by.filter(id=user.id).exists()
     
     # Get recently graded assignments (last 5)
     recently_graded = Submission.objects.filter(
