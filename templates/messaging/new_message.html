@@ -59,6 +59,8 @@
                         {% if selected_recipient and selected_recipient.id == r.id %}selected{% endif %}>
                         {{ r.get_full_name }} ({{ r.role }}{% if r.year_level %} · Gr.{{ r.year_level }}{% endif %}{% if r.section %} {{ r.section }}{% endif %})
                     </option>
+                    {% empty %}
+                    <option value="" disabled>No users available to message</option>
                     {% endfor %}
                 </select>
             </div>
@@ -147,19 +149,19 @@ function applyStudentFilters() {
     const sel = select.options[select.selectedIndex];
     if (sel && sel.hidden) select.value = '';
 }
-</script>
-<script>
-    function showPreview(input) {
-        if (input.files && input.files[0]) {
-            document.getElementById('fileName').textContent = input.files[0].name;
-            document.getElementById('filePreview').classList.remove('hidden');
-            document.getElementById('filePreview').classList.add('flex');
-        }
+
+function showPreview(input) {
+    if (input.files && input.files[0]) {
+        document.getElementById('fileName').textContent = input.files[0].name;
+        document.getElementById('filePreview').classList.remove('hidden');
+        document.getElementById('filePreview').classList.add('flex');
     }
-    function clearFile() {
-        document.getElementById('attachmentInput').value = '';
-        document.getElementById('filePreview').classList.add('hidden');
-        document.getElementById('filePreview').classList.remove('flex');
-    }
+}
+
+function clearFile() {
+    document.getElementById('attachmentInput').value = '';
+    document.getElementById('filePreview').classList.add('hidden');
+    document.getElementById('filePreview').classList.remove('flex');
+}
 </script>
 {% endblock %}

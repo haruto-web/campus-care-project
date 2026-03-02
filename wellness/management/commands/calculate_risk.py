@@ -12,11 +12,31 @@ class Command(BaseCommand):
         students = User.objects.filter(role='student')
         
         for student in students:
-            # Calculate GPA
+            # Calculate GPA (Philippine 5.0 scale: 1.00 = Excellent, 5.00 = Failing)
             grades = Grade.objects.filter(student=student)
             if grades.exists():
-                gpa = grades.aggregate(Avg('score'))['score__avg']
-                gpa = round(gpa / 25, 2) if gpa else 0  # Convert to 4.0 scale
+                # Convert percentage to Philippine GPA scale
+                avg_percentage = grades.aggregate(Avg('score'))['score__avg']
+                if avg_percentage >= 97:
+                    gpa = 1.00
+                elif avg_percentage >= 94:
+                    gpa = 1.25
+                elif avg_percentage >= 91:
+                    gpa = 1.50
+                elif avg_percentage >= 88:
+                    gpa = 1.75
+                elif avg_percentage >= 85:
+                    gpa = 2.00
+                elif avg_percentage >= 82:
+                    gpa = 2.25
+                elif avg_percentage >= 79:
+                    gpa = 2.50
+                elif avg_percentage >= 76:
+                    gpa = 2.75
+                elif avg_percentage >= 75:
+                    gpa = 3.00  # Passing grade
+                else:
+                    gpa = 5.00  # Failing
             else:
                 gpa = 0
             
@@ -36,15 +56,16 @@ class Command(BaseCommand):
             # Calculate risk score
             risk_score = 0
             
-            # GPA factor (0-40 points)
-            if gpa < 1.5:
+            # GPA factor (0-40 points) - Philippine scale
+            if gpa >= 4.0 or gpa == 5.0:  # Failing grades
                 risk_score += 40
-            elif gpa < 2.0:
+            elif gpa >= 3.5:  # Below average
                 risk_score += 30
-            elif gpa < 2.5:
+            elif gpa >= 3.0:  # Passing but concerning
                 risk_score += 20
-            elif gpa < 3.0:
+            elif gpa >= 2.5:  # Fair
                 risk_score += 10
+            # 1.0-2.25 = Good to Excellent (no risk points)
             
             # Attendance factor (0-30 points)
             if attendance_rate < 60:

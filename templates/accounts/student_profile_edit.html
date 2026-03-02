@@ -109,25 +109,6 @@
                 </div>
             </div>
 
-            <!-- Academic Stats (Read-only) -->
-            <div class="mb-8">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Academic Performance</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p class="text-sm text-gray-600 mb-1">Current GPA</p>
-                        <p class="text-2xl font-bold text-blue-600">{{ gpa|default:"N/A" }}</p>
-                    </div>
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <p class="text-sm text-gray-600 mb-1">Attendance Rate</p>
-                        <p class="text-2xl font-bold text-green-600">{{ attendance_rate|default:"N/A" }}%</p>
-                    </div>
-                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                        <p class="text-sm text-gray-600 mb-1">Enrolled Classes</p>
-                        <p class="text-2xl font-bold text-purple-600">{{ enrolled_classes_count }}</p>
-                    </div>
-                </div>
-            </div>
-
             <!-- Submit Buttons -->
             <div class="flex gap-4">
                 <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">

@@ -31,10 +31,12 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 CSRF_TRUSTED_ORIGINS = [f'https://{RENDER_EXTERNAL_HOSTNAME}'] if RENDER_EXTERNAL_HOSTNAME else []
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.append(f'https://www.{RENDER_EXTERNAL_HOSTNAME}')
 
 
 # Application definition
@@ -56,6 +58,7 @@ INSTALLED_APPS = [
     'wellness',
     'ml_models',
     'ai_assistant',
+
     'cloudinary',
     'cloudinary_storage',
     'messaging',
@@ -163,7 +166,7 @@ CLOUDINARY_STORAGE = {
 
 if config('CLOUDINARY_CLOUD_NAME', default='') and not DEBUG:
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    MEDIA_URL = '/media/'
+    MEDIA_URL = 'https://res.cloudinary.com/{}/'.format(config('CLOUDINARY_CLOUD_NAME', default=''))
 else:
     MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

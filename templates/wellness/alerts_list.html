@@ -1,10 +1,14 @@
 {% extends 'base.html' %}
 
-{% block title %}Alerts & Notifications{% endblock %}
+{% block title %}Student Notifications{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
-    <h2 class="text-3xl font-bold text-gray-800">Alerts & Notifications</h2>
+    <!-- Header with explanation -->
+    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 p-6 rounded-lg">
+        <h2 class="text-3xl font-bold text-gray-800 mb-2">Student Notifications</h2>
+        <p class="text-yellow-800">🔔 Important updates about students who may need your attention or support.</p>
+    </div>
     
     <!-- Warning Banner for Critical/High Alerts -->
     {% if critical_unread > 0 or high_unread > 0 %}
@@ -24,17 +28,14 @@
     </div>
 
     <!-- AI Suggestion Banner -->
+    {% if students_needing_intervention > 0 %}
     <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-5 rounded-lg shadow-lg">
         <div class="flex items-start gap-4">
             <i class="bi bi-robot text-3xl flex-shrink-0"></i>
             <div class="flex-1">
                 <h3 class="font-bold text-lg mb-1">🤖 BT AI Assistant Recommendation</h3>
                 <p class="text-purple-100 text-sm mb-3">
-                    You have
-                    {% if critical_unread > 0 %}<strong>{{ critical_unread }} critical</strong>{% endif %}
-                    {% if critical_unread > 0 and high_unread > 0 %} and {% endif %}
-                    {% if high_unread > 0 %}<strong>{{ high_unread }} high severity</strong>{% endif %}
-                    unresolved alerts. These students may need immediate intervention.
+                    You have <strong>{{ students_needing_intervention }} student(s)</strong> with critical/high alerts who don't have scheduled interventions yet.
                     Would you like AI to help you create intervention plans for them?
                 </p>
                 <div class="flex flex-wrap gap-3">
@@ -56,78 +57,151 @@
         </div>
     </div>
     {% endif %}
+    {% endif %}
     
+    <!-- Search and Filter Section -->
     <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">🔍 Find Notifications</h3>
         <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <select name="type" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">All Types</option>
-                <option value="high_risk" {% if alert_type == 'high_risk' %}selected{% endif %}>High Risk Student</option>
-                <option value="missing_assignments" {% if alert_type == 'missing_assignments' %}selected{% endif %}>Missing Assignments</option>
-                <option value="low_attendance" {% if alert_type == 'low_attendance' %}selected{% endif %}>Low Attendance</option>
-                <option value="wellness_concern" {% if alert_type == 'wellness_concern' %}selected{% endif %}>Wellness Concern</option>
-                <option value="teacher_concern" {% if alert_type == 'teacher_concern' %}selected{% endif %}>Teacher Concern</option>
-            </select>
-            <select name="severity" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">All Severity</option>
-                <option value="critical" {% if severity_filter == 'critical' %}selected{% endif %}>Critical</option>
-                <option value="high" {% if severity_filter == 'high' %}selected{% endif %}>High</option>
-                <option value="medium" {% if severity_filter == 'medium' %}selected{% endif %}>Medium</option>
-                <option value="low" {% if severity_filter == 'low' %}selected{% endif %}>Low</option>
-            </select>
-            <select name="resolved" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">Active Only</option>
-                <option value="true" {% if show_resolved == 'true' %}selected{% endif %}>Show All (History)</option>
-            </select>
-            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Filter</button>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notification Type</label>
+                <select name="type" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Types</option>
+                    <option value="high_risk" {% if alert_type == 'high_risk' %}selected{% endif %}>🔴 Student Needs Help</option>
+                    <option value="missing_assignments" {% if alert_type == 'missing_assignments' %}selected{% endif %}>📄 Missing Homework</option>
+                    <option value="low_attendance" {% if alert_type == 'low_attendance' %}selected{% endif %}>📅 Attendance Issues</option>
+                    <option value="wellness_concern" {% if alert_type == 'wellness_concern' %}selected{% endif %}>💖 Wellness Check</option>
+                    <option value="teacher_concern" {% if alert_type == 'teacher_concern' %}selected{% endif %}>📝 Teacher Report</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Priority Level</label>
+                <select name="severity" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Priorities</option>
+                    <option value="critical" {% if severity_filter == 'critical' %}selected{% endif %}>🔥 Urgent</option>
+                    <option value="high" {% if severity_filter == 'high' %}selected{% endif %}>🔴 High Priority</option>
+                    <option value="medium" {% if severity_filter == 'medium' %}selected{% endif %}>🟡 Medium Priority</option>
+                    <option value="low" {% if severity_filter == 'low' %}selected{% endif %}>🟢 Low Priority</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="resolved" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Active Only</option>
+                    <option value="true" {% if show_resolved == 'true' %}selected{% endif %}>Show All (History)</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">🔍 Search</button>
+            </div>
         </form>
     </div>
-    
-    {% for alert in alerts %}
-    <div class="bg-white rounded-lg shadow border-l-4 
-        {% if alert.severity == 'critical' %}border-red-600 bg-red-50
-        {% elif alert.severity == 'high' %}border-orange-500 bg-orange-50
-        {% elif alert.severity == 'medium' %}border-yellow-500 bg-yellow-50
-        {% else %}border-blue-500 bg-blue-50{% endif %}">
-        <div class="p-6">
-            <div class="flex justify-between items-start">
-                <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-2">
-                        <h5 class="text-lg font-bold text-gray-800">{{ alert.get_alert_type_display }}</h5>
-                        <span class="px-3 py-1 text-xs font-bold rounded-full
-                            {% if alert.severity == 'critical' %}bg-red-600 text-white
-                            {% elif alert.severity == 'high' %}bg-orange-500 text-white
-                            {% elif alert.severity == 'medium' %}bg-yellow-500 text-white
-                            {% else %}bg-blue-500 text-white{% endif %}">
-                            {{ alert.get_severity_display|upper }}
-                        </span>
-                        {% if not alert.is_read %}
-                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 animate-pulse">NEW</span>
-                        {% endif %}
-                        {% if alert.resolved %}
-                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">RESOLVED</span>
-                        {% endif %}
+    <!-- Results Section -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800">📄 Notification List</h3>
+            <p class="text-gray-600 text-sm mt-1">Click "Mark Read" or "Resolve" to take action on notifications.</p>
+        </div>
+        
+        <div class="max-h-96 overflow-y-auto p-6">
+            {% if alerts %}
+                <div class="space-y-4">
+                    {% for alert in alerts %}
+                    <div class="bg-white rounded-lg border-2 hover:shadow-md transition
+                        {% if alert.severity == 'critical' %}border-red-200 bg-red-50
+                        {% elif alert.severity == 'high' %}border-orange-200 bg-orange-50
+                        {% elif alert.severity == 'medium' %}border-yellow-200 bg-yellow-50
+                        {% else %}border-blue-200 bg-blue-50{% endif %}">
+                        <div class="p-6">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <!-- Student Header -->
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg
+                                            {% if alert.severity == 'critical' %}bg-red-500
+                                            {% elif alert.severity == 'high' %}bg-orange-500
+                                            {% elif alert.severity == 'medium' %}bg-yellow-500
+                                            {% else %}bg-blue-500{% endif %}">
+                                            {{ alert.student.get_full_name|slice:":1"|upper }}
+                                        </div>
+                                        <div class="ml-3">
+                                            <a href="{% url 'student_profile' alert.student.id %}" class="text-lg font-bold text-blue-600 hover:text-blue-900">{{ alert.student.get_full_name }}</a>
+                                            <p class="text-sm text-gray-600">Grade {{ alert.student.year_level|default:"?" }} - {{ alert.student.section|default:"No Section" }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Notification Details -->
+                                    <div class="mb-3">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <h5 class="text-lg font-semibold text-gray-800">
+                                                {% if alert.alert_type == 'high_risk' %}🔴 Student Needs Help
+                                                {% elif alert.alert_type == 'missing_assignments' %}📄 Missing Homework
+                                                {% elif alert.alert_type == 'low_attendance' %}📅 Attendance Issues
+                                                {% elif alert.alert_type == 'wellness_concern' %}💖 Wellness Check
+                                                {% elif alert.alert_type == 'teacher_concern' %}📝 Teacher Report
+                                                {% else %}{{ alert.get_alert_type_display }}{% endif %}
+                                            </h5>
+                                            
+                                            <!-- Priority Badge -->
+                                            {% if alert.severity == 'critical' %}
+                                                <span class="px-3 py-1 text-sm font-bold rounded-full bg-red-600 text-white">🔥 URGENT</span>
+                                            {% elif alert.severity == 'high' %}
+                                                <span class="px-3 py-1 text-sm font-bold rounded-full bg-orange-500 text-white">🔴 HIGH</span>
+                                            {% elif alert.severity == 'medium' %}
+                                                <span class="px-3 py-1 text-sm font-bold rounded-full bg-yellow-500 text-white">🟡 MEDIUM</span>
+                                            {% else %}
+                                                <span class="px-3 py-1 text-sm font-bold rounded-full bg-blue-500 text-white">🟢 LOW</span>
+                                            {% endif %}
+                                            
+                                            {% if not alert.is_read %}
+                                                <span class="px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800 animate-pulse">🆕 NEW</span>
+                                            {% endif %}
+                                            {% if alert.resolved %}
+                                                <span class="px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">✅ RESOLVED</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="text-gray-700 mb-2">{{ alert.message }}</p>
+                                        <p class="text-sm text-gray-500">
+                                            🕰️ {{ alert.created_at|date:"M d, Y g:i A" }}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                {% if not alert.resolved %}
+                                <div class="flex flex-col space-y-2 ml-4">
+                                    {% if not alert.is_read %}
+                                    <a href="{% url 'wellness:mark_alert_read' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}" 
+                                       class="px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-semibold transition text-center">
+                                        👁️ Mark Read
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'wellness:resolve_alert' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}" 
+                                       class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition text-center">
+                                        ✅ Resolve
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
-                    <p class="text-gray-700 mb-2">{{ alert.message }}</p>
-                    <p class="text-sm text-gray-500">
-                        <a href="{% url 'student_profile' alert.student.id %}" class="text-blue-600 hover:text-blue-900 font-semibold">{{ alert.student.get_full_name }}</a>
-                        | {{ alert.created_at|date:"M d, Y g:i A" }}
-                    </p>
+                    {% endfor %}
                 </div>
-                {% if not alert.resolved %}
-                <div class="flex space-x-2">
-                    {% if not alert.is_read %}
-                    <a href="{% url 'wellness:mark_alert_read' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}" class="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-semibold">Mark Read</a>
-                    {% endif %}
-                    <a href="{% url 'wellness:resolve_alert' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold">Resolve</a>
+            {% else %}
+                <div class="text-center py-12">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle text-6xl text-green-500"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No notifications found</h3>
+                    <p class="text-gray-500 mb-4">Great! No students need immediate attention right now.</p>
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
+                        <p class="text-green-800 text-sm">
+                            🎉 <strong>All clear!</strong> This means your students are doing well and no urgent issues have been detected.
+                        </p>
+                    </div>
                 </div>
-                {% endif %}
-            </div>
+            {% endif %}
         </div>
     </div>
-    {% empty %}
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center text-blue-800">
-        No alerts found.
-    </div>
-    {% endfor %}
 </div>
 {% endblock %}

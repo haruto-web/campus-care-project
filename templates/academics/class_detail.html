@@ -3,280 +3,320 @@
 {% block title %}{{ class.name }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto space-y-6">
-    <!-- Class Header with Gradient -->
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 sm:p-8 text-white">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+<div class="max-w-7xl mx-auto space-y-4 px-2 sm:px-4">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-700 to-indigo-700 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h2 class="text-2xl sm:text-3xl font-bold mb-2">{{ class.code }}</h2>
-                <p class="text-lg sm:text-xl text-blue-100 mb-2">{{ class.name }}</p>
-                <p class="text-blue-100 text-sm">{{ class.description }}</p>
+                <div class="flex items-center gap-3 mb-1">
+                    <span class="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full tracking-wide">{{ class.code }}</span>
+                    {% if class.year_level %}<span class="bg-white/20 text-white text-xs px-3 py-1 rounded-full">Grade {{ class.year_level }}</span>{% endif %}
+                    {% if class.section %}<span class="bg-white/20 text-white text-xs px-3 py-1 rounded-full">{{ class.section }}</span>{% endif %}
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold">{{ class.name }}</h1>
+                {% if class.description %}<p class="text-blue-200 text-sm mt-1">{{ class.description }}</p>{% endif %}
             </div>
-            <div class="sm:text-right">
-                <div class="bg-white/20 backdrop-blur rounded-lg px-4 py-2 inline-block">
-                    <p class="text-sm text-blue-100">Students Enrolled</p>
-                    <p class="text-3xl font-bold">{{ class.students.count }}</p>
+            <div class="flex gap-4 text-center">
+                <div class="bg-white/15 rounded-xl px-5 py-3">
+                    <p class="text-2xl font-bold">{{ class.students.count }}</p>
+                    <p class="text-blue-200 text-xs">Students</p>
+                </div>
+                <div class="bg-white/15 rounded-xl px-5 py-3">
+                    <p class="text-2xl font-bold">{{ assignments|length }}</p>
+                    <p class="text-blue-200 text-xs">Assignments</p>
                 </div>
             </div>
+        </div>
+
+        <!-- Class meta row -->
+        <div class="flex flex-wrap gap-4 mt-4 text-sm text-blue-100">
+            <span class="flex items-center gap-1"><i class="bi bi-person"></i> {{ class.teacher.get_full_name }}</span>
+            <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i> {{ class.semester }}</span>
+            {% if class.schedule %}<span class="flex items-center gap-1"><i class="bi bi-clock"></i> {{ class.schedule }}</span>{% endif %}
+            {% if class.room %}<span class="flex items-center gap-1"><i class="bi bi-geo-alt"></i> Room {{ class.room }}</span>{% endif %}
         </div>
     </div>
 
-    <!-- Quick Actions Bar -->
-    <div class="bg-white rounded-lg shadow p-3 sm:p-4">
-        <div class="flex flex-wrap gap-2">
-            {% if user.role == 'teacher' and class.teacher == user %}
-            <a href="{% url 'academics:edit_class' class.id %}" class="flex items-center gap-1.5 bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition text-sm">
-                <i class="bi bi-pencil"></i> <span class="hidden sm:inline">Edit Class</span><span class="sm:hidden">Edit</span>
+    <!-- Teacher Quick Actions -->
+    {% if user.role == 'teacher' and class.teacher == user %}
+    <div class="bg-white rounded-xl shadow p-4">
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Quick Actions</p>
+        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <a href="{% url 'academics:create_assignment' class.id %}" class="flex flex-col items-center gap-1.5 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 rounded-xl p-3 transition text-center">
+                <i class="bi bi-plus-circle-fill text-xl"></i>
+                <span class="text-xs font-medium">Assignment</span>
             </a>
-            <a href="{% url 'academics:manage_students' class.id %}" class="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
-                <i class="bi bi-people"></i> <span class="hidden sm:inline">Manage Students</span><span class="sm:hidden">Students</span>
+            <a href="{% url 'academics:mark_attendance' class.id %}" class="flex flex-col items-center gap-1.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 rounded-xl p-3 transition text-center">
+                <i class="bi bi-check2-square text-xl"></i>
+                <span class="text-xs font-medium">Attendance</span>
             </a>
-            <a href="{% url 'academics:create_assignment' class.id %}" class="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition text-sm">
-                <i class="bi bi-plus-circle"></i> <span class="hidden sm:inline">New Assignment</span><span class="sm:hidden">Assign</span>
+            <a href="{% url 'academics:create_announcement' class.id %}" class="flex flex-col items-center gap-1.5 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 rounded-xl p-3 transition text-center">
+                <i class="bi bi-megaphone-fill text-xl"></i>
+                <span class="text-xs font-medium">Announce</span>
             </a>
-            <a href="{% url 'academics:mark_attendance' class.id %}" class="flex items-center gap-1.5 bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition text-sm">
-                <i class="bi bi-check2-square"></i> <span class="hidden sm:inline">Mark Attendance</span><span class="sm:hidden">Attend</span>
+            <a href="{% url 'academics:upload_material' class.id %}" class="flex flex-col items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-xl p-3 transition text-center">
+                <i class="bi bi-upload text-xl"></i>
+                <span class="text-xs font-medium">Material</span>
             </a>
-            <a href="{% url 'academics:create_announcement' class.id %}" class="flex items-center gap-1.5 bg-yellow-600 text-white px-3 py-2 rounded-lg hover:bg-yellow-700 transition text-sm">
-                <i class="bi bi-megaphone"></i> <span class="hidden sm:inline">Post Announcement</span><span class="sm:hidden">Announce</span>
+            <a href="{% url 'academics:manage_students' class.id %}" class="flex flex-col items-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-xl p-3 transition text-center">
+                <i class="bi bi-people-fill text-xl"></i>
+                <span class="text-xs font-medium">Students</span>
             </a>
-            <a href="{% url 'academics:upload_material' class.id %}" class="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition text-sm">
-                <i class="bi bi-upload"></i> <span class="hidden sm:inline">Upload Material</span><span class="sm:hidden">Upload</span>
+            <a href="{% url 'academics:edit_class' class.id %}" class="flex flex-col items-center gap-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl p-3 transition text-center">
+                <i class="bi bi-gear-fill text-xl"></i>
+                <span class="text-xs font-medium">Settings</span>
             </a>
-            {% endif %}
         </div>
     </div>
+    {% endif %}
 
-    <!-- Class Info Grid -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
-            <div class="flex items-center gap-3">
-                <div class="bg-blue-100 p-3 rounded-lg">
-                    <i class="bi bi-person text-2xl text-blue-600"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600">Teacher</p>
-                    <p class="font-semibold text-gray-800">{{ class.teacher.get_full_name }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
-            <div class="flex items-center gap-3">
-                <div class="bg-green-100 p-3 rounded-lg">
-                    <i class="bi bi-calendar text-2xl text-green-600"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600">Semester</p>
-                    <p class="font-semibold text-gray-800">{{ class.semester }}</p>
-                </div>
-            </div>
-        </div>
-        {% if class.schedule %}
-        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
-            <div class="flex items-center gap-3">
-                <div class="bg-purple-100 p-3 rounded-lg">
-                    <i class="bi bi-clock text-2xl text-purple-600"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600">Schedule</p>
-                    <p class="font-semibold text-gray-800">{{ class.schedule }}</p>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        {% if class.room %}
-        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
-            <div class="flex items-center gap-3">
-                <div class="bg-yellow-100 p-3 rounded-lg">
-                    <i class="bi bi-door-open text-2xl text-yellow-600"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600">Room</p>
-                    <p class="font-semibold text-gray-800">{{ class.room }}</p>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Announcements Section -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
-            <h3 class="text-lg font-semibold flex items-center gap-2">
+    <!-- Tabs -->
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+        <div class="flex border-b overflow-x-auto">
+            <button onclick="showTab('assignments')" id="tab-assignments" class="tab-btn active-tab px-5 py-3 text-sm font-semibold whitespace-nowrap flex items-center gap-2">
+                <i class="bi bi-clipboard-check"></i> Assignments
+                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">{{ assignments|length }}</span>
+            </button>
+            <button onclick="showTab('announcements')" id="tab-announcements" class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap flex items-center gap-2 text-gray-500 hover:text-gray-800">
                 <i class="bi bi-megaphone"></i> Announcements
-            </h3>
-            {% if user.role == 'teacher' and class.teacher == user %}
-            <a href="{% url 'academics:create_announcement' class.id %}" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition text-sm">
-                + New
-            </a>
-            {% endif %}
+                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ announcements|length }}</span>
+            </button>
+            <button onclick="showTab('materials')" id="tab-materials" class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap flex items-center gap-2 text-gray-500 hover:text-gray-800">
+                <i class="bi bi-folder2-open"></i> Materials
+                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ materials|length }}</span>
+            </button>
+            <button onclick="showTab('roster')" id="tab-roster" class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap flex items-center gap-2 text-gray-500 hover:text-gray-800">
+                <i class="bi bi-people"></i> Roster
+                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ class.students.count }}</span>
+            </button>
         </div>
-        <div class="p-6">
-            {% if announcements %}
-                <div class="space-y-3">
-                {% for announcement in announcements %}
-                <div class="p-4 border-l-4 {% if announcement.priority == 'urgent' %}border-red-500 bg-red-50{% else %}border-blue-500 bg-blue-50{% endif %} rounded-r-lg hover:shadow-md transition">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-1">
-                                <h6 class="font-semibold text-gray-800">{{ announcement.title }}</h6>
-                                {% if announcement.priority == 'urgent' %}
-                                <span class="px-2 py-1 bg-red-600 text-white rounded text-xs">URGENT</span>
+
+        <!-- Assignments Tab -->
+        <div id="panel-assignments" class="tab-panel p-5">
+            {% if assignments %}
+            <div class="space-y-3">
+                {% for assignment in assignments %}
+                {% with now=assignment.due_date %}
+                <div class="border rounded-xl p-4 hover:shadow-md transition group">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3 flex-1 min-w-0">
+                            <!-- Submission type icon -->
+                            <div class="mt-0.5 shrink-0">
+                                {% if assignment.submission_type == 'text_entry' %}
+                                <div class="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="bi bi-pencil-square text-green-600"></i>
+                                </div>
+                                {% elif assignment.submission_type == 'both' %}
+                                <div class="w-9 h-9 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <i class="bi bi-layers text-purple-600"></i>
+                                </div>
+                                {% else %}
+                                <div class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="bi bi-file-earmark-arrow-up text-blue-600"></i>
+                                </div>
                                 {% endif %}
                             </div>
-                            <p class="text-gray-700 mb-2">{{ announcement.content }}</p>
-                            <small class="text-gray-500">{{ announcement.author.get_full_name }} • {{ announcement.created_at|date:"M d, Y" }}</small>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-gray-500 text-center py-4">No announcements yet.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Class Materials Section -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
-            <h3 class="text-lg font-semibold flex items-center gap-2">
-                <i class="bi bi-file-earmark"></i> Class Materials
-            </h3>
-            {% if user.role == 'teacher' and class.teacher == user %}
-            <a href="{% url 'academics:upload_material' class.id %}" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition text-sm">
-                + Upload
-            </a>
-            {% endif %}
-        </div>
-        <div class="p-6">
-            {% if materials %}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {% for material in materials %}
-                <div class="p-4 border rounded-lg hover:shadow-md hover:border-purple-300 transition group">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <i class="bi bi-file-earmark-pdf text-2xl text-purple-600"></i>
-                                <div>
-                                    <a href="{{ material.file.url }}" target="_blank" class="font-semibold text-gray-800 hover:text-purple-600">
-                                        {{ material.title }}
-                                    </a>
-                                    {% if material.description %}
-                                    <p class="text-sm text-gray-600">{{ material.description }}</p>
-                                    {% endif %}
+                            <div class="min-w-0">
+                                <h4 class="font-semibold text-gray-900 truncate">{{ assignment.title }}</h4>
+                                <p class="text-sm text-gray-500 mt-0.5 line-clamp-1">{{ assignment.description|truncatewords:15 }}</p>
+                                <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500">
+                                    <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i> Due {{ assignment.due_date|date:"M d, Y · g:i A" }}</span>
+                                    <span class="flex items-center gap-1"><i class="bi bi-trophy"></i> {{ assignment.total_points }} pts</span>
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                                        {% if assignment.submission_type == 'text_entry' %}bg-green-100 text-green-700
+                                        {% elif assignment.submission_type == 'both' %}bg-purple-100 text-purple-700
+                                        {% else %}bg-blue-100 text-blue-700{% endif %}">
+                                        {% if assignment.submission_type == 'text_entry' %}Text Entry
+                                        {% elif assignment.submission_type == 'both' %}File or Text
+                                        {% else %}File Upload{% endif %}
+                                    </span>
                                 </div>
                             </div>
-                            <small class="text-gray-500">{{ material.uploaded_at|date:"M d, Y" }}</small>
                         </div>
-                        <div class="flex gap-2">
-                            <a href="{{ material.file.url }}" download class="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition">
-                                <i class="bi bi-download"></i>
+                        <div class="flex items-center gap-2 shrink-0">
+                            {% if user.role == 'teacher' %}
+                            <a href="{% url 'academics:view_submissions' class.id assignment.id %}" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-1.5">
+                                <i class="bi bi-eye"></i> <span class="hidden sm:inline">Submissions</span>
                             </a>
-                            {% if user.role == 'teacher' and class.teacher == user %}
-                            <a href="{% url 'academics:delete_material' material.id %}" 
-                               class="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition"
-                               onclick="return confirm('Delete this material?')">
+                            <a href="{% url 'academics:delete_assignment' assignment.id %}"
+                               class="bg-red-50 text-red-600 border border-red-200 px-2.5 py-2 rounded-lg hover:bg-red-100 transition text-sm"
+                               onclick="return confirm('Delete this assignment and all submissions?')">
                                 <i class="bi bi-trash"></i>
                             </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-gray-500 text-center py-4">No materials uploaded yet.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Class Roster Section -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
-            <h3 class="text-lg font-semibold flex items-center gap-2">
-                <i class="bi bi-people"></i> Class Roster ({{ class.students.count }})
-            </h3>
-            {% if user.role == 'teacher' and class.teacher == user %}
-            <a href="{% url 'academics:manage_students' class.id %}" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition text-sm">
-                Manage
-            </a>
-            {% endif %}
-        </div>
-        <div class="p-6">
-            {% if class.students.all %}
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {% for student in class.students.all %}
-                    <div class="p-4 border rounded-lg hover:shadow-md hover:border-green-300 transition group">
-                        <div class="flex items-center gap-3">
-                            <div class="bg-green-100 p-3 rounded-full group-hover:bg-green-200 transition">
-                                <i class="bi bi-person text-2xl text-green-600"></i>
-                            </div>
-                            <div>
-                                <strong class="text-gray-800">{{ student.get_full_name }}</strong>
-                                <p class="text-sm text-gray-600">{{ student.email }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-gray-500 text-center py-4">No students enrolled yet.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Assignments Section -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
-            <h3 class="text-lg font-semibold flex items-center gap-2">
-                <i class="bi bi-clipboard-check"></i> Assignments
-            </h3>
-            {% if user.role == 'teacher' and class.teacher == user %}
-            <a href="{% url 'academics:create_assignment' class.id %}" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition text-sm">
-                + Create
-            </a>
-            {% endif %}
-        </div>
-        <div class="p-6">
-            {% if assignments %}
-                <div class="space-y-3">
-                {% for assignment in assignments %}
-                <div class="p-4 border rounded-lg hover:shadow-md hover:border-blue-300 transition">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h6 class="font-semibold text-gray-800 mb-1">{{ assignment.title }}</h6>
-                            <p class="text-sm text-gray-600 mb-2">{{ assignment.description|truncatewords:20 }}</p>
-                            <div class="flex items-center gap-4 text-sm text-gray-500">
-                                <span><i class="bi bi-calendar mr-1"></i>{{ assignment.due_date|date:"M d, Y" }}</span>
-                                <span><i class="bi bi-trophy mr-1"></i>{{ assignment.total_points }} pts</span>
-                            </div>
-                        </div>
-                        <div>
-                            {% if user.role == 'teacher' %}
-                                <a href="{% url 'academics:view_submissions' class.id assignment.id %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition inline-flex items-center gap-2">
-                                    <i class="bi bi-eye"></i> View
-                                </a>
                             {% elif user.role == 'student' %}
                                 {% if assignment.has_submission %}
-                                    <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition inline-flex items-center gap-2">
-                                        <i class="bi bi-arrow-repeat"></i> Re-submit
-                                    </a>
+                                <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-amber-500 text-white px-3 py-2 rounded-lg hover:bg-amber-600 transition text-sm flex items-center gap-1.5">
+                                    <i class="bi bi-arrow-repeat"></i> Re-submit
+                                </a>
                                 {% else %}
-                                    <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition inline-flex items-center gap-2">
-                                        <i class="bi bi-upload"></i> Submit
-                                    </a>
+                                <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition text-sm flex items-center gap-1.5">
+                                    <i class="bi bi-upload"></i> Submit
+                                </a>
                                 {% endif %}
                             {% endif %}
                         </div>
                     </div>
                 </div>
+                {% endwith %}
                 {% endfor %}
-                </div>
+            </div>
             {% else %}
-                <p class="text-gray-500 text-center py-4">No assignments yet.</p>
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="bi bi-clipboard-check text-3xl text-blue-400"></i>
+                </div>
+                <p class="text-gray-500 font-medium">No assignments yet</p>
+                {% if user.role == 'teacher' and class.teacher == user %}
+                <a href="{% url 'academics:create_assignment' class.id %}" class="mt-3 inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
+                    <i class="bi bi-plus-circle"></i> Create First Assignment
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Announcements Tab -->
+        <div id="panel-announcements" class="tab-panel hidden p-5">
+            {% if announcements %}
+            <div class="space-y-3">
+                {% for announcement in announcements %}
+                <div class="rounded-xl border-l-4 p-4 {% if announcement.priority == 'urgent' %}border-red-500 bg-red-50{% else %}border-blue-400 bg-blue-50{% endif %}">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h4 class="font-semibold text-gray-900">{{ announcement.title }}</h4>
+                                {% if announcement.priority == 'urgent' %}
+                                <span class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">URGENT</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-700 text-sm">{{ announcement.content }}</p>
+                            <p class="text-xs text-gray-400 mt-2">{{ announcement.author.get_full_name }} · {{ announcement.created_at|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="bi bi-megaphone text-3xl text-yellow-400"></i>
+                </div>
+                <p class="text-gray-500 font-medium">No announcements yet</p>
+                {% if user.role == 'teacher' and class.teacher == user %}
+                <a href="{% url 'academics:create_announcement' class.id %}" class="mt-3 inline-flex items-center gap-2 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition text-sm">
+                    <i class="bi bi-plus-circle"></i> Post Announcement
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Materials Tab -->
+        <div id="panel-materials" class="tab-panel hidden p-5">
+            {% if materials %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {% for material in materials %}
+                <div class="border rounded-xl p-4 hover:shadow-md transition flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="bi bi-file-earmark-text text-purple-600 text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <a href="{{ material.file.url }}" target="_blank" class="font-semibold text-gray-800 hover:text-purple-600 truncate block">{{ material.title }}</a>
+                            {% if material.description %}<p class="text-xs text-gray-500 truncate">{{ material.description }}</p>{% endif %}
+                            <p class="text-xs text-gray-400 mt-0.5">{{ material.uploaded_at|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 shrink-0">
+                        <a href="{{ material.file.url }}" download class="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition">
+                            <i class="bi bi-download"></i>
+                        </a>
+                        {% if user.role == 'teacher' and class.teacher == user %}
+                        <a href="{% url 'academics:delete_material' material.id %}"
+                           class="bg-red-50 text-red-600 border border-red-200 p-2 rounded-lg hover:bg-red-100 transition"
+                           onclick="return confirm('Delete this material?')">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="bi bi-folder2-open text-3xl text-purple-400"></i>
+                </div>
+                <p class="text-gray-500 font-medium">No materials uploaded yet</p>
+                {% if user.role == 'teacher' and class.teacher == user %}
+                <a href="{% url 'academics:upload_material' class.id %}" class="mt-3 inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition text-sm">
+                    <i class="bi bi-upload"></i> Upload Material
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Roster Tab -->
+        <div id="panel-roster" class="tab-panel hidden p-5">
+            {% if class.students.all %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {% for student in class.students.all %}
+                <div class="border rounded-xl p-3 flex items-center gap-3 hover:shadow-md transition">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+                        {{ student.get_full_name|slice:":1"|upper }}
+                    </div>
+                    <div class="min-w-0">
+                        <p class="font-semibold text-gray-800 truncate">{{ student.get_full_name }}</p>
+                        <p class="text-xs text-gray-500 truncate">{{ student.email }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="bi bi-people text-3xl text-green-400"></i>
+                </div>
+                <p class="text-gray-500 font-medium">No students enrolled yet</p>
+                {% if user.role == 'teacher' and class.teacher == user %}
+                <a href="{% url 'academics:manage_students' class.id %}" class="mt-3 inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
+                    <i class="bi bi-person-plus"></i> Add Students
+                </a>
+                {% endif %}
+            </div>
             {% endif %}
         </div>
     </div>
 </div>
+
+<style>
+.active-tab {
+    color: #2563eb;
+    border-bottom: 2px solid #2563eb;
+    background: #eff6ff;
+}
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>
+
+<script>
+function showTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active-tab');
+        b.classList.add('text-gray-500');
+        b.classList.remove('text-gray-800');
+    });
+    document.getElementById('panel-' + name).classList.remove('hidden');
+    const btn = document.getElementById('tab-' + name);
+    btn.classList.add('active-tab');
+    btn.classList.remove('text-gray-500');
+}
+</script>
 {% endblock %}

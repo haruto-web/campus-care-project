@@ -66,8 +66,10 @@ campus-care-project/
 ├── messaging/                # Direct messaging system
 │   ├── models.py            # Conversation, Message (with file attachments)
 │   ├── views.py             # Inbox, conversation thread, compose
+│   ├── content_filter.py    # Content filtering for inappropriate language
 │   ├── urls.py              # Messaging routes
-│   └── context_processors.py# Unread message count for navbar badge
+│   ├── context_processors.py# Unread message count for navbar badge
+│   └── management/commands/ # User management and testing tools
 │
 ├── ml_models/                # AI/ML features
 │   ├── models.py            # SentimentAnalysis model
@@ -177,8 +179,9 @@ Inbox → Conversation Thread
     ↓
 ├── Send text messages
 ├── Attach files/images (paperclip icon)
+├── Content filtering (students only)
 └── Compose New Message
-    ├── Filter by Role (All/Admin/Counselor/Teacher/Student)
+    ├── Filter by Role (All/Counselor/Teacher/Student)
     └── Student sub-filters (Year Level + Section)
 ```
 
@@ -188,7 +191,7 @@ Inbox → Conversation Thread
 | Admin | Counselor, Teacher, Student |
 | Counselor | Admin, Counselor, Teacher, Student |
 | Teacher | Counselor, Admin, Student |
-| Student | Counselor, Teacher |
+| Student | Counselor, Teacher, Student |
 
 ---
 
@@ -216,15 +219,23 @@ class Message(models.Model):
     is_read = models.BooleanField(default=False)
 ```
 
-### **3. Bulk Intervention Creation** (`wellness/views.py`)
+### **3. Content Filtering System** (`messaging/content_filter.py`)
+```python
+def contains_inappropriate_content(text):
+    # Filters Filipino and English inappropriate words
+    # Returns (is_inappropriate, found_words)
+    # Only applies to students, not staff
+```
+### **4. Bulk Intervention Creation** (`wellness/views.py`)
 ```python
 def bulk_create_interventions(request):
     # Auto-creates interventions for all critical/high risk students
     # without existing scheduled interventions
     # Marks their alerts as read after creation
 ```
+```
 
-### **4. Django Signals** (`wellness/signals.py`)
+### **5. Django Signals** (`wellness/signals.py`)
 Triggers alerts automatically when:
 - Risk level becomes high/critical
 - Missing assignments ≥ 3
@@ -232,7 +243,7 @@ Triggers alerts automatically when:
 - Teacher submits concern
 - Wellness check-in shows distress
 
-### **5. URL Routing** (`campus_care/urls.py`)
+### **6. URL Routing** (`campus_care/urls.py`)
 ```python
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -244,7 +255,7 @@ urlpatterns = [
 ]
 ```
 
-### **6. Storage Configuration** (`settings.py`)
+### **7. Storage Configuration** (`settings.py`)
 ```python
 # Cloudinary in production (DEBUG=False), local in dev (DEBUG=True)
 if config('CLOUDINARY_CLOUD_NAME', default='') and not DEBUG:
@@ -278,12 +289,14 @@ if config('CLOUDINARY_CLOUD_NAME', default='') and not DEBUG:
 ✅ Recently graded notifications (student)
 ✅ Year level & section filters
 ✅ AI-powered sentiment analysis (Gemini)
+✅ Student-to-student messaging with content filtering
+✅ Content filtering for inappropriate language (Filipino & English)
+✅ Enhanced user management tools
 ✅ AI chatbot assistant (Admin & Counselor)
 ✅ Direct messaging system with file attachments
 ✅ Unread message badge in navbar
 ✅ Role-based message recipient filtering
 ✅ Mobile responsive navbar (hamburger menu)
-✅ Cloudinary media storage (production)
 ✅ Deployed on Render with PostgreSQL
 
 ---

@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+{% block title %}Send Message{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6 mb-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold mb-2"><i class="bi bi-chat-dots-fill mr-2"></i>Send New Message</h2>
+                <p class="text-blue-100">Connect with teachers, counselors, and classmates</p>
+            </div>
+            <a href="{% url 'messaging:inbox' %}" class="bg-blue-800 text-white px-4 py-2 rounded-lg hover:bg-blue-900 font-medium transition">
+                <i class="bi bi-arrow-left mr-1"></i> Back to Messages
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Form -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-lg border">
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 px-6 py-4 border-b">
+                    <h3 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <div class="bg-blue-100 p-2 rounded-full mr-3">
+                            <i class="bi bi-pencil-square text-blue-600"></i>
+                        </div>
+                        Compose Your Message
+                    </h3>
+                    <p class="text-sm text-gray-600 mt-1 ml-12">Choose who to message and write your note</p>
+                </div>
+                <div class="p-6">
+                    <form method="post" enctype="multipart/form-data" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        <!-- Step 1: Choose Recipient -->
+                        <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-400">
+                            <div class="flex items-center mb-3">
+                                <i class="bi bi-people-fill text-blue-600 text-xl mr-2"></i>
+                                <h4 class="font-semibold text-gray-800">Step 1: Who do you want to message?</h4>
+                            </div>
+                            
+                            <!-- Role Filter Buttons -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Filter by type:</label>
+                                <div class="flex flex-wrap gap-2" id="roleFilters">
+                                    <button type="button" onclick="filterRole('all')"
+                                        class="role-btn px-4 py-2 rounded-lg text-sm font-semibold border border-blue-600 bg-blue-600 text-white flex items-center" data-role="all">
+                                        <i class="bi bi-people mr-1"></i> Everyone
+                                    </button>
+                                    <button type="button" onclick="filterRole('student')"
+                                        class="role-btn px-4 py-2 rounded-lg text-sm font-semibold border border-gray-300 text-gray-600 hover:border-blue-500 hover:text-blue-600 flex items-center" data-role="student">
+                                        <i class="bi bi-person-badge mr-1"></i> Classmates
+                                    </button>
+                                    <button type="button" onclick="filterRole('teacher')"
+                                        class="role-btn px-4 py-2 rounded-lg text-sm font-semibold border border-gray-300 text-gray-600 hover:border-blue-500 hover:text-blue-600 flex items-center" data-role="teacher">
+                                        <i class="bi bi-person-workspace mr-1"></i> Teachers
+                                    </button>
+                                    <button type="button" onclick="filterRole('counselor')"
+                                        class="role-btn px-4 py-2 rounded-lg text-sm font-semibold border border-gray-300 text-gray-600 hover:border-blue-500 hover:text-blue-600 flex items-center" data-role="counselor">
+                                        <i class="bi bi-heart mr-1"></i> Counselors
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Student Filters -->
+                            <div id="studentFilters" class="hidden grid grid-cols-2 gap-3 mb-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 mb-1">Grade Level</label>
+                                    <select id="yearFilter" onchange="applyStudentFilters()"
+                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">All Grades</option>
+                                        {% for y in year_levels %}<option value="{{ y }}">Grade {{ y }}</option>{% endfor %}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 mb-1">Section</label>
+                                    <select id="sectionFilter" onchange="applyStudentFilters()"
+                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">All Sections</option>
+                                        {% for s in sections %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <label for="recipientSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                                Select person to message: *
+                            </label>
+                            <select name="recipient" id="recipientSelect" required
+                                class="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                <option value="">🔍 Choose someone to message...</option>
+                                {% for r in recipients %}
+                                <option value="{{ r.id }}"
+                                    data-role="{{ r.role }}"
+                                    data-year="{{ r.year_level|default:'' }}"
+                                    data-section="{{ r.section|default:'' }}"
+                                    {% if selected_recipient and selected_recipient.id == r.id %}selected{% endif %}>
+                                    {% if r.role == 'student' %}👤{% elif r.role == 'teacher' %}👩‍🏫{% elif r.role == 'counselor' %}👩‍⚕️{% else %}👥{% endif %} {{ r.get_full_name }} 
+                                    <span class="text-gray-600">({{ r.role|capfirst }}{% if r.year_level %} · Grade {{ r.year_level }}{% endif %}{% if r.section %} · {{ r.section }}{% endif %})</span>
+                                </option>
+                                {% empty %}
+                                <option value="" disabled>No users available to message</option>
+                                {% endfor %}
+                            </select>
+                            <p class="text-xs text-gray-500 mt-2">
+                                <i class="bi bi-info-circle mr-1"></i>
+                                Use the filter buttons above to find the right person quickly
+                            </p>
+                        </div>
+
+                        <!-- Step 2: Write Message -->
+                        <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-400">
+                            <div class="flex items-center mb-3">
+                                <i class="bi bi-chat-text text-green-600 text-xl mr-2"></i>
+                                <h4 class="font-semibold text-gray-800">Step 2: Write your message</h4>
+                            </div>
+                            <label for="messageBody" class="block text-sm font-medium text-gray-700 mb-2">
+                                What would you like to say? *
+                            </label>
+                            <textarea name="body" id="messageBody" rows="6" required placeholder="Type your message here...
+
+Example:
+Hi! I have a question about today's assignment. Could you help me understand the math problem on page 45?
+
+Thanks!"
+                                class="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
+                            <p class="text-xs text-gray-500 mt-2">
+                                <i class="bi bi-lightbulb mr-1"></i>
+                                Be clear and polite. Include specific questions or details to get better help.
+                            </p>
+                        </div>
+
+                        <!-- Step 3: Optional Attachment -->
+                        <div class="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-400">
+                            <div class="flex items-center mb-3">
+                                <i class="bi bi-paperclip text-purple-600 text-xl mr-2"></i>
+                                <h4 class="font-semibold text-gray-800">Step 3: Add a file (optional)</h4>
+                            </div>
+                            <div id="filePreview" class="hidden items-center gap-2 px-3 py-2 bg-white rounded-lg text-sm text-gray-600 mb-3 border">
+                                <i class="bi bi-file-earmark text-blue-600"></i>
+                                <span id="fileName" class="truncate flex-1 font-medium"></span>
+                                <button type="button" onclick="clearFile()" class="text-red-500 hover:text-red-700 p-1">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                </button>
+                            </div>
+                            <label class="flex items-center justify-center gap-3 cursor-pointer border-2 border-dashed border-purple-300 rounded-lg px-6 py-4 hover:border-purple-400 hover:bg-purple-100 transition text-sm text-gray-600 bg-white">
+                                <i class="bi bi-cloud-upload text-purple-600 text-xl"></i>
+                                <div class="text-center">
+                                    <div class="font-medium text-purple-700">Click to attach a file</div>
+                                    <div class="text-xs text-gray-500">Images, PDFs, documents (Max 10MB)</div>
+                                </div>
+                                <input type="file" name="attachment" id="attachmentInput" class="hidden"
+                                       accept="image/*,.pdf,.doc,.docx,.txt,.xlsx,.pptx"
+                                       onchange="showPreview(this)">
+                            </label>
+                        </div>
+
+                        <!-- Send Button -->
+                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border">
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <button type="submit"
+                                    class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-lg hover:from-blue-700 hover:to-purple-700 font-semibold text-lg shadow-lg transition flex items-center justify-center">
+                                    <i class="bi bi-send-fill mr-2"></i> Send Message
+                                </button>
+                                <a href="{% url 'messaging:inbox' %}"
+                                    class="flex-1 sm:flex-none bg-gray-500 text-white px-6 py-4 rounded-lg hover:bg-gray-600 font-semibold text-lg text-center transition flex items-center justify-center">
+                                    <i class="bi bi-x-circle mr-2"></i> Cancel
+                                </a>
+                            </div>
+                            <p class="text-xs text-center text-gray-500 mt-3">
+                                <i class="bi bi-shield-check mr-1"></i>
+                                Your message will be delivered instantly and they'll get a notification
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Sidebar -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Quick Tips -->
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 border border-blue-200">
+                <div class="flex items-center mb-3">
+                    <i class="bi bi-lightbulb-fill text-blue-600 mr-2"></i>
+                    <h4 class="font-semibold text-blue-800">Quick Tips</h4>
+                </div>
+                <ul class="text-xs text-blue-700 space-y-2">
+                    <li class="flex items-start">
+                        <i class="bi bi-check2 mr-2 mt-0.5 text-blue-600"></i>
+                        <span>Use filters to find the right person quickly</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="bi bi-check2 mr-2 mt-0.5 text-blue-600"></i>
+                        <span>Be specific about what you need help with</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="bi bi-check2 mr-2 mt-0.5 text-blue-600"></i>
+                        <span>Attach files like homework or screenshots</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="bi bi-check2 mr-2 mt-0.5 text-blue-600"></i>
+                        <span>Messages are delivered instantly</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Who Can You Message -->
+            <div class="bg-white rounded-lg shadow-lg border">
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-3 border-b">
+                    <h4 class="font-semibold text-gray-800 flex items-center">
+                        <i class="bi bi-people text-green-600 mr-2"></i>
+                        Who You Can Message
+                    </h4>
+                </div>
+                <div class="p-4 space-y-3">
+                    <div class="flex items-center p-2 bg-blue-50 rounded-lg">
+                        <i class="bi bi-person-badge text-blue-600 mr-3"></i>
+                        <div>
+                            <div class="font-medium text-sm text-gray-800">Classmates</div>
+                            <div class="text-xs text-gray-600">Other students in your school</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center p-2 bg-green-50 rounded-lg">
+                        <i class="bi bi-person-workspace text-green-600 mr-3"></i>
+                        <div>
+                            <div class="font-medium text-sm text-gray-800">Teachers</div>
+                            <div class="text-xs text-gray-600">Ask about assignments & classes</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center p-2 bg-purple-50 rounded-lg">
+                        <i class="bi bi-heart text-purple-600 mr-3"></i>
+                        <div>
+                            <div class="font-medium text-sm text-gray-800">Counselors</div>
+                            <div class="text-xs text-gray-600">Get support & guidance</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentRole = 'all';
+
+function filterRole(role) {
+    currentRole = role;
+
+    // Update button styles
+    document.querySelectorAll('.role-btn').forEach(btn => {
+        const active = btn.dataset.role === role;
+        if (active) {
+            btn.className = 'role-btn px-4 py-2 rounded-lg text-sm font-semibold border border-blue-600 bg-blue-600 text-white flex items-center';
+        } else {
+            btn.className = 'role-btn px-4 py-2 rounded-lg text-sm font-semibold border border-gray-300 text-gray-600 hover:border-blue-500 hover:text-blue-600 flex items-center';
+        }
+    });
+
+    // Show/hide student sub-filters
+    const sf = document.getElementById('studentFilters');
+    if (role === 'student') {
+        sf.classList.remove('hidden');
+        sf.classList.add('grid');
+    } else {
+        sf.classList.add('hidden');
+        sf.classList.remove('grid');
+        document.getElementById('yearFilter').value = '';
+        document.getElementById('sectionFilter').value = '';
+    }
+
+    applyStudentFilters();
+}
+
+function applyStudentFilters() {
+    const year = document.getElementById('yearFilter').value;
+    const section = document.getElementById('sectionFilter').value.toLowerCase();
+    const select = document.getElementById('recipientSelect');
+
+    Array.from(select.options).forEach(opt => {
+        if (!opt.value) return; // keep placeholder
+        const role = opt.dataset.role;
+        const optYear = opt.dataset.year;
+        const optSection = (opt.dataset.section || '').toLowerCase();
+
+        let show = currentRole === 'all' || role === currentRole;
+        if (show && currentRole === 'student') {
+            if (year && optYear !== year) show = false;
+            if (section && optSection !== section) show = false;
+        }
+        opt.hidden = !show;
+    });
+
+    // Reset selection if current selection is now hidden
+    const sel = select.options[select.selectedIndex];
+    if (sel && sel.hidden) select.value = '';
+}
+
+function showPreview(input) {
+    if (input.files && input.files[0]) {
+        document.getElementById('fileName').textContent = input.files[0].name;
+        document.getElementById('filePreview').classList.remove('hidden');
+        document.getElementById('filePreview').classList.add('flex');
+    }
+}
+
+function clearFile() {
+    document.getElementById('attachmentInput').value = '';
+    document.getElementById('filePreview').classList.add('hidden');
+    document.getElementById('filePreview').classList.remove('flex');
+}
+</script>
+{% endblock %}

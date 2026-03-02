@@ -22,25 +22,32 @@
     <!-- Messages -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-5 space-y-3 min-h-[300px] max-h-[60vh] overflow-y-auto" id="msgContainer">
         {% for msg in msgs %}
-        <div class="flex {% if msg.sender == request.user %}justify-end{% else %}justify-start{% endif %}" data-msg-id="{{ msg.id }}">
-            <div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-sm
-                {% if msg.sender == request.user %}bg-blue-600 text-white rounded-br-sm
-                {% else %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm{% endif %}">
-                {% if msg.body %}<p class="mb-1">{{ msg.body }}</p>{% endif %}
-                {% if msg.attachment %}
-                    {% if msg.is_image %}
-                    <img src="{{ msg.attachment.url }}" alt="image" class="max-w-[240px] rounded-lg mt-1 cursor-pointer" onclick="window.open('{{ msg.attachment.url }}','_blank')">
-                    {% else %}
-                    <a href="{{ msg.attachment.url }}" target="_blank" class="flex items-center gap-2 mt-1 px-3 py-2 rounded-lg {% if msg.sender == request.user %}bg-blue-700 hover:bg-blue-800{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
-                        <i class="bi bi-file-earmark text-base"></i>
-                        <span class="text-xs truncate max-w-[160px]">{{ msg.attachment.name|slice:"22:" }}</span>
-                        <i class="bi bi-download text-xs ml-auto"></i>
-                    </a>
+        <div class="flex {% if msg.sender == request.user %}justify-end{% else %}justify-start{% endif %}" data-msg-id="{{ msg.id }}" data-is-mine="{% if msg.sender == request.user %}1{% else %}0{% endif %}">
+            <div>
+                <div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-sm
+                    {% if msg.sender == request.user %}bg-blue-600 text-white rounded-br-sm
+                    {% else %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm{% endif %}">
+                    {% if msg.body %}<p class="mb-1">{{ msg.body }}</p>{% endif %}
+                    {% if msg.attachment %}
+                        {% if msg.is_image %}
+                        <img src="{{ msg.attachment.url }}" alt="image" class="max-w-[240px] rounded-lg mt-1 cursor-pointer" onclick="window.open('{{ msg.attachment.url }}','_blank')">
+                        {% else %}
+                        <a href="{{ msg.attachment.url }}" target="_blank" class="flex items-center gap-2 mt-1 px-3 py-2 rounded-lg {% if msg.sender == request.user %}bg-blue-700 hover:bg-blue-800{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                            <i class="bi bi-file-earmark text-base"></i>
+                            <span class="text-xs truncate max-w-[160px]">{{ msg.attachment.name|slice:"22:" }}</span>
+                            <i class="bi bi-download text-xs ml-auto"></i>
+                        </a>
+                        {% endif %}
                     {% endif %}
-                {% endif %}
-                <p class="text-xs mt-1 {% if msg.sender == request.user %}text-blue-200{% else %}text-gray-400{% endif %}">
-                    {{ msg.created_at|date:"M d, g:i A" }}
+                    <p class="text-xs mt-1 {% if msg.sender == request.user %}text-blue-200{% else %}text-gray-400{% endif %}">
+                        {{ msg.created_at|date:"M d, g:i A" }}
+                    </p>
+                </div>
+                {% if msg.sender == request.user %}
+                <p class="text-right text-xs text-gray-400 mt-0.5 read-receipt" data-for-msg="{{ msg.id }}">
+                    {% if msg.is_read %}Read{% endif %}
                 </p>
+                {% endif %}
             </div>
         </div>
         {% empty %}
@@ -89,6 +96,8 @@ function buildBubble(msg) {
     const wrap = document.createElement('div');
     wrap.className = `flex ${msg.is_mine ? 'justify-end' : 'justify-start'}`;
     wrap.dataset.msgId = msg.id;
+    wrap.dataset.isMine = msg.is_mine ? '1' : '0';
+    const outer = document.createElement('div');
     let inner = `<div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${msg.is_mine ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}">`;
     if (msg.body) inner += `<p class="mb-1">${msg.body}</p>`;
     if (msg.attachment_url) {
@@ -99,8 +108,21 @@ function buildBubble(msg) {
         }
     }
     inner += `<p class="text-xs mt-1 ${msg.is_mine ? 'text-blue-200' : 'text-gray-400'}">${msg.created_at}</p></div>`;
-    wrap.innerHTML = inner;
+    if (msg.is_mine) {
+        inner += `<p class="text-right text-xs text-gray-400 mt-0.5 read-receipt" data-for-msg="${msg.id}">${msg.is_read ? 'Read' : ''}</p>`;
+    }
+    outer.innerHTML = inner;
+    wrap.appendChild(outer);
     return wrap;
+}
+
+function updateReadReceipts(lastReadSentId) {
+    if (!lastReadSentId) return;
+    document.querySelectorAll('.read-receipt').forEach(el => {
+        const msgId = parseInt(el.dataset.forMsg);
+        // Only show "Read" on the last read sent message
+        el.textContent = (msgId === lastReadSentId) ? 'Read' : '';
+    });
 }
 
 function appendMessages(msgs) {
@@ -119,7 +141,10 @@ function appendMessages(msgs) {
 setInterval(() => {
     fetch(`/messages/${convId}/poll/?after=${lastMsgId}`)
         .then(r => r.json())
-        .then(data => { if (data.messages && data.messages.length) appendMessages(data.messages); })
+        .then(data => {
+            if (data.messages && data.messages.length) appendMessages(data.messages);
+            if (data.last_read_sent_id) updateReadReceipts(data.last_read_sent_id);
+        })
         .catch(() => {});
 }, 3000);
 

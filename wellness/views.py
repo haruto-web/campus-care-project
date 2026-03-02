@@ -131,6 +131,14 @@ def create_intervention(request, student_id=None):
             intervention = form.save(commit=False)
             intervention.counselor = request.user
             intervention.save()
+            
+            # Mark related alerts as resolved when intervention is created
+            Alert.objects.filter(
+                student=intervention.student,
+                severity__in=['critical', 'high'],
+                resolved=False
+            ).update(is_read=True, resolved=True)
+            
             messages.success(request, f'Intervention for {intervention.student.get_full_name()} created successfully!')
             return redirect('wellness:interventions_list')
     else:
@@ -235,6 +243,19 @@ def alerts_list(request):
     critical_unread = Alert.objects.filter(severity='critical', is_read=False, resolved=False).count()
     high_unread = Alert.objects.filter(severity='high', is_read=False, resolved=False).count()
     
+    # Count students with critical/high alerts who don't have scheduled interventions
+    from django.db.models import Q
+    critical_high_alerts = Alert.objects.filter(
+        severity__in=['critical', 'high'], 
+        resolved=False
+    ).values_list('student_id', flat=True).distinct()
+    
+    students_with_interventions = Intervention.objects.filter(
+        status='scheduled'
+    ).values_list('student_id', flat=True).distinct()
+    
+    students_needing_intervention = len(set(critical_high_alerts) - set(students_with_interventions))
+    
     context = {
         'alerts': alerts,
         'alert_type': alert_type,
@@ -242,6 +263,7 @@ def alerts_list(request):
         'severity_filter': severity_filter,
         'critical_unread': critical_unread,
         'high_unread': high_unread,
+        'students_needing_intervention': students_needing_intervention,
     }
     return render(request, 'wellness/alerts_list.html', context)
 
@@ -280,12 +302,12 @@ def bulk_create_interventions(request):
             scheduled_date=tz.now() + td(days=1),
             status='scheduled',
         )
-        # Mark this student's critical/high alerts as read
+        # Mark this student's critical/high alerts as read AND resolved
         Alert.objects.filter(
             student=student,
             severity__in=['critical', 'high'],
             resolved=False
-        ).update(is_read=True)
+        ).update(is_read=True, resolved=True)
         created_count += 1
 
     if created_count > 0:

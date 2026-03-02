@@ -18,9 +18,11 @@ urlpatterns = [
     path('class/<int:class_id>/attendance/', views.mark_attendance, name='mark_attendance'),
     path('class/<int:class_id>/assignment/<int:assignment_id>/submissions/', views.view_submissions, name='view_submissions'),
     path('submission/<int:submission_id>/grade/', views.grade_submission, name='grade_submission'),
+    path('submission/<int:submission_id>/comment/', views.comment_submission, name='comment_submission'),
     path('class/<int:class_id>/material/upload/', views.upload_material, name='upload_material'),
     path('material/<int:material_id>/delete/', views.delete_material, name='delete_material'),
     
+    path('assignment/<int:assignment_id>/delete/', views.delete_assignment, name='delete_assignment'),
     # Student URLs
     path('student/announcements/', views.student_announcements, name='student_announcements'),
     path('student/materials/', views.student_materials, name='student_materials'),

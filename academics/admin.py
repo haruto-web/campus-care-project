@@ -3,8 +3,9 @@ from .models import Class, Assignment, Submission, Attendance, Grade, Announceme
 
 @admin.register(Class)
 class ClassAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'teacher', 'semester', 'schedule', 'room']
+    list_display = ['code', 'name', 'teacher']
     search_fields = ['code', 'name']
+    list_filter = ['teacher']
 
 @admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):

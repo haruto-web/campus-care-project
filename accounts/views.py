@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
 from django.db.models import Count, Avg, Q
+from django.utils import timezone
 from datetime import datetime, timedelta
 from academics.models import Class, Assignment, Submission, Attendance, Grade
 from wellness.models import WellnessCheckIn, RiskAssessment, Alert, Intervention
@@ -122,8 +123,8 @@ def register_view(request):
         
         user.save()
         
-        # Log the user in automatically
-        login(request, user)
+        # Log the user in automatically (bypass allauth backend)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         
         # Students go to profile completion
         messages.success(request, 'Account created successfully! Please complete your profile.')
@@ -175,15 +176,17 @@ def student_dashboard(request):
     
     # Attach missing assignments per class for the dashboard panel
     submitted_ids = Submission.objects.filter(student=user).values_list('assignment_id', flat=True)
+    from django.utils import timezone as tz
+    now = tz.now()
     for cls in classes:
-        cls.missing_for_student = cls.assignment_set.filter(
-            due_date__lt=datetime.now()
+        cls.missing_for_student = cls.assignments.filter(
+            due_date__lt=now
         ).exclude(id__in=submitted_ids)
     
     # Get upcoming assignments
     assignments = Assignment.objects.filter(
         class_obj__in=classes,
-        due_date__gte=datetime.now()
+        due_date__gte=now
     ).order_by('due_date')[:5]
     
     # Get recent announcements (unread only)
@@ -237,10 +240,54 @@ def teacher_dashboard(request):
         score__isnull=True
     ).count()
     
-    # Get recent submissions (last 10)
+    # Get recent submissions (last 10) grouped by class - only from teacher's classes
     recent_submissions = Submission.objects.filter(
         assignment__class_obj__in=classes
-    ).select_related('student', 'assignment', 'assignment__class_obj').order_by('-submitted_at')[:10]
+    ).select_related('student', 'assignment', 'assignment__class_obj').order_by('-submitted_at')[:15]
+    
+    # Group submissions by class
+    from collections import defaultdict
+    submissions_by_class_dict = defaultdict(list)
+    for submission in recent_submissions:
+        submissions_by_class_dict[submission.assignment.class_obj].append(submission)
+    
+    # Convert to list format for template (limit 3 submissions per class)
+    submissions_by_class = []
+    for class_obj, submissions in submissions_by_class_dict.items():
+        submissions_by_class.append({
+            'class': class_obj,
+            'submissions': submissions[:3]  # Limit to 3 per class
+        })
+    
+    # Section-based breakdowns
+    from collections import defaultdict
+    
+    # Students by section
+    students_by_section = defaultdict(int)
+    for student in students:
+        section = student.section or 'No Section'
+        students_by_section[section] += 1
+    
+    # At-risk by section
+    atrisk_by_section = defaultdict(int)
+    for student in at_risk_students:
+        section = student.section or 'No Section'
+        atrisk_by_section[section] += 1
+    
+    # Pending grades by section
+    pending_by_section = defaultdict(int)
+    pending_submissions = Submission.objects.filter(
+        assignment__class_obj__in=classes,
+        score__isnull=True
+    ).select_related('student')
+    for submission in pending_submissions:
+        section = submission.student.section or 'No Section'
+        pending_by_section[section] += 1
+    
+    # Convert to list format for template
+    students_by_section_list = [{'section': k, 'count': v} for k, v in students_by_section.items()]
+    atrisk_by_section_list = [{'section': k, 'count': v} for k, v in atrisk_by_section.items()]
+    pending_by_section_list = [{'section': k, 'count': v} for k, v in pending_by_section.items()]
     
     context = {
         'classes': classes,
@@ -249,6 +296,10 @@ def teacher_dashboard(request):
         'pending_grades': pending_grades,
         'at_risk_count': len(at_risk_students),
         'recent_submissions': recent_submissions,
+        'submissions_by_class': submissions_by_class,
+        'students_by_section': students_by_section_list,
+        'atrisk_by_section': atrisk_by_section_list,
+        'pending_by_section': pending_by_section_list,
     }
     return render(request, 'dashboard/teacher_dashboard.html', context)
 
@@ -268,10 +319,31 @@ def counselor_dashboard(request):
     # Get upcoming interventions
     upcoming_interventions = Intervention.objects.filter(
         status='scheduled',
-        scheduled_date__gte=datetime.now()
+        scheduled_date__gte=timezone.now()
     ).order_by('scheduled_date')[:5]
     
     pending_interventions = Intervention.objects.filter(status='scheduled').count()
+    
+    # Section-based breakdowns
+    from collections import defaultdict
+    
+    # High risk by section
+    highrisk_by_section = defaultdict(int)
+    high_risk_assessments = RiskAssessment.objects.filter(risk_level='high').select_related('student')
+    for assessment in high_risk_assessments:
+        section = assessment.student.section or 'No Section'
+        highrisk_by_section[section] += 1
+    
+    # Medium risk by section
+    mediumrisk_by_section = defaultdict(int)
+    medium_risk_assessments = RiskAssessment.objects.filter(risk_level='medium').select_related('student')
+    for assessment in medium_risk_assessments:
+        section = assessment.student.section or 'No Section'
+        mediumrisk_by_section[section] += 1
+    
+    # Convert to list format for template
+    highrisk_by_section_list = [{'section': k, 'count': v} for k, v in highrisk_by_section.items()]
+    mediumrisk_by_section_list = [{'section': k, 'count': v} for k, v in mediumrisk_by_section.items()]
     
     context = {
         'high_risk_students': high_risk_students,
@@ -281,17 +353,19 @@ def counselor_dashboard(request):
         'unread_alerts': unread_alerts,
         'upcoming_interventions': upcoming_interventions,
         'pending_interventions': pending_interventions,
+        'highrisk_by_section': highrisk_by_section_list,
+        'mediumrisk_by_section': mediumrisk_by_section_list,
     }
     return render(request, 'dashboard/counselor_dashboard.html', context)
 
 def admin_dashboard(request):
     from django.db.models import Count
-    from datetime import datetime, timedelta
+    from datetime import timedelta
     from django.core.management import call_command
     
     # Auto-calculate risk assessments if none exist or if last calculation was > 1 day ago
     latest_assessment = RiskAssessment.objects.order_by('-date').first()
-    if not latest_assessment or (datetime.now().date() - latest_assessment.date).days > 0:
+    if not latest_assessment or (timezone.now().date() - latest_assessment.date).days > 0:
         try:
             call_command('calculate_risk')
         except:
@@ -325,12 +399,11 @@ def admin_dashboard(request):
     recent_alerts = Alert.objects.select_related('student').order_by('-created_at')[:5]
     
     # Activity data (last 30 days)
-    thirty_days_ago = datetime.now() - timedelta(days=30)
     activity_labels = []
     activity_data = []
     
     for i in range(6):
-        date = datetime.now() - timedelta(days=i*5)
+        date = timezone.now() - timedelta(days=i*5)
         activity_labels.insert(0, date.strftime('%b %d'))
         count = User.objects.filter(date_joined__gte=date - timedelta(days=5), date_joined__lt=date).count()
         activity_data.insert(0, count)
@@ -365,9 +438,18 @@ def profile_view(request):
         request.user.phone = request.POST.get('phone', '')
         
         if request.FILES.get('profile_picture'):
-            request.user.profile_picture = request.FILES['profile_picture']
+            try:
+                request.user.profile_picture = request.FILES['profile_picture']
+            except Exception:
+                messages.warning(request, 'Profile picture upload failed. Other changes saved.')
         
-        request.user.save()
+        try:
+            request.user.save()
+        except Exception:
+            request.user.profile_picture = None
+            request.user.save()
+            messages.warning(request, 'Profile picture upload failed. Other changes saved.')
+            return redirect('profile')
         messages.success(request, 'Profile updated successfully!')
         return redirect('profile')
     
@@ -563,15 +645,22 @@ def complete_profile_view(request):
                 try:
                     user.id_picture = request.FILES['id_picture']
                 except Exception:
-                    pass
+                    messages.warning(request, 'ID picture upload failed. Other changes saved.')
         if request.FILES.get('profile_picture'):
             try:
                 user.profile_picture = request.FILES['profile_picture']
             except Exception:
-                pass
+                messages.warning(request, 'Profile picture upload failed. Other changes saved.')
         
         user.profile_completed = True
-        user.save()
+        try:
+            user.save()
+        except Exception:
+            # If save fails due to file upload, save without files
+            user.profile_picture = None
+            user.id_picture = None
+            user.save()
+            messages.warning(request, 'File uploads failed, but profile was saved.')
         
         # Auto-enroll student in ALL classes with matching section AND year_level
         if user.role == 'student' and user.section and user.year_level:

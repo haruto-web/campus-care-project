@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Count
+from django.db.models import Count, Q
 from accounts.models import User
 from academics.models import Class
 from academics.forms import ClassForm
@@ -299,3 +299,61 @@ def admin_enroll_student(request):
         'recent_enrollments': recent_enrollments[:10],
     }
     return render(request, 'admin/enroll_student.html', context)
+
+@login_required
+def admin_cleanup_users(request):
+    if request.user.role.lower() != 'admin':
+        messages.error(request, 'Permission denied. Admin access required.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        # Count users before deletion
+        total_before = User.objects.count()
+        admins_count = User.objects.filter(role='admin').count()
+        
+        # Delete non-admin users
+        deleted_count = User.objects.exclude(role='admin').delete()[0]
+        
+        messages.success(request, f'Cleanup complete! Deleted {deleted_count} users. {admins_count} admin accounts kept safe.')
+        return redirect('dashboard')
+    
+    # Show current user counts
+    context = {
+        'total_users': User.objects.count(),
+        'admin_count': User.objects.filter(role='admin').count(),
+        'student_count': User.objects.filter(role='student').count(),
+        'teacher_count': User.objects.filter(role='teacher').count(),
+        'counselor_count': User.objects.filter(role='counselor').count(),
+    }
+    return render(request, 'admin/cleanup_users.html', context)
+
+@login_required
+def admin_create_superuser(request):
+    if request.user.role.lower() != 'admin':
+        messages.error(request, 'Permission denied. Admin access required.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists.')
+            return render(request, 'admin/create_superuser.html')
+        
+        # Create superuser
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            role='admin',
+            is_staff=True,
+            is_superuser=True,
+            profile_completed=True
+        )
+        
+        messages.success(request, f'Superuser {username} created successfully! You can now access Django admin.')
+        return redirect('dashboard')
+    
+    return render(request, 'admin/create_superuser.html')

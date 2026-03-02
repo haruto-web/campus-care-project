@@ -1,82 +1,146 @@
 {% extends 'base.html' %}
 
-{% block title %}Interventions{% endblock %}
+{% block title %}Student Meetings{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
-    <div class="flex justify-between items-center">
-        <h2 class="text-3xl font-bold text-gray-800">Interventions</h2>
-        <a href="{% url 'wellness:create_intervention' %}" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
-            <i class="bi bi-plus-circle mr-2"></i> Create Intervention
-        </a>
+    <!-- Header with explanation -->
+    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 p-6 rounded-lg">
+        <div class="flex justify-between items-start">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Student Support Meetings</h2>
+                <p class="text-purple-800">📅 Schedule and track one-on-one meetings with students who need extra support or guidance.</p>
+            </div>
+            <a href="{% url 'wellness:create_intervention' %}" class="px-3 py-2 md:px-6 md:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center font-medium transition text-sm md:text-base">
+                <i class="bi bi-plus-circle mr-1 md:mr-2"></i> <span class="hidden sm:inline">📅 Schedule New Meeting</span><span class="sm:hidden">📅 New</span>
+            </a>
+        </div>
     </div>
     
+    <!-- Search and Filter Section -->
     <div class="bg-white rounded-lg shadow p-6">
-        <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <select name="status" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">All Status</option>
-                <option value="scheduled" {% if status_filter == 'scheduled' %}selected{% endif %}>Scheduled</option>
-                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
-                <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
-                <option value="history" {% if status_filter == 'history' %}selected{% endif %}>History (Completed + Cancelled)</option>
-            </select>
-            <select name="year_level" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">All Grades</option>
-                <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
-                <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
-                <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
-                <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
-            </select>
-            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Filter</button>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">🔍 Find Meetings</h3>
+        <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Meeting Status</label>
+                <select name="status" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Meetings</option>
+                    <option value="scheduled" {% if status_filter == 'scheduled' %}selected{% endif %}>📅 Upcoming Meetings</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>✅ Completed Meetings</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>❌ Cancelled Meetings</option>
+                    <option value="history" {% if status_filter == 'history' %}selected{% endif %}>📄 Meeting History</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
+                <select name="year_level" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Grades</option>
+                    <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
+                    <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
+                    <option value="9" {% if year_level_filter == '9' %}selected{% endif %}>Grade 9</option>
+                    <option value="10" {% if year_level_filter == '10' %}selected{% endif %}>Grade 10</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">🔍 Search</button>
+            </div>
         </form>
     </div>
-    
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Scheduled Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Counselor</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for intervention in interventions %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <a href="{% url 'student_profile' intervention.student.id %}" class="text-blue-600 hover:text-blue-900 font-medium">{{ intervention.student.get_full_name }}</a>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{ intervention.get_intervention_type_display }}</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ intervention.scheduled_date|date:"M d, Y g:i A" }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            {% if intervention.status == 'scheduled' %}
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Scheduled</span>
-                            {% elif intervention.status == 'completed' %}
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
-                            {% else %}
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Cancelled</span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ intervention.counselor.get_full_name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <a href="{% url 'wellness:update_intervention' intervention.id %}" class="text-blue-600 hover:text-blue-900">
-                                <i class="bi bi-pencil"></i> Edit
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">No interventions found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Results Section -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800">📄 Meeting Schedule</h3>
+            <p class="text-gray-600 text-sm mt-1">Click on any meeting to update its status or add notes.</p>
+        </div>
+        
+        <div class="max-h-96 overflow-y-auto">
+            {% if interventions %}
+                <div class="min-h-0">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0 z-10">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meeting Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Counselor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for intervention in interventions %}
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm {% if intervention.status == 'scheduled' %}bg-blue-500{% elif intervention.status == 'completed' %}bg-green-500{% else %}bg-gray-500{% endif %}">
+                                            {{ intervention.student.get_full_name|slice:":1"|upper }}
+                                        </div>
+                                        <div class="ml-3">
+                                            <a href="{% url 'student_profile' intervention.student.id %}" class="text-blue-600 hover:text-blue-900 font-medium">{{ intervention.student.get_full_name }}</a>
+                                            <p class="text-sm text-gray-500">Grade {{ intervention.student.year_level|default:"?" }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-purple-100 text-purple-800">
+                                        {% if intervention.intervention_type == 'academic' %}
+                                            📚 {{ intervention.get_intervention_type_display }}
+                                        {% elif intervention.intervention_type == 'behavioral' %}
+                                            🗣️ {{ intervention.get_intervention_type_display }}
+                                        {% elif intervention.intervention_type == 'emotional' %}
+                                            💖 {{ intervention.get_intervention_type_display }}
+                                        {% else %}
+                                            📝 {{ intervention.get_intervention_type_display }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ intervention.scheduled_date|date:"M d, Y" }}</div>
+                                    <div class="text-sm text-gray-500">{{ intervention.scheduled_date|date:"g:i A" }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if intervention.status == 'scheduled' %}
+                                        <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            📅 Upcoming
+                                        </span>
+                                    {% elif intervention.status == 'completed' %}
+                                        <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
+                                            ✅ Completed
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-800">
+                                            ❌ Cancelled
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ intervention.counselor.get_full_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <a href="{% url 'wellness:update_intervention' intervention.id %}" class="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                                        <i class="bi bi-pencil mr-1"></i> Update
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-12">
+                    <div class="mb-4">
+                        <i class="bi bi-calendar-plus text-6xl text-blue-300"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No meetings scheduled yet</h3>
+                    <p class="text-gray-500 mb-4">You haven't scheduled any student support meetings.</p>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+                        <p class="text-blue-800 text-sm mb-3">
+                            💡 <strong>Getting started:</strong> Schedule one-on-one meetings with students who need extra help or guidance.
+                        </p>
+                        <a href="{% url 'wellness:create_intervention' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition">
+                            <i class="bi bi-plus-circle mr-2"></i> Schedule Your First Meeting
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
