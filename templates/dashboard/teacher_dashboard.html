@@ -200,7 +200,10 @@
                                     </div>
                                     <div>
                                         <h6 class="font-bold text-gray-900">{{ class_data.class.code }} - {{ class_data.class.name }}</h6>
-                                        <p class="text-sm text-gray-600">{{ class_data.submissions|length }} recent submission{{ class_data.submissions|length|pluralize }}</p>
+                                        <p class="text-sm text-gray-600">
+                                            {{ class_data.submissions|length }} recent submission{{ class_data.submissions|length|pluralize }} • 
+                                            Grade {{ class_data.class.year_level|default:"?" }} {{ class_data.class.section|default:"" }}
+                                        </p>
                                     </div>
                                 </div>
                                 <a href="{% url 'academics:class_detail' class_data.class.id %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">

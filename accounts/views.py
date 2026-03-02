@@ -237,7 +237,7 @@ def teacher_dashboard(request):
         score__isnull=True
     ).count()
     
-    # Get recent submissions (last 10) grouped by class
+    # Get recent submissions (last 10) grouped by class - only from teacher's classes
     recent_submissions = Submission.objects.filter(
         assignment__class_obj__in=classes
     ).select_related('student', 'assignment', 'assignment__class_obj').order_by('-submitted_at')[:15]
