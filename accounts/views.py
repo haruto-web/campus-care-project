@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
 from django.db.models import Count, Avg, Q
+from django.utils import timezone
 from datetime import datetime, timedelta
 from academics.models import Class, Assignment, Submission, Attendance, Grade
 from wellness.models import WellnessCheckIn, RiskAssessment, Alert, Intervention
@@ -318,7 +319,7 @@ def counselor_dashboard(request):
     # Get upcoming interventions
     upcoming_interventions = Intervention.objects.filter(
         status='scheduled',
-        scheduled_date__gte=datetime.now()
+        scheduled_date__gte=timezone.now()
     ).order_by('scheduled_date')[:5]
     
     pending_interventions = Intervention.objects.filter(status='scheduled').count()
@@ -359,12 +360,12 @@ def counselor_dashboard(request):
 
 def admin_dashboard(request):
     from django.db.models import Count
-    from datetime import datetime, timedelta
+    from datetime import timedelta
     from django.core.management import call_command
     
     # Auto-calculate risk assessments if none exist or if last calculation was > 1 day ago
     latest_assessment = RiskAssessment.objects.order_by('-date').first()
-    if not latest_assessment or (datetime.now().date() - latest_assessment.date).days > 0:
+    if not latest_assessment or (timezone.now().date() - latest_assessment.date).days > 0:
         try:
             call_command('calculate_risk')
         except:
@@ -398,12 +399,11 @@ def admin_dashboard(request):
     recent_alerts = Alert.objects.select_related('student').order_by('-created_at')[:5]
     
     # Activity data (last 30 days)
-    thirty_days_ago = datetime.now() - timedelta(days=30)
     activity_labels = []
     activity_data = []
     
     for i in range(6):
-        date = datetime.now() - timedelta(days=i*5)
+        date = timezone.now() - timedelta(days=i*5)
         activity_labels.insert(0, date.strftime('%b %d'))
         count = User.objects.filter(date_joined__gte=date - timedelta(days=5), date_joined__lt=date).count()
         activity_data.insert(0, count)
@@ -443,7 +443,13 @@ def profile_view(request):
             except Exception:
                 messages.warning(request, 'Profile picture upload failed. Other changes saved.')
         
-        request.user.save()
+        try:
+            request.user.save()
+        except Exception:
+            request.user.profile_picture = None
+            request.user.save()
+            messages.warning(request, 'Profile picture upload failed. Other changes saved.')
+            return redirect('profile')
         messages.success(request, 'Profile updated successfully!')
         return redirect('profile')
     
@@ -639,7 +645,7 @@ def complete_profile_view(request):
                 try:
                     user.id_picture = request.FILES['id_picture']
                 except Exception:
-                    pass
+                    messages.warning(request, 'ID picture upload failed. Other changes saved.')
         if request.FILES.get('profile_picture'):
             try:
                 user.profile_picture = request.FILES['profile_picture']
@@ -647,7 +653,14 @@ def complete_profile_view(request):
                 messages.warning(request, 'Profile picture upload failed. Other changes saved.')
         
         user.profile_completed = True
-        user.save()
+        try:
+            user.save()
+        except Exception:
+            # If save fails due to file upload, save without files
+            user.profile_picture = None
+            user.id_picture = None
+            user.save()
+            messages.warning(request, 'File uploads failed, but profile was saved.')
         
         # Auto-enroll student in ALL classes with matching section AND year_level
         if user.role == 'student' and user.section and user.year_level:
