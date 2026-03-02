@@ -76,6 +76,7 @@ def conversation(request, conv_id):
                     'is_image': msg.is_image() if msg.attachment else False,
                     'created_at': msg.created_at.strftime('%b %d, %I:%M %p'),
                     'is_mine': True,
+                    'is_read': False,
                 })
         return redirect('messaging:conversation', conv_id=conv.id)
 
@@ -108,8 +109,13 @@ def poll_messages(request, conv_id):
             'is_image': msg.is_image() if msg.attachment else False,
             'created_at': msg.created_at.strftime('%b %d, %I:%M %p'),
             'is_mine': msg.sender == request.user,
+            'is_read': msg.is_read,
         })
-    return JsonResponse({'messages': data})
+    # Also return the last read message id among sent messages (for read receipt)
+    last_read_sent = conv.messages.filter(
+        sender=request.user, is_read=True
+    ).order_by('-id').values_list('id', flat=True).first()
+    return JsonResponse({'messages': data, 'last_read_sent_id': last_read_sent or 0})
 
 
 @login_required
