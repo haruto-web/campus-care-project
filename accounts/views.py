@@ -179,7 +179,7 @@ def student_dashboard(request):
     from django.utils import timezone as tz
     now = tz.now()
     for cls in classes:
-        cls.missing_for_student = cls.assignment_set.filter(
+        cls.missing_for_student = cls.assignments.filter(
             due_date__lt=now
         ).exclude(id__in=submitted_ids)
     
