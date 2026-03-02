@@ -401,42 +401,49 @@ BrightTrack (formerly Campus Care) is an LMS with integrated student support mon
 - ✅ File upload handling (Cloudinary in production)
 - ✅ Django Allauth (Google OAuth)
 - ✅ Django Signals (automated alerts)
+- ✅ Philippine GPA System (5.0 scale)
 
 ### Frontend:
 - ✅ Django Templates
 - ✅ Tailwind CSS (responsive UI, dark mode)
 - ✅ Chart.js (data visualization)
 - ✅ JavaScript (polling, AJAX, toasts)
+- ✅ Mobile-first responsive design
 
 ### Deployment:
 - ✅ Render (production)
 - ✅ Cloudinary (media storage in production)
 - ✅ WhiteNoise (static files)
 - ✅ PostgreSQL on Render
+- ✅ Web-based admin tools (no shell access needed)
 
 ---
 
 ## Recent Updates (March 2, 2026)
 
-### ✅ New Features Added:
-1. **Content Filtering System** - Blocks inappropriate language in student messages (Filipino & English)
-2. **Student-to-Student Messaging** - Students can now message other students
-3. **Enhanced User Management** - Admin tools for user cleanup and management
-4. **Improved Message UI** - Cleaner, simpler new message interface
-5. **Role-Based Messaging Permissions** - Refined messaging rules for all user types
-6. **Real-Time Error Handling** - Immediate feedback for blocked messages
+### ✅ Latest Features Added:
+1. **Philippine GPA System** - Updated to use 5.0 scale (1.00 = Excellent, 5.00 = Failing)
+2. **Mobile-Optimized Wellness Check-in** - Responsive design for mobile devices
+3. **Teacher Quick Actions** - Dropdown menu shortcuts for common tasks
+4. **Enhanced Profile Management** - Better error handling for file uploads
+5. **Web-based User Management** - Admin tools for user cleanup without shell access
+6. **Improved Academic Performance Display** - Removed confusing N/A values from student profiles
 
 ### 🔗 Updated Features:
-- Content filter with 40+ inappropriate words/phrases
-- Student messaging permissions expanded
-- User data validation and cleanup tools
-- Enhanced error messages and user feedback
+- GPA calculation now follows Philippine educational standards
+- Risk assessment updated for Philippine grading scale
+- Mobile-friendly wellness check-in form with responsive emoji buttons
+- Teacher dashboard shows submissions filtered by section and grade level
+- Profile picture upload with graceful error handling
+- Streamlined student profile editing interface
 
 ### 📝 Updated Files:
-- `messaging/content_filter.py` - Content filtering system
-- `messaging/views.py` - Enhanced message validation
-- `templates/messaging/new_message.html` - Simplified UI
-- `messaging/management/commands/` - User management tools
+- `wellness/management/commands/calculate_risk.py` - Philippine GPA system
+- `templates/wellness/wellness_checkin.html` - Mobile-responsive design
+- `templates/base.html` - Teacher quick actions in dropdown
+- `accounts/views.py` - Enhanced error handling for file uploads
+- `accounts/admin_views.py` - Web-based user management tools
+- `templates/accounts/student_profile_edit.html` - Removed academic stats section
 
 ---
 
@@ -487,5 +494,8 @@ python manage.py create_superuser || true
 - ✅ Content filtering for inappropriate language
 - ✅ Comprehensive user management tools
 - ✅ Deployed on Render with Cloudinary storage
+- ✅ Philippine GPA system (5.0 scale)
+- ✅ Mobile-optimized interface
+- ✅ Web-based admin tools
 
 **Live URL:** https://bright-track-project.onrender.com 🎉
