@@ -3,11 +3,9 @@ from django.shortcuts import redirect
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
-        # If user exists, connect the account
+        # Block Google OAuth for new student registrations — use OTP instead
         if sociallogin.is_existing:
             return
-        
-        # Check if email already exists
         if 'email' in sociallogin.account.extra_data:
             email = sociallogin.account.extra_data['email']
             from .models import User
@@ -15,7 +13,11 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
                 user = User.objects.get(email=email)
                 sociallogin.connect(request, user)
             except User.DoesNotExist:
-                pass
+                from allauth.exceptions import ImmediateHttpResponse
+                from django.shortcuts import redirect
+                from django.contrib import messages
+                messages.error(request, 'Students must register using email OTP. Please use the student login page.')
+                raise ImmediateHttpResponse(redirect('otp_request'))
     
     def save_user(self, request, sociallogin, form=None):
         user = super().save_user(request, sociallogin, form)

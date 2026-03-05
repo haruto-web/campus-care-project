@@ -47,7 +47,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-purple-600 text-sm font-medium">Announcements</p>
-                    <p class="text-2xl font-bold text-purple-900">{{ announcements|length }}</p>
+                    <p class="text-2xl font-bold text-purple-900" id="unread-count">{{ announcements|length }}</p>
                 </div>
                 <i class="bi bi-megaphone text-purple-500 text-2xl"></i>
             </div>
@@ -123,9 +123,9 @@
                 </div>
                 <div class="p-6">
                     {% if announcements %}
-                        <div class="space-y-4">
-                            {% for announcement in announcements|slice:":3" %}
-                            <div class="p-4 border border-gray-200 rounded-lg">
+                        <div class="space-y-4" id="announcements-list">
+                            {% for announcement in announcements %}
+                            <div class="p-4 border border-gray-200 rounded-lg announcement-item {% if announcement.is_read %}hidden{% endif %}" data-id="{{ announcement.id }}" data-read="{{ announcement.is_read|yesno:'true,false' }}">
                                 <div class="flex items-start justify-between mb-2">
                                     <div class="flex items-center space-x-2">
                                         <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded font-medium">
@@ -137,12 +137,21 @@
                                         </span>
                                         {% endif %}
                                     </div>
-                                    <span class="text-xs text-gray-500">{{ announcement.created_at|date:"M j, g:i A" }}</span>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs text-gray-500">{{ announcement.created_at|date:"M j, g:i A" }}</span>
+                                        <label class="flex items-center cursor-pointer" title="Mark as read">
+                                            <input type="checkbox" class="announcement-checkbox w-4 h-4 accent-purple-600" data-id="{{ announcement.id }}" {% if announcement.is_read %}checked{% endif %} onchange="toggleRead(this)">
+                                        </label>
+                                    </div>
                                 </div>
                                 <h4 class="font-medium text-gray-900 mb-2">{{ announcement.title }}</h4>
                                 <p class="text-sm text-gray-600">{{ announcement.content|truncatechars:120 }}</p>
                             </div>
                             {% endfor %}
+                        </div>
+                        <div id="all-read-msg" class="text-center py-8 hidden">
+                            <i class="bi bi-check-circle text-purple-400 text-4xl mb-3"></i>
+                            <p class="text-gray-600">All announcements read!</p>
                         </div>
                     {% else %}
                         <div class="text-center py-8">
@@ -197,4 +206,36 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+function updateUnreadCount() {
+    const visible = document.querySelectorAll('.announcement-item:not(.hidden)').length;
+    const countEl = document.getElementById('unread-count');
+    if (countEl) countEl.textContent = visible;
+    const allRead = document.getElementById('all-read-msg');
+    if (allRead) allRead.classList.toggle('hidden', visible > 0);
+}
+function toggleRead(checkbox) {
+    const id = checkbox.dataset.id;
+    const item = document.querySelector('.announcement-item[data-id="' + id + '"]');
+    fetch('/class/announcement/' + id + '/toggle-read/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': CSRF}
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            if (data.is_read) {
+                item.classList.add('hidden');
+            } else {
+                item.classList.remove('hidden');
+                checkbox.checked = false;
+            }
+            updateUnreadCount();
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', updateUnreadCount);
+</script>
 {% endblock %}

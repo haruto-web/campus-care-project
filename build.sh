@@ -8,3 +8,4 @@ python manage.py migrate
 python manage.py migrate sites || true
 python manage.py configure_site || true
 python manage.py create_superuser || true
+python manage.py seed_demo || true

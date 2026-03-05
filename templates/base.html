@@ -300,12 +300,12 @@
             }
             if (data.announcements > prevCounts.announcements) {
                 showToast('<i class="bi bi-megaphone"></i> New announcement posted', 'bg-indigo-600');
-                addNotifItem('<i class="bi bi-megaphone mr-2 text-indigo-500"></i> New announcement', '/academics/my_classes/');
+                addNotifItem('<i class="bi bi-megaphone mr-2 text-indigo-500"></i> New announcement', '/class/my-classes/');
                 hasNewNotifications = true;
             }
             if (data.grades > prevCounts.grades) {
                 showToast('<i class="bi bi-trophy"></i> Assignment graded!', 'bg-purple-600');
-                addNotifItem('<i class="bi bi-trophy mr-2 text-purple-500"></i> Assignment graded', '/academics/student_grades/');
+                addNotifItem('<i class="bi bi-trophy mr-2 text-purple-500"></i> Assignment graded', '/class/student/grades/');
                 hasNewNotifications = true;
             }
             // Only show alert notifications if there's a significant increase
