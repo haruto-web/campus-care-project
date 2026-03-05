@@ -41,10 +41,24 @@
                                 <h4 class="font-semibold text-gray-800">Step 1: Pick Students</h4>
                             </div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Select one or more students *</label>
-                            <input type="text" id="studentSearch" placeholder="Search students..." oninput="filterStudents()" class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 text-sm">
+                            <div class="flex gap-2 mb-2">
+                                <select id="sectionFilter" onchange="applyFilters()" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="">All Sections</option>
+                                    {% for section in sections %}
+                                    <option value="{{ section|lower }}" {% if section_filter == section|lower %}selected{% endif %}>{{ section }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select id="gradeFilter" onchange="applyFilters()" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="">All Grades</option>
+                                    {% for grade in grade_levels %}
+                                    <option value="{{ grade }}" {% if grade_filter == grade %}selected{% endif %}>Grade {{ grade }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <input type="text" id="studentSearch" placeholder="Search students..." oninput="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 text-sm">
                             <div class="border border-gray-300 rounded-lg bg-white max-h-48 overflow-y-auto" id="studentList">
                                 {% for student in students %}
-                                <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer student-option" data-name="{{ student.get_full_name|lower }}">
+                                <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer student-option" data-name="{{ student.get_full_name|lower }}" data-section="{{ student.section|lower }}" data-grade="{{ student.year_level }}">
                                     <input type="checkbox" name="student" value="{{ student.id }}" class="mr-2">
                                     <span class="text-sm text-gray-800">{{ student.get_full_name }}{% if student.year_level %} (Grade {{ student.year_level }}){% endif %}{% if student.section %} - {{ student.section }}{% endif %}</span>
                                 </label>
@@ -175,10 +189,15 @@
     select:focus { outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
 </style>
 <script>
-function filterStudents() {
+function applyFilters() {
     const q = document.getElementById('studentSearch').value.toLowerCase();
+    const sec = document.getElementById('sectionFilter').value.toLowerCase();
+    const grade = document.getElementById('gradeFilter').value;
     document.querySelectorAll('.student-option').forEach(el => {
-        el.style.display = el.dataset.name.includes(q) ? '' : 'none';
+        const nameMatch = !q || el.dataset.name.includes(q);
+        const secMatch = !sec || el.dataset.section === sec;
+        const gradeMatch = !grade || el.dataset.grade === grade;
+        el.style.display = (nameMatch && secMatch && gradeMatch) ? '' : 'none';
     });
 }
 document.addEventListener('change', function(e) {

@@ -288,6 +288,18 @@ def admin_enroll_student(request):
     
     students = User.objects.filter(role='student').order_by('last_name', 'first_name')
     classes = Class.objects.all().select_related('teacher').order_by('code')
+
+    # Dynamic filter options from DB
+    sections = User.objects.filter(role='student').exclude(section='').values_list('section', flat=True).distinct().order_by('section')
+    grade_levels = User.objects.filter(role='student').exclude(year_level=None).values_list('year_level', flat=True).distinct().order_by('year_level')
+
+    # Apply filters
+    section_filter = request.GET.get('section', '')
+    grade_filter = request.GET.get('grade', '')
+    if section_filter:
+        students = students.filter(section__iexact=section_filter)
+    if grade_filter:
+        students = students.filter(year_level=grade_filter)
     
     # Get recent enrollments
     recent_enrollments = []
@@ -302,6 +314,10 @@ def admin_enroll_student(request):
         'students': students,
         'classes': classes,
         'recent_enrollments': recent_enrollments[:10],
+        'sections': sections,
+        'grade_levels': grade_levels,
+        'section_filter': section_filter,
+        'grade_filter': grade_filter,
     }
     return render(request, 'admin/enroll_student.html', context)
 

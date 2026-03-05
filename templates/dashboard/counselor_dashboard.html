@@ -448,6 +448,20 @@
                         </div>
                         <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform"></i>
                     </a>
+                    <a href="{% url 'download_report' %}?format=pdf" class="flex items-center w-full border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg hover:bg-red-50 font-semibold transition group">
+                        <i class="bi bi-file-earmark-pdf text-xl mr-3"></i>
+                        <div class="flex-1 text-left">
+                            <div class="font-bold">Download PDF</div>
+                            <div class="text-xs text-red-400">Full school report</div>
+                        </div>
+                    </a>
+                    <a href="{% url 'download_report' %}?format=docx" class="flex items-center w-full border-2 border-indigo-200 text-indigo-700 px-4 py-3 rounded-lg hover:bg-indigo-50 font-semibold transition group">
+                        <i class="bi bi-file-earmark-word text-xl mr-3"></i>
+                        <div class="flex-1 text-left">
+                            <div class="font-bold">Download DOCX</div>
+                            <div class="text-xs text-indigo-400">Word document report</div>
+                        </div>
+                    </a>
                 </div>
             </div>
             
