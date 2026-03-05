@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import random
+from django.utils import timezone
+from datetime import timedelta
 
 class User(AbstractUser):
     ROLE_CHOICES = [
@@ -40,3 +43,22 @@ class User(AbstractUser):
             today = date.today()
             return today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
         return None
+
+
+class OTPCode(models.Model):
+    contact_value = models.CharField(max_length=255)  # email
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    @classmethod
+    def generate(cls, email):
+        cls.objects.filter(contact_value=email, is_used=False).update(is_used=True)
+        code = str(random.randint(100000, 999999))
+        return cls.objects.create(contact_value=email, code=code)
+
+    def is_valid(self):
+        return not self.is_used and timezone.now() < self.created_at + timedelta(minutes=10)
+
+    def __str__(self):
+        return f"{self.contact_value} → {self.code}"

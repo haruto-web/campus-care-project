@@ -8,7 +8,8 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from academics.models import Class, Assignment, Submission, Attendance, Grade
 from wellness.models import WellnessCheckIn, RiskAssessment, Alert, Intervention
-from .models import User
+from .models import User, OTPCode
+from .otp_utils import send_otp_email
 
 def landing_view(request):
     if request.user.is_authenticated:
@@ -132,20 +133,217 @@ def register_view(request):
     
     return render(request, 'accounts/register.html')
 
+
+def otp_request_view(request):
+    """Step 1: Student enters email only — always sends OTP."""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip().lower()
+
+        if not email or '@' not in email:
+            messages.error(request, 'Please enter a valid email address.')
+            return render(request, 'accounts/otp_request.html')
+
+        otp = OTPCode.generate(email)
+        try:
+            send_otp_email(email, otp.code)
+        except Exception:
+            messages.error(request, 'Failed to send verification code. Please try again.')
+            return render(request, 'accounts/otp_request.html')
+
+        request.session['otp_email'] = email
+        request.session.pop('otp_purpose', None)
+        return redirect('otp_verify')
+
+    return render(request, 'accounts/otp_request.html')
+
+
+def otp_verify_view(request):
+    """OTP verify — used for login, new registration, and forgot password."""
+    email = request.session.get('otp_email')
+    if not email:
+        return redirect('otp_request')
+
+    if request.method == 'POST':
+        entered = request.POST.get('code', '').strip()
+        otp = OTPCode.objects.filter(
+            contact_value=email, code=entered, is_used=False
+        ).order_by('-created_at').first()
+
+        if not otp or not otp.is_valid():
+            messages.error(request, 'Invalid or expired code. Please try again.')
+            return render(request, 'accounts/otp_verify.html', {'email': email})
+
+        otp.is_used = True
+        otp.save()
+        request.session['otp_verified'] = True
+
+        if request.session.get('otp_purpose') == 'reset':
+            return redirect('otp_reset_password')
+
+        existing = User.objects.filter(email=email, role='student').first()
+        if existing:
+            return redirect('otp_login_password')
+
+        return redirect('otp_register')
+
+    return render(request, 'accounts/otp_verify.html', {'email': email})
+
+
+def otp_login_password_view(request):
+    """Existing student enters password after OTP verified."""
+    if not request.session.get('otp_verified'):
+        return redirect('otp_request')
+
+    email = request.session.get('otp_email')
+
+    if request.method == 'POST':
+        password = request.POST.get('password', '')
+        try:
+            u = User.objects.get(email=email, role='student')
+            user = authenticate(request, username=u.username, password=password)
+        except User.DoesNotExist:
+            user = None
+
+        if user is not None:
+            for key in ['otp_email', 'otp_verified']:
+                request.session.pop(key, None)
+            login(request, user)
+            return redirect('dashboard')
+        else:
+            messages.error(request, 'Incorrect password.')
+
+    return render(request, 'accounts/otp_login_password.html', {'email': email})
+
+
+def otp_forgot_password_view(request):
+    """Send OTP to reset password for existing student."""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip().lower()
+        student = User.objects.filter(email=email, role='student').first()
+        if not student:
+            messages.error(request, 'No student account found with that email.')
+            return render(request, 'accounts/otp_forgot_password.html')
+
+        otp = OTPCode.generate(email)
+        try:
+            send_otp_email(email, otp.code)
+        except Exception:
+            messages.error(request, 'Failed to send code. Please try again.')
+            return render(request, 'accounts/otp_forgot_password.html')
+
+        request.session['otp_email'] = email
+        request.session['otp_purpose'] = 'reset'
+        return redirect('otp_verify')
+
+    return render(request, 'accounts/otp_forgot_password.html')
+
+
+def otp_reset_password_view(request):
+    """Set new password after OTP verified for forgot password."""
+    if not request.session.get('otp_verified') or request.session.get('otp_purpose') != 'reset':
+        return redirect('otp_request')
+
+    email = request.session.get('otp_email')
+
+    if request.method == 'POST':
+        password = request.POST.get('password', '')
+        password2 = request.POST.get('password2', '')
+
+        if password != password2:
+            messages.error(request, 'Passwords do not match.')
+            return render(request, 'accounts/otp_reset_password.html')
+
+        if len(password) < 8:
+            messages.error(request, 'Password must be at least 8 characters.')
+            return render(request, 'accounts/otp_reset_password.html')
+
+        student = User.objects.get(email=email, role='student')
+        student.set_password(password)
+        student.save()
+
+        for key in ['otp_email', 'otp_verified', 'otp_purpose']:
+            request.session.pop(key, None)
+
+        messages.success(request, 'Password reset successfully. Please log in.')
+        return redirect('otp_request')
+
+    return render(request, 'accounts/otp_reset_password.html')
+
+
+def otp_register_view(request):
+    """New student fills in name + password after OTP verified."""
+    if not request.session.get('otp_verified'):
+        return redirect('otp_request')
+
+    email = request.session.get('otp_email')
+
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        password = request.POST.get('password', '')
+        password2 = request.POST.get('password2', '')
+
+        if password != password2:
+            messages.error(request, 'Passwords do not match.')
+            return render(request, 'accounts/otp_register.html', {'email': email})
+
+        if len(password) < 8:
+            messages.error(request, 'Password must be at least 8 characters.')
+            return render(request, 'accounts/otp_register.html', {'email': email})
+
+        import uuid
+        base = f"{first_name.lower()}{last_name.lower()}"
+        username = f"{base}{str(uuid.uuid4())[:4]}"
+        while User.objects.filter(username=username).exists():
+            username = f"{base}{str(uuid.uuid4())[:4]}"
+
+        user = User(
+            username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            role='student',
+        )
+        user.set_password(password)
+        user.save()
+
+        for key in ['otp_email', 'otp_verified']:
+            request.session.pop(key, None)
+
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        messages.success(request, 'Account created! Please complete your profile.')
+        return redirect('complete_profile')
+
+    return render(request, 'accounts/otp_register.html', {'email': email})
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     
     if request.method == 'POST':
-        username = request.POST.get('username')
+        email = request.POST.get('email', '').strip().lower()
         password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        
+
+        try:
+            u = User.objects.get(email=email)
+            user = authenticate(request, username=u.username, password=password)
+        except User.DoesNotExist:
+            user = None
+
         if user is not None:
+            if user.role == 'student':
+                messages.error(request, 'Students must log in using email OTP.')
+                return redirect('otp_request')
             login(request, user)
             return redirect('dashboard')
         else:
-            messages.error(request, 'Invalid username or password')
+            messages.error(request, 'Invalid email or password.')
     
     return render(request, 'accounts/login.html')
 

@@ -462,3 +462,8 @@ python manage.py create_superuser || true
 4. Cloudinary for secure media in production
 5. `DEBUG=False` in production
 6. Content filtering prevents inappropriate messages from students
+
+
+i want to remove of creating dummy account for student. the student must input email or number to login of register a account. for example student input a email, the student will recieve a OTP/authentication code to put that in register or login. guide me to implement this in my work
+
+create a md file for this implementation

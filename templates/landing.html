@@ -42,7 +42,7 @@
                 <!-- Desktop -->
                 <div class="hidden sm:flex items-center gap-4">
                     <a href="{% url 'login' %}" class="text-gray-700 hover:text-gray-900 font-medium">Log In</a>
-                    <a href="{% url 'register' %}" class="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition font-medium">Get Started</a>
+                    <a href="{% url 'otp_request' %}" class="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition font-medium">Student Login</a>
                 </div>
                 <!-- Mobile hamburger -->
                 <button onclick="toggleLandingMenu()" class="sm:hidden p-2 rounded text-gray-700 hover:bg-gray-100">
@@ -53,7 +53,7 @@
         <!-- Mobile menu -->
         <div id="landingMobileMenu" class="hidden sm:hidden border-t border-gray-200 bg-white px-4 py-3 space-y-2">
             <a href="{% url 'login' %}" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 font-medium">Log In</a>
-            <a href="{% url 'register' %}" class="block px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700 font-medium text-center">Get Started</a>
+            <a href="{% url 'otp_request' %}" class="block px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700 font-medium text-center">Student Login</a>
         </div>
     </nav>
     <script>
@@ -77,8 +77,8 @@
                         BrightTrack is a comprehensive learning management system designed to support student success through intelligent monitoring, early intervention, and data-driven insights.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <a href="{% url 'register' %}" class="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 transition font-semibold text-lg text-center">
-                            Start Free Today
+                        <a href="{% url 'otp_request' %}" class="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 transition font-semibold text-lg text-center">
+                            Student Login / Register
                         </a>
                         <a href="{% url 'login' %}" class="border-2 border-gray-300 text-gray-700 px-8 py-3 rounded-lg hover:border-gray-400 transition font-semibold text-lg text-center">
                             Sign In
@@ -223,8 +223,8 @@
             <h2 class="text-4xl font-bold text-white mb-6">Ready to Get Started?</h2>
             <p class="text-xl text-red-100 mb-8">Join thousands of educators and students using BrightTrack to achieve academic success.</p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{% url 'register' %}" class="bg-white text-red-600 px-8 py-3 rounded-lg hover:bg-gray-100 transition font-semibold text-lg text-center">
-                    Create Free Account
+                <a href="{% url 'otp_request' %}" class="bg-white text-red-600 px-8 py-3 rounded-lg hover:bg-gray-100 transition font-semibold text-lg text-center">
+                    Student Login / Register
                 </a>
                 <a href="{% url 'login' %}" class="border-2 border-white text-white px-8 py-3 rounded-lg hover:bg-red-700 transition font-semibold text-lg text-center">
                     Sign In

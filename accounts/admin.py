@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User
+from .models import User, OTPCode
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
@@ -9,3 +9,8 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ('Additional Info', {'fields': ('role', 'phone', 'profile_picture', 'year_level', 'section', 'subject', 'id_picture', 'about_me', 'profile_completed')}),
     )
+
+@admin.register(OTPCode)
+class OTPCodeAdmin(admin.ModelAdmin):
+    list_display = ['contact_value', 'code', 'created_at', 'is_used']
+    list_filter = ['is_used']
