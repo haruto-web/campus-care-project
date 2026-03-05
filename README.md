@@ -3,9 +3,25 @@
 ## System Overview
 BrightTrack (formerly Campus Care) is an LMS with integrated student support monitoring that tracks academic performance, attendance, and wellness to identify at-risk students early.
 
-**Last Updated:** March 2, 2026
+**Last Updated:** March 3, 2026
 **Overall Progress:** 100% Complete
-**Status:** All features complete! Real-time chat, global notifications, responsive design, content filtering, and user management added!
+**Live URL:** https://bright-track-project.onrender.com
+
+---
+
+## 🗂️ URL Structure
+
+All academics routes are mounted under `/class/` (not `/academics/`):
+
+| Prefix | App |
+|--------|-----|
+| `/` | accounts (login, register, dashboard, profile) |
+| `/class/` | academics (classes, assignments, submissions, grades, attendance) |
+| `/wellness/` | wellness (check-ins, alerts, interventions, reports) |
+| `/messages/` | messaging (inbox, conversations) |
+| `/ai/` | ai_assistant (AI feedback) |
+| `/admin/` | Django admin |
+| `/accounts/` | allauth (Google OAuth) |
 
 ---
 
@@ -13,123 +29,144 @@ BrightTrack (formerly Campus Care) is an LMS with integrated student support mon
 
 ### Registration & Onboarding Flow
 ```
-1. User visits landing page (with loading screen) → Clicks "Register"
-2. Selects role (Student/Teacher/Counselor/Admin)
-3. Role-specific fields appear:
-   - Student: Year Level (7-10) + Section
-   - Teacher: Section (class they teach)
-   - Counselor: Basic info only
-4. Completes registration → Auto-login
-5. Redirected to role-specific profile completion:
-   - Student: Profile pic, student number, grade level, section, phone, DOB, ID pic
-   - Teacher: SKIP (goes directly to dashboard)
-   - Counselor: SKIP (goes directly to dashboard)
-6. Section & Grade Level based auto-assignment:
-   - Students: Auto-enrolled in classes matching BOTH section AND year level
-   - Example: Grade 7 Section Apple → Only enrolled in Grade 7 Apple classes
-   - Teacher: Auto-assigned to section class during registration
-7. Redirected to role-based dashboard
+1. User visits landing page (loading screen + animated progress bar) → Clicks "Register"
+2. Fills in name, email, username, password (students only via public registration)
+3. Completes registration → Auto-login
+4. Redirected to role-specific profile completion:
+   - Student: Profile pic, student number, grade level (7-10), section, phone, DOB, ID pic
+   - Teacher: Profile pic, section, DOB, ID pic, about me (or SKIP)
+   - Counselor: Profile pic, DOB (or SKIP)
+5. Section & Grade Level based auto-enrollment:
+   - Student enters section + year level → Auto-enrolled in ALL classes matching BOTH
+   - Example: Grade 7 Section Apple → Only Grade 7 Apple classes
+   - Teacher creates class with section + grade level → Auto-enrolls matching students
+6. Redirected to role-based dashboard
 ```
 
 ### Teacher Workflow
 ```
 1. Login → Dashboard
-   ├─ View classes taught
-   ├─ See students needing attention (at-risk)
-   └─ Check recent submissions (with notifications)
+   ├─ View classes taught (with student counts)
+   ├─ See at-risk students needing attention
+   ├─ Check recent submissions (grouped by class, 3 per class)
+   └─ Quick Actions dropdown (create class, mark attendance, etc.)
 
-2. Create New Class
-   ├─ Enter Class Name (e.g., "Math")
-   ├─ Enter Section (e.g., "Apple")
-   ├─ Select Grade Level (7, 8, 9, or 10)
+2. Create New Class (/class/create/)
+   ├─ Enter Class Name, Section, Grade Level (7-10)
    ├─ Add Description, Semester, Room, Schedule
    └─ Students with matching section AND grade level auto-enrolled
 
-3. My Classes
-   ├─ Filter by year level/section
-   ├─ Click class → Class Detail Page
+3. My Classes (/class/my-classes/)
+   ├─ Filter by year level / section
+   ├─ Click class → Class Detail (tabbed UI)
    └─ Edit class name/details
 
-4. Class Management
-   ├─ Edit Class → Rename, update details
-   ├─ Manage Students → Add/drop students with search and year level filter
-   ├─ Create Assignment → Title, description, due date, points
-   ├─ Mark Attendance → Present/Late/Absent
-   ├─ Post Announcement → Normal/Urgent priority
-   └─ Upload Materials → Files for students
+4. Class Detail (/class/class/<id>/) — Tabbed UI
+   ├─ Assignments tab → List with delete button per assignment
+   ├─ Announcements tab → List of posted announcements
+   ├─ Materials tab → Uploaded files with delete
+   ├─ Roster tab → Enrolled students
+   └─ Icon quick-actions grid (Create Assignment, Mark Attendance, Post Announcement, Upload Material, Manage Students, Edit Class)
 
-5. Grading
-   ├─ View Submissions → Filter graded/pending
-   ├─ Grade Assignment → Two-column UI with feedback
-   └─ Student notified automatically
+5. Assignment Management
+   ├─ Create Assignment → Title, description, due date, points, submission type
+   │   └─ Submission types: File Upload | Text Entry | File or Text (radio card selector)
+   ├─ View Submissions (/class/class/<id>/assignment/<id>/submissions/)
+   │   ├─ Filter by graded/pending
+   │   ├─ Preview button → Inline expandable row showing text entry + file
+   │   ├─ Comment box in preview row → AJAX save (no page reload)
+   │   └─ Grade button → Full grade submission page
+   ├─ Grade Submission → Score input, feedback textarea, AI Suggest button
+   └─ Delete Assignment → Trash button in class detail
 
-6. Student Monitoring
-   ├─ Students List → Search, filter by year level
-   ├─ View Student Profile → Risk level, GPA, attendance
-   └─ Submit Concern → Academic/behavioral/emotional
+6. Attendance (/class/class/<id>/attendance/)
+   └─ Mark Present / Absent / Late per student for today
+
+7. Communication
+   ├─ Post Announcement → Title, content, Normal/Urgent priority
+   ├─ Upload Material → File with title and description
+   └─ Real-time messaging with students/counselors (content filtered)
+
+8. Student Monitoring
+   ├─ Students List (/students/) → Search, filter by year level/class
+   ├─ View Student Profile → Risk level, GPA, attendance, concerns, interventions
+   └─ Submit Concern → Academic / Behavioral / Emotional / Attendance
 ```
 
 ### Student Workflow
 ```
-1. Login → Dashboard
-   ├─ View enrolled classes (auto-enrolled by section + grade level)
-   ├─ See upcoming assignments
-   ├─ Check recently graded work
-   ├─ Read announcements (mark as read)
-   └─ Click stat cards → expand classes list or missing assignments by subject
+1. Login → Dashboard (/dashboard/)
+   ├─ Stat cards: My Classes | Pending Tasks | Announcements (live unread count)
+   ├─ Today's Tasks → Upcoming assignments with View/Submit button
+   ├─ Recent Announcements → Unread only shown; checkbox to mark read/unread
+   │   └─ Checking = hides from dashboard (stays in class); unchecking = restores
+   └─ My Classes sidebar → Quick links to each class
 
-2. My Classes
-   ├─ Click class → Class Detail
-   ├─ View assignments, grades, materials
-   └─ See class schedule and teacher info
+2. My Classes (/class/my-classes/)
+   └─ Click class → Class Detail (read-only view)
 
-3. Assignments
-   ├─ View all assignments (upcoming/overdue/completed)
-   ├─ Submit assignment → Upload file
-   └─ Re-submit if needed
+3. Class Detail (/class/class/<id>/)
+   ├─ Assignments tab → Submit / Re-submit button per assignment
+   ├─ Announcements tab → All class announcements (always visible here)
+   ├─ Materials tab → Download files
+   └─ Roster tab → See classmates
 
-4. Academic Tracking
-   ├─ My Grades → View scores and feedback
-   ├─ My Attendance → Track attendance rate
-   └─ GPA displayed on dashboard
+4. Assignments (/class/student/assignments/)
+   ├─ Tabs: Upcoming | Overdue | Completed
+   ├─ Submit → File upload, text entry, or both (based on assignment type)
+   ├─ Completed tab shows:
+   │   ├─ Score (e.g., 8/10) with color coding
+   │   ├─ Teacher Feedback (if graded)
+   │   └─ Teacher Comment (if comment-only, shown under "Pending Grade")
+   └─ Re-submit clears previous grade/feedback
 
-5. Wellness
-   ├─ Submit wellness check-in
+5. My Grades (/class/student/grades/)
+   ├─ Filter by class
+   ├─ Score, percentage, status per assignment
+   └─ Feedback/comment row shown below each graded assignment
+
+6. My Attendance (/class/student/attendance/)
+   ├─ Overall attendance rate
+   └─ Per-class breakdown with records
+
+7. Wellness (/wellness/checkin/)
+   ├─ Submit mood/wellness check-in (emoji buttons, mobile-friendly)
    └─ View check-in history
 
-6. Communication
-   ├─ View announcements
-   ├─ Download class materials
-   ├─ Mark announcements as read
-   └─ Real-time messaging with teachers/counselors/students (content filtered)
+8. Messaging (/messages/)
+   ├─ Inbox → All conversations
+   ├─ Real-time chat (3s polling, AJAX send)
+   ├─ File/image attachments
+   ├─ Read receipts (Messenger-style "Read" under last read sent message)
+   ├─ Content filtering for inappropriate language (Filipino & English)
+   └─ Student-to-student messaging enabled
 ```
 
 ### Counselor Workflow
 ```
 1. Login → Dashboard
-   ├─ View at-risk students overview
-   ├─ See new alerts count (real-time badge)
-   └─ Check pending interventions
+   ├─ At-risk students overview (high/medium counts)
+   ├─ Real-time alert badge (updates every 5s)
+   └─ Pending interventions
 
-2. At-Risk Students
+2. At-Risk Students (/wellness/at-risk/)
    ├─ Filter by risk level (High/Medium/Low)
    ├─ Search by name/email
-   ├─ View student profile → Full risk assessment
-   └─ Create intervention
+   ├─ View student profile → Full risk assessment, GPA, attendance, wellness
+   └─ Create intervention from profile
 
-3. Interventions
-   ├─ View all interventions
+3. Interventions (/wellness/interventions/)
    ├─ Filter by status (Scheduled/Completed/Cancelled)
-   ├─ Update intervention → Add notes, change status
+   ├─ Update status, add notes
    └─ Track outcomes
 
-4. Alerts
-   ├─ View all alerts (color-coded by severity)
-   ├─ Filter by type/severity
-   ├─ Mark as read
-   └─ Resolve alerts
+4. Alerts (/wellness/alerts/)
+   ├─ Color-coded by severity
+   ├─ Filter by type/date/severity
+   ├─ Mark as read / Resolve
+   └─ Auto-generated by Django signals
 
-5. Reports
+5. Reports (/wellness/reports/)
    ├─ Risk level distribution
    ├─ Intervention statistics
    ├─ Alert statistics
@@ -143,29 +180,24 @@ BrightTrack (formerly Campus Care) is an LMS with integrated student support mon
    ├─ Risk distribution charts
    └─ Recent alerts
 
-2. User Management (Admin Panel)
+2. User Management (/manage/users/)
    ├─ Add/edit/delete users
    ├─ Assign roles
-   └─ View all users
+   └─ Cleanup inactive users (/manage/cleanup-users/)
 
-3. Class Management (Admin Panel)
-   ├─ View all classes
+3. Class Management (/manage/create-class/, /manage/enroll-student/)
    ├─ Create classes for teachers
-   └─ Enroll students
+   └─ Enroll students manually
 
-4. System Monitoring
-   ├─ View at-risk students
-   ├─ Check wellness history
-   └─ Monitor system usage
+4. Django Admin (/admin/)
+   └─ Full model-level access (users, classes, submissions, etc.)
 ```
 
 ### Automated System Processes
 ```
-1. Section & Grade Level Based Assignment (On Profile Completion)
-   ├─ Student enters section + year level → Auto-enrolled in matching classes
-   ├─ Example: Grade 7 Section Apple → Only Grade 7 Apple classes
-   ├─ Teacher creates class with section + grade level → Auto-enrolls matching students
-   └─ Code auto-generated: "SEC-{SECTION}" (e.g., SEC-APPLE)
+1. Section & Grade Level Based Enrollment
+   ├─ Student completes profile → Auto-enrolled in matching classes
+   └─ Teacher creates class → Auto-enrolls matching students
 
 2. Alert Generation (Django Signals)
    ├─ High risk student detected → Alert created
@@ -174,330 +206,242 @@ BrightTrack (formerly Campus Care) is an LMS with integrated student support mon
    ├─ Teacher submits concern → Alert created
    └─ Wellness distress detected → Alert created
 
-3. Real-Time Notifications (Polling)
-   ├─ Chat messages → 3s polling, AJAX send (no page reload)
-   ├─ Unread message badge → updates every 5s
-   ├─ New announcement → toast popup for students
-   ├─ Assignment graded → toast popup for students
-   ├─ New alert → toast popup for counselors/admins
-   └─ Bell icon dropdown shows recent notification history
+3. Real-Time Notifications (Polling every 5s)
+   ├─ Unread message badge → live update
+   ├─ Bell icon dropdown → recent notification history
+   └─ Toast popups:
+       ├─ 💬 New message (all roles)
+       ├─ 📢 New announcement (students)
+       ├─ 🏆 Assignment graded (students)
+       └─ ⚠️ New alert (counselors/admins)
+
+4. Risk Assessment (calculate_risk management command)
+   ├─ Philippine GPA system (1.00 = Excellent, 5.00 = Failing)
+   ├─ Auto-runs on admin dashboard load if stale
+   └─ Factors: GPA, attendance rate, missing assignments, wellness score
 ```
 
 ---
 
-## User Roles
+## 📦 Data Models
 
-- ✅ **Teacher** - Manage classes, grade assignments, report concerns
-- ✅ **Counselor** - Monitor at-risk students, create interventions
-- ✅ **Admin** - Manage users, classes, system settings
-- ✅ **Student** - Attend classes, submit assignments, take wellness check-ins
+### academics app
+- **Class** — name, code, section, year_level (7-10), teacher FK, students M2M, semester, schedule, room
+- **Assignment** — class_obj FK, title, description, due_date, total_points, submission_type (file_upload/text_entry/both)
+- **Submission** — assignment FK, student FK, file, text_content, score, feedback, graded_at
+- **Attendance** — class_obj FK, student FK, date, status (present/absent/late)
+- **Announcement** — class_obj FK, author FK, title, content, priority (normal/urgent), read_by M2M
+- **Material** — class_obj FK, title, file, uploaded_by FK
+- **Grade** — student FK, class_obj FK, assignment FK, score, max_score
+
+### accounts app
+- **User** — role (student/teacher/counselor/admin), section, year_level, student_number, profile_picture, id_picture, about_me, profile_completed
+
+### messaging app
+- **Conversation** — participants M2M
+- **Message** — conversation FK, sender FK, body, attachment, is_read
+
+### wellness app
+- **WellnessCheckIn** — student FK, mood score, text_response, date
+- **RiskAssessment** — student FK, risk_level (low/medium/high), risk_score, gpa, date
+- **Alert** — student FK, alert_type, severity, is_read, resolved
+- **Intervention** — student FK, counselor FK, type, description, scheduled_date, status, notes
+- **TeacherConcern** — student FK, teacher FK, concern_type, description
 
 ---
 
-## 1. TEACHER FEATURES (100% Complete)
+## 1. TEACHER FEATURES
 
 ### ✅ Class Management
 - ✅ Create class with section AND grade level
 - ✅ Auto-enroll students matching both section and grade level
 - ✅ Edit class (rename, description, schedule, room)
-- ✅ Add/remove students to class (with search and year level filter)
+- ✅ Add/remove students (with search and year level filter)
 - ✅ View class roster
-- ✅ View class detail page
-- ✅ Section & grade level based automatic grouping
+- ✅ Tabbed class detail page (Assignments / Announcements / Materials / Roster)
+- ✅ Icon quick-actions grid in class detail
 
 ### ✅ Assignment Management
-- ✅ Create assignment (title, description, due date, points)
-- ✅ View submissions (modern UI with student avatars)
-- ✅ Grade assignments with feedback (modern two-column layout)
-- ✅ View grading queue
-- ✅ Recent submissions dashboard widget
+- ✅ Create assignment with submission type (File Upload / Text Entry / File or Text)
+- ✅ Delete assignment
+- ✅ View submissions with inline preview (text + file) before grading
+- ✅ Leave comment on submission (AJAX, no page reload)
+- ✅ Grade assignment with score + feedback (two-column layout)
+- ✅ AI Suggest feedback button (Gemini)
+- ✅ Student notified on grading
 
-### ✅ Attendance Tracking
+### ✅ Attendance
 - ✅ Mark daily attendance (present/absent/late)
-- ✅ View attendance interface
 
 ### ✅ Communication
-- ✅ Post class/school-wide announcements
-- ✅ Set priority (normal/urgent)
-- ✅ Upload class materials
-- ✅ Delete materials
+- ✅ Post announcements (normal/urgent)
+- ✅ Upload/delete class materials
 - ✅ Real-time messaging with students/counselors
 
 ### ✅ Student Monitoring
-- ✅ Submit concern about student (academic, behavioral, emotional, attendance)
-- ✅ View submitted concerns
-- ✅ View comprehensive student profiles
-- ✅ Search and filter students
-- ✅ View students needing attention
+- ✅ Submit concern (academic/behavioral/emotional/attendance)
+- ✅ View student profiles (risk, GPA, attendance, wellness)
+- ✅ Search and filter students by year level/class
 
 ---
 
-## 2. COUNSELOR FEATURES (100% Complete)
+## 2. COUNSELOR FEATURES
 
 ### ✅ Dashboard
-- ✅ At-risk students overview
-- ✅ Quick stats (total at-risk, new alerts)
-- ✅ Pending interventions
-- ✅ Real-time alert badge (updates every 5s)
+- ✅ At-risk overview, alert badge (5s polling), pending interventions
 
 ### ✅ Student Monitoring
-- ✅ View student profiles with risk indicators
-- ✅ Filter by risk level, class, grade
-- ✅ Search students by name or email
-- ✅ Sort by risk score
+- ✅ Filter by risk level, search by name/email, sort by risk score
 
 ### ✅ Intervention Management
-- ✅ Intervention model created (type, description, scheduled date, status)
-- ✅ Create intervention form
-- ✅ Update intervention status (modern Tailwind UI)
-- ✅ Add notes after intervention
-- ✅ Track outcomes
-- ✅ View all interventions with filters
+- ✅ Create, update, track interventions with notes and outcomes
 
-### ✅ Alerts & Notifications
-- ✅ Alert model created
-- ✅ View all alerts
-- ✅ Mark as read/resolved
-- ✅ Filter by type/date/severity
-- ✅ Automated alert generation (signals)
-- ✅ Real-time toast notifications
+### ✅ Alerts
+- ✅ View, filter, mark read/resolved; auto-generated by signals
 
-### ✅ Reports & Analytics
-- ✅ System-wide statistics
-- ✅ Risk level distribution
-- ✅ Intervention statistics
-- ✅ Alert statistics
-- ✅ Academic overview
-- ✅ Recent activity tracking
+### ✅ Reports
+- ✅ Risk distribution, intervention stats, alert stats, academic overview
 
 ---
 
-## 3. ADMIN FEATURES (100% Complete)
+## 3. ADMIN FEATURES
 
 ### ✅ User Management
-- ✅ Add/edit/delete users (via admin panel)
-- ✅ View all users
-- ✅ Role assignment
+- ✅ Add/edit/delete users, assign roles, cleanup tools
 
 ### ✅ Class Management
-- ✅ View all classes (via admin panel)
-- ✅ Manage class data
-- ✅ Create classes for teachers
-- ✅ Enroll students in classes
+- ✅ Create classes for teachers, enroll students
 
 ### ✅ System Monitoring
-- ✅ Dashboard with system statistics
-- ✅ At-risk students view (via admin panel)
-- ✅ View wellness check-in history
-- ✅ Data visualization (charts and graphs)
+- ✅ Dashboard stats, risk charts, wellness history
 
 ---
 
-## 4. STUDENT FEATURES (100% Complete)
+## 4. STUDENT FEATURES
 
-### ✅ Class Access
-- ✅ View enrolled classes
-- ✅ See class schedule
-- ✅ Access class materials (download)
-- ✅ View class detail page
+### ✅ Dashboard
+- ✅ Unread announcements with read/unread checkbox toggle
+- ✅ Read announcements hidden from dashboard (still visible in class)
+- ✅ Live unread announcement count
+- ✅ Upcoming assignments, my classes sidebar
 
-### ✅ Assignment Management
-- ✅ View assignments (upcoming, overdue, completed)
-- ✅ Submit assignments (with file upload)
-- ✅ View grades and feedback
-- ✅ Re-submit assignments
+### ✅ Assignments
+- ✅ View upcoming/overdue/completed tabs
+- ✅ Submit: file upload, text entry, or both
+- ✅ Re-submit (clears previous grade)
+- ✅ View score, teacher feedback, and teacher comment (even if not yet graded)
 
-### ✅ Attendance & Grades
-- ✅ View own attendance record (stats in dashboard)
-- ✅ View current GPA (in dashboard)
-- ✅ My Attendance (detailed view)
-- ✅ My Grades (detailed view)
+### ✅ Grades
+- ✅ Per-class grade breakdown with score, percentage, feedback
+- ✅ Teacher comments shown even for ungraded submissions
 
-### ✅ Wellness Check-ins
-- ✅ Submit check-in form
+### ✅ Attendance
+- ✅ Overall rate + per-class breakdown
+
+### ✅ Wellness
+- ✅ Submit check-in (mobile-friendly emoji buttons)
 - ✅ View check-in history
 
-### ✅ Communication
-- ✅ View announcements
-- ✅ Mark announcements as read (with checkbox)
-- ✅ Real-time messaging with teachers/counselors/students
-- ✅ Content filtering for inappropriate language (students only)
-- ✅ Student-to-student messaging enabled
-
-### ✅ Dashboard Stat Cards (Clickable)
-- ✅ Classes card → expands full class list
-- ✅ Missing card → expands missing assignments grouped by subject
-
----
-
-## 5. AUTHENTICATION & ONBOARDING (100% Complete)
-
-### ✅ User Registration/Login
-- ✅ Login page (email/username + password)
-- ✅ Google OAuth login
-- ✅ Role-based redirect after login
-- ✅ Registration page with role selection
-- ✅ First-time setup (role-based profile completion)
-- ✅ Automatic section + grade level based class assignment
-
-### ✅ Profile Completion (Role-Based)
-- ✅ **Student Profile**: Profile picture, student number, grade level, section, phone, DOB, ID picture
-- ✅ **Teacher Profile**: Profile picture, section, DOB, ID picture, about me
-- ✅ **Counselor Profile**: Profile picture, DOB
-- ✅ Skip option available
-
----
-
-## 6. REAL-TIME FEATURES (100% Complete)
-
-### ✅ Chat / Messaging
-- ✅ AJAX message send (no page reload)
-- ✅ 3-second polling for new messages
-- ✅ "Live" green pulse indicator in chat header
+### ✅ Messaging
+- ✅ Real-time chat (3s polling, AJAX)
 - ✅ File/image attachments
-- ✅ Role-based messaging permissions
-- ✅ Student-to-student messaging enabled
-- ✅ Content filtering for inappropriate language (Filipino & English)
-- ✅ Real-time error handling for blocked messagesole-based messaging permissions
-
-### ✅ Global Notification Polling (5s)
-- ✅ Unread message badge updates live
-- ✅ Bell icon with dropdown notification history
-- ✅ Toast popups for:
-  - 💬 New message (all roles)
-  - 📢 New announcement (students)
-  - 🏆 Assignment graded (students)
-  - ⚠️ New alert (counselors/admins)
+- ✅ Messenger-style read receipts
+- ✅ Content filtering (Filipino & English)
+- ✅ Student-to-student messaging
 
 ---
 
-## 7. UI/UX (100% Complete)
+## 5. AUTHENTICATION & ONBOARDING
 
-### ✅ Responsive Design
-- ✅ Mobile-first layouts across all pages
-- ✅ Collapsible hamburger menu
-- ✅ 2-column stat grids on mobile
-- ✅ Shortened button labels on small screens
-- ✅ Hidden table columns on mobile (submissions page)
+- ✅ Login (username/email + password)
+- ✅ Google OAuth (allauth)
+- ✅ Role-based redirect after login
+- ✅ Student public registration
+- ✅ Role-specific profile completion with skip option
+- ✅ Auto section + grade level class enrollment on profile completion
 
-### ✅ Landing Page
-- ✅ Loading screen with animated progress bar
-- ✅ Fade-out transition after page load
-- ✅ Hero, features, roles, CTA sections
-- ✅ Mobile-responsive navigation
+---
 
-### ✅ Dark Mode
-- ✅ Toggle in navbar dropdown
-- ✅ Persists via localStorage
+## 6. REAL-TIME FEATURES
+
+- ✅ Chat: 3s polling, AJAX send, live indicator, read receipts
+- ✅ Notifications: 5s polling, bell dropdown, toast popups
+- ✅ Announcement read/unread toggle (AJAX, dashboard only)
+- ✅ Teacher comment save (AJAX, no reload)
+
+---
+
+## 7. UI/UX
+
+- ✅ Tailwind CSS, dark mode (localStorage toggle)
+- ✅ Mobile-first responsive design, hamburger menu
+- ✅ Landing page with loading screen + animated progress bar
+- ✅ Tabbed class detail page
+- ✅ Inline submission preview with expandable rows
 
 ---
 
 ## Technical Stack
 
-### Backend:
-- ✅ Django 5.0
-- ✅ PostgreSQL (production & development)
-- ✅ Django ORM
-- ✅ File upload handling (Cloudinary in production)
-- ✅ Django Allauth (Google OAuth)
-- ✅ Django Signals (automated alerts)
-- ✅ Philippine GPA System (5.0 scale)
-
-### Frontend:
-- ✅ Django Templates
-- ✅ Tailwind CSS (responsive UI, dark mode)
-- ✅ Chart.js (data visualization)
-- ✅ JavaScript (polling, AJAX, toasts)
-- ✅ Mobile-first responsive design
-
-### Deployment:
-- ✅ Render (production)
-- ✅ Cloudinary (media storage in production)
-- ✅ WhiteNoise (static files)
-- ✅ PostgreSQL on Render
-- ✅ Web-based admin tools (no shell access needed)
+| Layer | Technology |
+|-------|-----------|
+| Backend | Django 5.0, Python 3.12 |
+| Database | PostgreSQL (local & Render) |
+| Auth | Django Allauth (Google OAuth) |
+| File Storage | Cloudinary (production), local (dev) |
+| Frontend | Django Templates, Tailwind CSS, Chart.js, Vanilla JS |
+| Deployment | Render (web service + PostgreSQL) |
+| Static Files | WhiteNoise |
+| AI | Google Gemini API (feedback suggestions) |
+| Signals | Django Signals (automated alerts) |
 
 ---
 
-## Recent Updates (March 2, 2026)
+## 🚀 Deployment
 
-### ✅ Latest Features Added:
-1. **Philippine GPA System** - Updated to use 5.0 scale (1.00 = Excellent, 5.00 = Failing)
-2. **Mobile-Optimized Wellness Check-in** - Responsive design for mobile devices
-3. **Teacher Quick Actions** - Dropdown menu shortcuts for common tasks
-4. **Enhanced Profile Management** - Better error handling for file uploads
-5. **Web-based User Management** - Admin tools for user cleanup without shell access
-6. **Improved Academic Performance Display** - Removed confusing N/A values from student profiles
-
-### 🔗 Updated Features:
-- GPA calculation now follows Philippine educational standards
-- Risk assessment updated for Philippine grading scale
-- Mobile-friendly wellness check-in form with responsive emoji buttons
-- Teacher dashboard shows submissions filtered by section and grade level
-- Profile picture upload with graceful error handling
-- Streamlined student profile editing interface
-
-### 📝 Updated Files:
-- `wellness/management/commands/calculate_risk.py` - Philippine GPA system
-- `templates/wellness/wellness_checkin.html` - Mobile-responsive design
-- `templates/base.html` - Teacher quick actions in dropdown
-- `accounts/views.py` - Enhanced error handling for file uploads
-- `accounts/admin_views.py` - Web-based user management tools
-- `templates/accounts/student_profile_edit.html` - Removed academic stats section
-
----
-
-## 🚀 Deployment Checklist
-
-### Render Environment Variables Required:
+### Render Environment Variables
 ```
 SECRET_KEY=<your-secret-key>
 DEBUG=False
 DATABASE_URL=<render-postgres-url>
-ALLOWED_HOSTS=<render-hostname>
+RENDER_EXTERNAL_HOSTNAME=bright-track-project.onrender.com
+ALLOWED_HOSTS=bright-track-project.onrender.com,localhost
 CLOUDINARY_CLOUD_NAME=campus-care
 CLOUDINARY_API_KEY=<key>
 CLOUDINARY_API_SECRET=<secret>
 GOOGLE_CLIENT_ID=<id>
 GOOGLE_CLIENT_SECRET=<secret>
-RENDER_EXTERNAL_HOSTNAME=bright-track-project.onrender.com
+GEMINI_API_KEY=<key>
 ```
 
-### build.sh runs:
-```
+### build.sh
+```bash
 pip install -r requirements.txt
-python manage.py collectstatic
+python manage.py collectstatic --noinput
 python manage.py migrate
 python manage.py migrate sites || true
 python manage.py configure_site || true
 python manage.py create_superuser || true
 ```
 
-### Google OAuth Setup:
+### Python Version
+`.python-version` → `3.12.0` (required for Django 5.0 compatibility)
+
+### Google OAuth
 - Authorized JS origin: `https://bright-track-project.onrender.com`
 - Redirect URI: `https://bright-track-project.onrender.com/accounts/google/login/callback/`
-- Django Site domain: `bright-track-project.onrender.com`
 
 ---
 
-## ✅ Project Complete!
+## Recent Changes (March 3, 2026)
 
-**BrightTrack LMS** is fully functional with:
-- ✅ Complete LMS features (classes, assignments, grades, attendance)
-- ✅ Integrated wellness monitoring & risk assessment
-- ✅ Real-time chat and notifications with content filtering
-- ✅ Student-to-student messaging with safety controls
-- ✅ Automatic section + grade level based enrollment
-- ✅ Role-based workflows (Student, Teacher, Counselor, Admin)
-- ✅ Modern, responsive UI with dark mode
-- ✅ Google OAuth login
-- ✅ Content filtering for inappropriate language
-- ✅ Comprehensive user management tools
-- ✅ Deployed on Render with Cloudinary storage
-- ✅ Philippine GPA system (5.0 scale)
-- ✅ Mobile-optimized interface
-- ✅ Web-based admin tools
-
-**Live URL:** https://bright-track-project.onrender.com 🎉
-
-# env update
+1. **Submission Types** — File Upload / Text Entry / File or Text per assignment
+2. **Inline Submission Preview** — Teachers can preview text + file before grading
+3. **Teacher Comments** — AJAX comment on submission without grading
+4. **Student sees comments** — Feedback shown even for ungraded submissions
+5. **Announcement Read/Unread Toggle** — Checkbox on dashboard; hides read, stays in class
+6. **Read Receipts** — Messenger-style "Read" under last read sent message
+7. **Python 3.12 pin** — Fixed Django 5.0 incompatibility with Python 3.14 on Render
+8. **URL fixes** — All hardcoded `/academics/` URLs corrected to `/class/`
+9. **Delete Assignment** — Trash button in class detail
+10. **Tabbed Class Detail** — Assignments / Announcements / Materials / Roster tabs

@@ -1,33 +1,38 @@
 # BrightTrack LMS - Complete Analysis
 
+**Last Updated:** March 3, 2026
+**Live URL:** https://bright-track-project.onrender.com
+
+---
+
 ## 🛠️ **Technology Stack**
 
-### **Backend Framework**
-- **Django 5.0** - Python web framework
-- **PostgreSQL** - Production database (Render)
-- **python-decouple** - Environment variable management
-- **Pillow** - Image processing for profile pictures
-- **google-genai** - AI-powered sentiment analysis
-- **gunicorn** - Production WSGI server
-- **dj-database-url** - Database URL parsing
-- **psycopg[binary]** - PostgreSQL adapter (Python 3.11+)
+### **Backend**
+- **Django 5.0** + **Python 3.12** (pinned via `.python-version`)
+- **PostgreSQL** — production database (Render)
+- **gunicorn** — production WSGI server
+- **dj-database-url** — DATABASE_URL parsing
+- **psycopg[binary]** — PostgreSQL adapter
+- **python-decouple** — environment variable management
+- **Pillow** — image processing
+- **google-genai** — Gemini AI (feedback suggestions + sentiment)
+- **Django Allauth** — Google OAuth
 
 ### **Frontend**
-- **Django Templates** - Server-side rendering
-- **Tailwind CSS** - Modern utility-first CSS framework
-- **Chart.js** - Data visualization
-- **Bootstrap Icons** - Icon library
-- **Custom CSS** - Additional styling
+- **Django Templates** — server-side rendering
+- **Tailwind CSS** — utility-first CSS
+- **Chart.js** — data visualization
+- **Bootstrap Icons** — icon library
+- **Vanilla JS** — AJAX, polling, toasts
 
-### **File Management**
-- **Cloudinary** - Persistent media storage (production)
-- **django-cloudinary-storage** - Cloudinary integration
-- **Local FileSystem** - Media storage (development)
-- **WhiteNoise** - Static file serving
+### **File Storage**
+- **Cloudinary** — production media (profiles, submissions, materials, attachments)
+- **django-cloudinary-storage** — Cloudinary integration
+- **Local FileSystem** — dev media storage
+- **WhiteNoise** — static file serving
 
 ### **Infrastructure**
-- **Render.com** - Cloud hosting
-- **Cloudinary** - Media CDN
+- **Render.com** — web service + managed PostgreSQL
 
 ---
 
@@ -36,268 +41,384 @@
 ```
 campus-care-project/
 │
-├── campus_care/              # Main project configuration
-│   ├── settings.py          # Database, apps, middleware, auth config
-│   ├── urls.py              # Root URL routing
-│   └── wsgi.py/asgi.py      # Server deployment
+├── campus_care/              # Project config
+│   ├── settings.py          # DB, apps, middleware, Cloudinary, CSRF
+│   ├── urls.py              # Root URL routing (class/, wellness/, messages/, ai/)
+│   └── wsgi.py / asgi.py
 │
-├── accounts/                 # User management app
-│   ├── models.py            # Custom User model (role-based)
-│   ├── views.py             # Auth, dashboards, profiles
-│   ├── urls.py              # Account routes
-│   ├── admin.py             # Admin panel customization
-│   └── management/commands/ # create_superuser, create_dummy_students
+├── accounts/                 # User management
+│   ├── models.py            # Custom User (role, section, year_level, profile_completed)
+│   ├── views.py             # Auth, role dashboards, profile completion, notifications_poll
+│   ├── admin_views.py       # Web-based admin tools (manage users, cleanup, enroll)
+│   ├── urls.py              # Account + admin management routes
+│   └── management/commands/ # create_superuser, configure_site
 │
-├── academics/                # LMS core features
-│   ├── models.py            # Class, Assignment, Submission, Attendance, Grade, Announcement, Material
-│   ├── views.py             # Class management, grading, attendance
-│   ├── announcement_views.py# Announcement read tracking (AJAX)
-│   ├── forms.py             # Django forms for data input
-│   ├── urls.py              # Academic routes
+├── academics/                # LMS core
+│   ├── models.py            # Class, Assignment (submission_type), Submission (text_content),
+│   │                        # Attendance, Grade, Announcement (read_by M2M), Material
+│   ├── views.py             # Class CRUD, grading, attendance, comment_submission (AJAX)
+│   ├── announcement_views.py# mark_announcement_read, toggle_announcement_read (AJAX)
+│   ├── forms.py             # ClassForm, AssignmentForm, MaterialForm
+│   ├── urls.py              # All academic routes under /class/
 │   └── templatetags/        # Custom template filters
 │
-├── wellness/                 # Campus Care monitoring system
-│   ├── models.py            # WellnessCheckIn, RiskAssessment, TeacherConcern, Intervention, Alert
-│   ├── views.py             # Risk monitoring, interventions, alerts, bulk interventions
+├── wellness/                 # Student support monitoring
+│   ├── models.py            # WellnessCheckIn, RiskAssessment, TeacherConcern,
+│   │                        # Intervention, Alert
+│   ├── views.py             # Risk monitoring, interventions, alerts, reports,
+│   │                        # bulk_create_interventions
+│   ├── signals.py           # Auto alert generation on risk/attendance/concern events
 │   ├── forms.py             # Concern and intervention forms
-│   ├── signals.py           # Automated alert generation
-│   └── urls.py              # Wellness routes
+│   └── urls.py
 │
-├── messaging/                # Direct messaging system
-│   ├── models.py            # Conversation, Message (with file attachments)
-│   ├── views.py             # Inbox, conversation thread, compose
-│   ├── content_filter.py    # Content filtering for inappropriate language
-│   ├── urls.py              # Messaging routes
+├── messaging/                # Direct messaging
+│   ├── models.py            # Conversation (participants M2M), Message (body, attachment, is_read)
+│   ├── views.py             # Inbox, conversation thread, poll_messages (returns is_read +
+│   │                        # last_read_sent_id for read receipts), AJAX send
+│   ├── content_filter.py    # Filipino & English inappropriate word filter (students only)
 │   ├── context_processors.py# Unread message count for navbar badge
-│   └── management/commands/ # User management and testing tools
+│   └── urls.py
 │
-├── ml_models/                # AI/ML features
-│   ├── models.py            # SentimentAnalysis model
-│   ├── gemini_client.py     # Google Gemini API integration
-│   ├── utils.py             # AI utility functions
-│   └── views.py             # AI-related views
+├── ml_models/                # AI/ML
+│   ├── gemini_client.py     # Google Gemini API (feedback suggestions, intervention recs)
+│   ├── models.py            # PredictionLog, SentimentAnalysis
+│   └── utils.py             # Student profile helpers for AI
 │
-├── ai_assistant/             # AI chatbot feature
-│   ├── views.py             # Chatbot endpoints
-│   └── urls.py              # Chatbot routes
+├── ai_assistant/             # AI feedback endpoint
+│   ├── views.py             # /ai/teacher/feedback/<id>/ — AI grade suggestion
+│   └── urls.py
 │
-├── templates/                # HTML templates
-│   ├── base.html            # Base layout with navbar + message badge
-│   ├── accounts/            # Login, register, profile pages
-│   ├── dashboard/           # Role-specific dashboards
-│   ├── academics/           # Class, assignment, grading pages
-│   ├── wellness/            # Concerns, interventions, alerts
-│   └── messaging/           # Inbox, conversation, compose pages
+├── templates/
+│   ├── base.html            # Navbar, bell notifications (5s poll), toast popups,
+│   │                        # dark mode toggle, hamburger menu
+│   ├── landing.html         # Loading screen + animated progress bar
+│   ├── dashboard/
+│   │   ├── student_dashboard.html   # Stat cards, tasks, announcements (checkbox toggle)
+│   │   ├── teacher_dashboard.html   # Classes, at-risk, recent submissions
+│   │   ├── counselor_dashboard.html # At-risk overview, alerts badge
+│   │   └── admin_dashboard.html     # System stats, risk charts
+│   ├── academics/
+│   │   ├── class_detail.html        # Tabbed UI (Assignments/Announcements/Materials/Roster)
+│   │   │                            # + icon quick-actions grid
+│   │   ├── create_assignment.html   # 3-card radio selector for submission type
+│   │   ├── submit_assignment.html   # File/text/both based on submission_type
+│   │   ├── view_submissions.html    # Preview toggle + inline comment box (AJAX)
+│   │   └── grade_submission.html    # Two-column grading + AI Suggest button
+│   ├── messaging/
+│   │   └── conversation.html        # Messenger-style read receipts, file attachments
+│   └── wellness/                    # Check-in, alerts, interventions, reports
 │
-├── static/css/              # Custom CSS
-├── media/                   # User uploads (dev only)
-├── build.sh                 # Render build script
-├── runtime.txt              # Python version
-└── manage.py                # Django CLI
+├── static/css/custom.css
+├── media/                    # Dev uploads only
+├── .python-version           # 3.12.0
+├── build.sh                  # Render build script
+├── requirements.txt
+└── manage.py
 ```
 
 ---
 
 ## 🔄 **Website Flow**
 
-### **1. Authentication Flow**
-```
-Landing Page → Register (choose role) → Login → Role-Based Dashboard
-```
+### **URL Prefixes**
+| Prefix | App |
+|--------|-----|
+| `/` | accounts |
+| `/class/` | academics |
+| `/wellness/` | wellness |
+| `/messages/` | messaging |
+| `/ai/` | ai_assistant |
+| `/admin/` | Django admin |
+| `/accounts/` | allauth (Google OAuth) |
 
-**User Roles:**
-- **Student** - View classes, assignments, grades, wellness check-ins
-- **Teacher** - Manage classes, grade assignments, report concerns
-- **Counselor** - Monitor at-risk students, create interventions
-- **Admin** - Full system access
+---
+
+### **1. Authentication & Onboarding**
+```
+Landing Page (loading screen + progress bar)
+    ↓
+Register (students only via public form) → Auto-login
+    ↓
+Profile Completion (role-specific):
+  Student  → profile pic, student number, grade level (7-10), section, phone, DOB, ID pic
+  Teacher  → profile pic, section, DOB, ID pic, about me  (or SKIP)
+  Counselor→ profile pic, DOB  (or SKIP)
+    ↓
+Auto-enrollment: student section + year_level → matched classes enrolled
+    ↓
+Role-based Dashboard
+```
 
 ---
 
 ### **2. Teacher Workflow**
-
 ```
 Teacher Dashboard
-    ↓
-My Classes → Class Detail
-    ↓
-├── Manage Students (add/drop with year level filter)
-├── Post Announcements (urgent/normal)
-├── Upload Materials
-├── Create Assignments
-├── Mark Attendance (Present/Late/Absent)
-├── View Submissions (graded/pending filter) → Grade Assignments
-├── Report Student Concerns
-└── Messages (direct messaging)
+  ├─ Classes taught (student counts)
+  ├─ At-risk students panel
+  ├─ Recent submissions (grouped by class, 3 per class)
+  └─ Quick Actions dropdown
+        ↓
+My Classes (/class/my-classes/) → filter by year/section
+        ↓
+Class Detail (/class/class/<id>/) — Tabbed UI
+  ├─ Assignments tab
+  │   ├─ Create Assignment → submission type: File Upload | Text Entry | File or Text
+  │   ├─ Delete Assignment (trash button)
+  │   └─ View Submissions
+  │       ├─ Preview button → expandable row (text_content + file + comment box)
+  │       ├─ Save Comment (AJAX, no reload) → student sees it immediately
+  │       └─ Grade button → /class/submission/<id>/grade/
+  │           └─ Score + Feedback + AI Suggest (Gemini)
+  ├─ Announcements tab → Post (normal/urgent)
+  ├─ Materials tab → Upload / Delete
+  └─ Roster tab → Manage Students (add/drop, year level filter)
+        ↓
+Mark Attendance (/class/class/<id>/attendance/) → Present/Absent/Late
+        ↓
+Student Monitoring (/students/) → Submit Concern → Academic/Behavioral/Emotional/Attendance
 ```
 
 ---
 
 ### **3. Student Workflow**
-
 ```
-Student Dashboard
-    ↓
-My Classes → Class Detail
-    ↓
-├── View Announcements (mark as read via AJAX)
-├── Download Materials
-├── View/Submit Assignments (with re-submit)
-├── View Grades & Feedback
-├── Wellness Check-in
-└── Messages (direct messaging)
+Student Dashboard (/dashboard/)
+  ├─ Stat cards: My Classes | Pending Tasks | Announcements (live unread count)
+  ├─ Today's Tasks → upcoming assignments (View/Submit)
+  ├─ Recent Announcements
+  │   ├─ Only unread shown on dashboard
+  │   ├─ Checkbox → marks read (hides from dashboard, stays in class)
+  │   └─ Uncheck → restores to dashboard
+  └─ My Classes sidebar
+        ↓
+Class Detail (/class/class/<id>/) — read-only tabbed view
+  ├─ Assignments tab → Submit / Re-submit
+  │   └─ Submit form adapts to submission_type (file / text / both)
+  ├─ Announcements tab → all announcements always visible here
+  ├─ Materials tab → download files
+  └─ Roster tab → classmates
+        ↓
+My Assignments (/class/student/assignments/)
+  ├─ Upcoming | Overdue | Completed tabs
+  └─ Completed tab shows:
+      ├─ Score + percentage (color coded)
+      ├─ Teacher Feedback (if graded)
+      └─ Teacher Comment (shown even if not yet graded)
+        ↓
+My Grades (/class/student/grades/) → per-class breakdown, feedback row
+My Attendance (/class/student/attendance/) → overall rate + per-class
+Wellness (/wellness/checkin/) → emoji check-in, history
+Messages (/messages/) → real-time chat, read receipts, file attachments
 ```
 
 ---
 
 ### **4. Counselor Workflow**
-
 ```
 Counselor Dashboard
-    ↓
-├── At-Risk Students List (filter by risk level/year)
-│   └── Student Profile → Create Intervention
-│
-├── Interventions List (filter by status/year)
-│   └── Update Intervention (modern UI)
-│
-├── Alerts (color-coded severity, filter preserved on actions)
-│   ├── Bulk Create Interventions (auto-creates for all critical/high)
-│   └── Mark as Read/Resolved
-│
-├── Reports & Analytics (charts, age range analysis)
-└── Messages (direct messaging)
+  ├─ At-risk counts (high/medium)
+  ├─ Alert badge (5s polling)
+  └─ Pending interventions
+        ↓
+At-Risk Students (/wellness/at-risk/) → filter by risk level, search
+  └─ Student Profile → full risk assessment, GPA, attendance, wellness
+      └─ Create Intervention
+        ↓
+Interventions (/wellness/interventions/) → filter by status, update, add notes
+        ↓
+Alerts (/wellness/alerts/) → color-coded severity, mark read/resolved,
+                              bulk create interventions for critical/high
+        ↓
+Reports (/wellness/reports/) → risk distribution, intervention stats, academic overview
 ```
 
 ---
 
-### **5. Messaging System**
-
+### **5. Admin Workflow**
 ```
-Navbar (chat icon with unread badge)
+Admin Dashboard → system stats, risk charts, recent alerts
+  ├─ User Management (/manage/users/) → add/edit/delete, assign roles
+  ├─ Cleanup Users (/manage/cleanup-users/)
+  ├─ Create Class (/manage/create-class/)
+  ├─ Enroll Student (/manage/enroll-student/)
+  └─ Django Admin (/admin/) → full model access
+```
+
+---
+
+### **6. Messaging System**
+```
+Navbar chat icon (unread badge, 5s poll)
     ↓
-Inbox → Conversation Thread
+Inbox (/messages/) → all conversations
     ↓
-├── Send text messages
-├── Attach files/images (paperclip icon)
-├── Content filtering (students only)
-└── Compose New Message
-    ├── Filter by Role (All/Counselor/Teacher/Student)
-    └── Student sub-filters (Year Level + Section)
+Conversation Thread
+  ├─ 3s polling for new messages
+  ├─ AJAX send (no page reload)
+  ├─ File/image attachments (paperclip)
+  ├─ Messenger-style read receipts ("Read" under last read sent message)
+  └─ Content filtering (students only — Filipino & English)
 ```
 
 **Messaging Permissions:**
 | Role | Can Message |
-|---|---|
-| Admin | Counselor, Teacher, Student |
-| Counselor | Admin, Counselor, Teacher, Student |
+|------|-------------|
+| Admin | Everyone |
+| Counselor | Everyone |
 | Teacher | Counselor, Admin, Student |
 | Student | Counselor, Teacher, Student |
 
 ---
 
-## 🧠 **Core Code Concepts**
-
-### **1. Custom User Model** (`accounts/models.py`)
-```python
-class User(AbstractUser):
-    role = models.CharField(choices=ROLE_CHOICES)  # student, teacher, counselor, admin
-    year_level = models.IntegerField()
-    section = models.CharField()
-    profile_picture = models.ImageField()
+### **7. Real-Time & Notifications**
 ```
+base.html polls /notifications/poll/ every 5s → returns:
+  ├─ messages  → unread message count (chat badge)
+  ├─ announcements → unread announcement count (students)
+  ├─ grades    → assignments graded in last 24h (students)
+  └─ alerts    → unresolved alerts (counselors/admins)
 
-### **2. Messaging Models** (`messaging/models.py`)
-```python
-class Conversation(models.Model):
-    participants = models.ManyToManyField(User)
+Toast popups:
+  💬 New message (all roles)
+  📢 New announcement (students)
+  🏆 Assignment graded (students)
+  ⚠️  New alert (counselors/admins)
 
-class Message(models.Model):
-    conversation = models.ForeignKey(Conversation)
-    sender = models.ForeignKey(User)
-    body = models.TextField(blank=True)
-    attachment = models.FileField(upload_to='message_attachments/', blank=True)
-    is_read = models.BooleanField(default=False)
-```
-
-### **3. Content Filtering System** (`messaging/content_filter.py`)
-```python
-def contains_inappropriate_content(text):
-    # Filters Filipino and English inappropriate words
-    # Returns (is_inappropriate, found_words)
-    # Only applies to students, not staff
-```
-### **4. Bulk Intervention Creation** (`wellness/views.py`)
-```python
-def bulk_create_interventions(request):
-    # Auto-creates interventions for all critical/high risk students
-    # without existing scheduled interventions
-    # Marks their alerts as read after creation
-```
-```
-
-### **5. Django Signals** (`wellness/signals.py`)
-Triggers alerts automatically when:
-- Risk level becomes high/critical
-- Missing assignments ≥ 3
-- Attendance < 75%
-- Teacher submits concern
-- Wellness check-in shows distress
-
-### **6. URL Routing** (`campus_care/urls.py`)
-```python
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('accounts.urls')),
-    path('class/', include('academics.urls')),
-    path('wellness/', include('wellness.urls')),
-    path('ai/', include('ai_assistant.urls')),
-    path('messages/', include('messaging.urls')),
-]
-```
-
-### **7. Storage Configuration** (`settings.py`)
-```python
-# Cloudinary in production (DEBUG=False), local in dev (DEBUG=True)
-if config('CLOUDINARY_CLOUD_NAME', default='') and not DEBUG:
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+Bell icon dropdown → recent notification history
 ```
 
 ---
 
-## 🎯 **Features Summary**
+## 🧠 **Key Code Concepts**
 
-### **Completed (100%)**
-✅ User authentication with role-based access
-✅ Section & grade level based auto-enrollment
-✅ Role-specific profile completion
-✅ Teacher class management (CRUD)
-✅ Student enrollment with drop feature
-✅ Assignment creation and grading (two-column UI)
-✅ Student assignment submission with re-submit
-✅ Attendance tracking
-✅ Announcements with AJAX read tracking
-✅ Class materials upload/download/delete
-✅ Teacher concern reporting
-✅ Risk assessment system
-✅ Counselor intervention management (modern UI)
-✅ Bulk intervention creation for critical/high risk
-✅ Automated alert generation (Django signals)
-✅ Color-coded alerts with filter persistence
-✅ Reports and analytics dashboard with charts
-✅ Modern UI with Tailwind CSS throughout
-✅ Recent submissions notifications (teacher)
-✅ Recently graded notifications (student)
-✅ Year level & section filters
-✅ AI-powered sentiment analysis (Gemini)
-✅ Student-to-student messaging with content filtering
-✅ Content filtering for inappropriate language (Filipino & English)
-✅ Enhanced user management tools
-✅ AI chatbot assistant (Admin & Counselor)
-✅ Direct messaging system with file attachments
-✅ Unread message badge in navbar
-✅ Role-based message recipient filtering
-✅ Mobile responsive navbar (hamburger menu)
-✅ Deployed on Render with PostgreSQL
+### **Assignment Submission Types** (`academics/models.py`)
+```python
+class Assignment(models.Model):
+    SUBMISSION_TYPE_CHOICES = [
+        ('file_upload', 'File Upload'),
+        ('text_entry', 'Text Entry'),
+        ('both', 'File or Text'),
+    ]
+    submission_type = models.CharField(max_length=20, choices=..., default='file_upload')
+```
+
+### **Submission with Text Content** (`academics/models.py`)
+```python
+class Submission(models.Model):
+    text_content = models.TextField(blank=True)   # for text_entry / both
+    file = models.FileField(upload_to='submissions/', blank=True, null=True)
+    score = models.IntegerField(null=True, blank=True)
+    feedback = models.TextField(blank=True)        # used for both grade feedback AND teacher comments
+    graded_at = models.DateTimeField(null=True, blank=True)
+```
+
+### **Announcement Read Toggle** (`academics/announcement_views.py`)
+```python
+def toggle_announcement_read(request, announcement_id):
+    # Adds user to read_by if not present, removes if present
+    # Returns {'success': True, 'is_read': bool}
+    # Dashboard hides read announcements; class detail always shows all
+```
+
+### **Teacher Comment (AJAX)** (`academics/views.py`)
+```python
+def comment_submission(request, submission_id):
+    # POST /class/submission/<id>/comment/
+    # Saves feedback without touching score or graded_at
+    # Student sees comment immediately in assignments/grades pages
+```
+
+### **Read Receipts** (`messaging/views.py`)
+```python
+def poll_messages(request, conversation_id):
+    # Returns messages with is_read per message
+    # Returns last_read_sent_id (last sent message read by recipient)
+    # Frontend shows "Read" only under that message
+```
+
+### **Notifications Poll** (`accounts/views.py`)
+```python
+def notifications_poll(request):
+    # Single endpoint polled every 5s
+    # Returns: messages, announcements, grades, alerts counts
+```
+
+### **Storage Config** (`settings.py`)
+```python
+# Cloudinary active only in production
+if CLOUDINARY_CLOUD_NAME and not DEBUG:
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+```
+
+### **Auto-Enrollment** (`accounts/views.py` + `academics/views.py`)
+```python
+# On student profile completion:
+section_classes = Class.objects.filter(section__iexact=user.section, year_level=user.year_level)
+for cls in section_classes:
+    cls.students.add(user)
+
+# On teacher creates class:
+students = User.objects.filter(role='student', section__iexact=class_obj.section, year_level=class_obj.year_level)
+for student in students:
+    class_obj.students.add(student)
+```
+
+---
+
+## ✅ **Features Summary**
+
+### **Authentication & Onboarding**
+- Role-based login (student/teacher/counselor/admin)
+- Google OAuth (allauth)
+- Student public registration
+- Role-specific profile completion with skip option
+- Auto section + grade level class enrollment
+
+### **Teacher**
+- Class CRUD with tabbed detail UI + icon quick-actions
+- Assignment creation with 3 submission types
+- Inline submission preview (text + file) before grading
+- AJAX teacher comment on submission (no grade required)
+- Grade submission with AI feedback suggestion (Gemini)
+- Delete assignment
+- Daily attendance marking
+- Post announcements (normal/urgent)
+- Upload/delete class materials
+- Student monitoring + concern submission
+
+### **Student**
+- Dashboard with live unread announcement count
+- Announcement read/unread checkbox toggle (AJAX)
+- Submit assignments: file, text, or both
+- Re-submit (clears previous grade)
+- View score + teacher feedback + teacher comment (even ungraded)
+- My Grades, My Attendance, Wellness check-in
+
+### **Counselor**
+- At-risk student monitoring with risk filters
+- Intervention management (create, update, track)
+- Bulk intervention creation for critical/high risk
+- Alert management (color-coded, mark read/resolved)
+- Reports & analytics
+
+### **Admin**
+- Web-based user management (no shell needed)
+- Class creation + student enrollment tools
+- Django admin full model access
+- System stats dashboard
+
+### **Messaging**
+- Real-time chat (3s polling, AJAX send)
+- File/image attachments
+- Messenger-style read receipts
+- Content filtering (Filipino & English, students only)
+- Student-to-student messaging
+
+### **Real-Time**
+- 5s notification polling (messages, announcements, grades, alerts)
+- Bell dropdown + toast popups per role
+- Chat live indicator
 
 ---
 
@@ -305,38 +426,39 @@ if config('CLOUDINARY_CLOUD_NAME', default='') and not DEBUG:
 
 ### **Render Environment Variables**
 ```
-SECRET_KEY=...
+SECRET_KEY=<key>
 DEBUG=False
-DATABASE_URL=postgresql://...
-ALLOWED_HOSTS=yourapp.onrender.com
+DATABASE_URL=<render-postgres-url>
+RENDER_EXTERNAL_HOSTNAME=bright-track-project.onrender.com
+ALLOWED_HOSTS=bright-track-project.onrender.com,localhost
 CLOUDINARY_CLOUD_NAME=campus-care
-CLOUDINARY_API_KEY=...
-CLOUDINARY_API_SECRET=...
-GEMINI_API_KEY=...
+CLOUDINARY_API_KEY=<key>
+CLOUDINARY_API_SECRET=<secret>
+GOOGLE_CLIENT_ID=<id>
+GOOGLE_CLIENT_SECRET=<secret>
+GEMINI_API_KEY=<key>
 ```
 
-### **Build Script** (`build.sh`)
+### **build.sh**
 ```bash
 pip install -r requirements.txt
-python manage.py collectstatic --no-input
+python manage.py collectstatic --noinput
 python manage.py migrate
-python manage.py create_superuser      # admin/admin123
-python manage.py create_dummy_students # 50 test students
+python manage.py migrate sites || true
+python manage.py configure_site || true
+python manage.py create_superuser || true
 ```
 
-### **Default Credentials**
-- Admin: `admin` / `admin123`
-- Teacher: `demo_teacher` / `teacher123`
-- Counselor: `demo_counselor` / `counselor123`
-- Students: `student123` (all 50 dummy students)
+### **Python Version**
+`.python-version` → `3.12.0` (required — Django 5.0 incompatible with Python 3.14)
 
 ---
 
 ## 🔐 **Security**
 
-1. Role-based access control on every view
-2. `@login_required` decorator on all protected views
-3. CSRF protection (Django middleware + AJAX fix)
-4. Environment variables for all secrets
-5. Cloudinary for secure media storage in production
-6. `DEBUG=False` in production
+1. Role-based access control on every view (`@login_required` + role checks)
+2. CSRF protection on all AJAX endpoints
+3. All secrets in environment variables
+4. Cloudinary for secure media in production
+5. `DEBUG=False` in production
+6. Content filtering prevents inappropriate messages from students
