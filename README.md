@@ -3,7 +3,7 @@
 ## System Overview
 BrightTrack (formerly Campus Care) is an LMS with integrated student support monitoring that tracks academic performance, attendance, and wellness to identify at-risk students early.
 
-**Last Updated:** March 3, 2026
+**Last Updated:** March 6, 2026
 **Overall Progress:** 100% Complete
 **Live URL:** https://bright-track-project.onrender.com
 
@@ -289,6 +289,8 @@ All academics routes are mounted under `/class/` (not `/academics/`):
 
 ### ✅ Dashboard
 - ✅ At-risk overview, alert badge (5s polling), pending interventions
+- ✅ Download PDF / Download DOCX report buttons in Quick Actions
+- ✅ BT AI Assistant (/ai/counselor/) — Create Intervention, Auto-Create All Interventions, Generate Report, Analyze Behavior, Weekly Summary, Draft Parent Email, Search Student, Ask AI
 
 ### ✅ Student Monitoring
 - ✅ Filter by risk level, search by name/email, sort by risk score
@@ -311,9 +313,13 @@ All academics routes are mounted under `/class/` (not `/academics/`):
 
 ### ✅ Class Management
 - ✅ Create classes for teachers, enroll students
+- ✅ Multi-select bulk enrollment with section/grade filter + search
 
 ### ✅ System Monitoring
 - ✅ Dashboard stats, risk charts, wellness history
+- ✅ Counselor count stat card (5-column grid)
+- ✅ Download PDF / Download DOCX system report (reportlab + python-docx)
+- ✅ BT AI Assistant button on dashboard → `/ai/admin/` (Generate System Report, Ask AI)
 
 ---
 
@@ -353,7 +359,9 @@ All academics routes are mounted under `/class/` (not `/academics/`):
 
 ## 5. AUTHENTICATION & ONBOARDING
 
-- ✅ Login (username/email + password)
+- ✅ Login (username/email + password) — staff/teacher via `/login/`
+- ✅ Student login/register via OTP email flow (`/otp/` → verify → password or register)
+- ✅ Forgot password via OTP reset
 - ✅ Google OAuth (allauth)
 - ✅ Role-based redirect after login
 - ✅ Student public registration
@@ -378,6 +386,8 @@ All academics routes are mounted under `/class/` (not `/academics/`):
 - ✅ Landing page with loading screen + animated progress bar
 - ✅ Tabbed class detail page
 - ✅ Inline submission preview with expandable rows
+- ✅ AI chat UI — formatted markdown rendering (bold, bullets, headers, hr) in BT chat bubbles
+- ✅ View Concerns page — Tailwind rewrite with expandable rows
 
 ---
 
@@ -433,7 +443,7 @@ python manage.py create_superuser || true
 
 ---
 
-## Recent Changes (March 3, 2026)
+## Recent Changes (March 6, 2026)
 
 1. **Submission Types** — File Upload / Text Entry / File or Text per assignment
 2. **Inline Submission Preview** — Teachers can preview text + file before grading
@@ -445,3 +455,13 @@ python manage.py create_superuser || true
 8. **URL fixes** — All hardcoded `/academics/` URLs corrected to `/class/`
 9. **Delete Assignment** — Trash button in class detail
 10. **Tabbed Class Detail** — Assignments / Announcements / Materials / Roster tabs
+11. **OTP Student Login** — Email OTP flow for students; staff use password login
+12. **Demo Data Seeding** — `seed_demo.py` management command (10 students, risk/wellness/alert data)
+13. **Notification Persistence** — Bell dropdown persists in `localStorage` per user across page loads
+14. **Multi-select Enrollment** — Admin enroll page: checkbox list + section/grade/search filters; Teacher manage_students: bulk add
+15. **View Concerns UI** — Rewritten in Tailwind with expandable rows
+16. **Admin Dashboard** — Counselor stat card, 5-column grid, PDF/DOCX download, BT AI Assistant button
+17. **Counselor Dashboard** — PDF/DOCX download buttons in Quick Actions
+18. **PDF/DOCX Reports** — `report_views.py` using reportlab + python-docx; accessible to admin & counselor
+19. **BT AI Assistant UI** — Markdown rendering fixed (bold, bullets, headers); consistent chat bubble styling
+20. **Student Profile** — Removed AI communication buttons (Parent Update / Encourage) from teacher view

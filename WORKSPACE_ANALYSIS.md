@@ -1,6 +1,6 @@
 # BrightTrack LMS - Complete Analysis
 
-**Last Updated:** March 3, 2026
+**Last Updated:** March 6, 2026
 **Live URL:** https://bright-track-project.onrender.com
 
 ---
@@ -15,8 +15,10 @@
 - **psycopg[binary]** — PostgreSQL adapter
 - **python-decouple** — environment variable management
 - **Pillow** — image processing
-- **google-genai** — Gemini AI (feedback suggestions + sentiment)
+- **google-genai** — Gemini AI (feedback suggestions + AI assistant)
 - **Django Allauth** — Google OAuth
+- **reportlab** — PDF report generation
+- **python-docx** — DOCX report generation
 
 ### **Frontend**
 - **Django Templates** — server-side rendering
@@ -34,6 +36,10 @@
 ### **Infrastructure**
 - **Render.com** — web service + managed PostgreSQL
 
+### **Email**
+- **Brevo HTTP API** — OTP email delivery (`requests.post` to `api.brevo.com/v3/smtp/email`)
+- No SMTP — Render free tier blocks all outbound SMTP ports
+
 ---
 
 ## 📁 **Folder Structure**
@@ -42,21 +48,27 @@
 campus-care-project/
 │
 ├── campus_care/              # Project config
-│   ├── settings.py          # DB, apps, middleware, Cloudinary, CSRF
+│   ├── settings.py          # DB, apps, middleware, Cloudinary, CSRF, Brevo API key
 │   ├── urls.py              # Root URL routing (class/, wellness/, messages/, ai/)
 │   └── wsgi.py / asgi.py
 │
 ├── accounts/                 # User management
 │   ├── models.py            # Custom User (role, section, year_level, profile_completed)
+│   │                        # OTPCode (contact_value, code, is_used, created_at)
 │   ├── views.py             # Auth, role dashboards, profile completion, notifications_poll
+│   │                        # otp_request_view, otp_verify_view, otp_login_password_view
+│   │                        # otp_register_view, otp_forgot_password_view, otp_reset_password_view
+│   ├── otp_utils.py         # send_otp_email() via Brevo HTTP API
 │   ├── admin_views.py       # Web-based admin tools (manage users, cleanup, enroll)
-│   ├── urls.py              # Account + admin management routes
-│   └── management/commands/ # create_superuser, configure_site
+│   ├── report_views.py      # download_report() → PDF (reportlab) or DOCX (python-docx)
+│   ├── urls.py              # Account + admin management + OTP + report routes
+│   └── management/commands/ # create_superuser, configure_site, seed_demo
 │
 ├── academics/                # LMS core
 │   ├── models.py            # Class, Assignment (submission_type), Submission (text_content),
 │   │                        # Attendance, Grade, Announcement (read_by M2M), Material
-│   ├── views.py             # Class CRUD, grading, attendance, comment_submission (AJAX)
+│   ├── views.py             # Class CRUD, grading, attendance, comment_submission (AJAX),
+│   │                        # bulk_add_students
 │   ├── announcement_views.py# mark_announcement_read, toggle_announcement_read (AJAX)
 │   ├── forms.py             # ClassForm, AssignmentForm, MaterialForm
 │   ├── urls.py              # All academic routes under /class/
@@ -84,35 +96,50 @@ campus-care-project/
 │   ├── models.py            # PredictionLog, SentimentAnalysis
 │   └── utils.py             # Student profile helpers for AI
 │
-├── ai_assistant/             # AI feedback endpoint
-│   ├── views.py             # /ai/teacher/feedback/<id>/ — AI grade suggestion
-│   └── urls.py
+├── ai_assistant/             # BT AI Assistant
+│   ├── views.py             # counselor_chat_view, admin_chat_view, counselor_chat, admin_chat
+│   └── urls.py              # /ai/counselor/, /ai/admin/, /ai/counselor/chat/, /ai/admin/chat/
 │
 ├── templates/
 │   ├── base.html            # Navbar, bell notifications (5s poll), toast popups,
-│   │                        # dark mode toggle, hamburger menu
+│   │                        # dark mode toggle, hamburger menu, localStorage notif persistence
 │   ├── landing.html         # Loading screen + animated progress bar
 │   ├── dashboard/
 │   │   ├── student_dashboard.html   # Stat cards, tasks, announcements (checkbox toggle)
 │   │   ├── teacher_dashboard.html   # Classes, at-risk, recent submissions
-│   │   ├── counselor_dashboard.html # At-risk overview, alerts badge
-│   │   └── admin_dashboard.html     # System stats, risk charts
+│   │   ├── counselor_dashboard.html # At-risk overview, alerts badge, PDF/DOCX buttons
+│   │   └── admin_dashboard.html     # 5-col stats, risk charts, PDF/DOCX, BT AI button
 │   ├── academics/
 │   │   ├── class_detail.html        # Tabbed UI (Assignments/Announcements/Materials/Roster)
 │   │   │                            # + icon quick-actions grid
 │   │   ├── create_assignment.html   # 3-card radio selector for submission type
 │   │   ├── submit_assignment.html   # File/text/both based on submission_type
 │   │   ├── view_submissions.html    # Preview toggle + inline comment box (AJAX)
-│   │   └── grade_submission.html    # Two-column grading + AI Suggest button
+│   │   ├── grade_submission.html    # Two-column grading + AI Suggest button
+│   │   └── manage_students.html     # Checkboxes + Select All + bulk Add Selected
+│   ├── accounts/
+│   │   ├── otp_request.html         # Student login: email → Continue
+│   │   ├── otp_verify.html          # Enter 6-digit OTP code
+│   │   ├── otp_login_password.html  # Existing student: enter password
+│   │   ├── otp_register.html        # New student: name + password
+│   │   ├── otp_forgot_password.html # Enter email to reset
+│   │   ├── otp_reset_password.html  # Set new password after OTP
+│   │   └── student_profile.html     # Teacher view (no AI communication buttons)
+│   ├── admin/
+│   │   └── enroll_student.html      # Checkbox list + section/grade/search filters
+│   ├── ai_assistant/
+│   │   ├── counselor_chat.html      # BT AI: 8 quick actions, markdown-rendered chat
+│   │   └── admin_chat.html          # BT AI: Generate Report + Ask AI, markdown chat
 │   ├── messaging/
 │   │   └── conversation.html        # Messenger-style read receipts, file attachments
-│   └── wellness/                    # Check-in, alerts, interventions, reports
+│   └── wellness/
+│       └── view_concerns.html       # Tailwind rewrite with expandable rows
 │
 ├── static/css/custom.css
 ├── media/                    # Dev uploads only
 ├── .python-version           # 3.12.0
-├── build.sh                  # Render build script
-├── requirements.txt
+├── build.sh                  # Render build script (includes seed_demo)
+├── requirements.txt          # includes reportlab, python-docx
 └── manage.py
 ```
 
@@ -134,19 +161,35 @@ campus-care-project/
 ---
 
 ### **1. Authentication & Onboarding**
+
+**Students** use OTP email flow:
 ```
-Landing Page (loading screen + progress bar)
+/otp/  → enter email → OTP sent via Brevo API
     ↓
-Register (students only via public form) → Auto-login
+/otp/verify/ → enter 6-digit code
     ↓
-Profile Completion (role-specific):
-  Student  → profile pic, student number, grade level (7-10), section, phone, DOB, ID pic
-  Teacher  → profile pic, section, DOB, ID pic, about me  (or SKIP)
-  Counselor→ profile pic, DOB  (or SKIP)
+Existing student → /otp/password/ → enter password → dashboard
+New student     → /otp/register/ → name + password → profile completion → dashboard
+Forgot password → /otp/forgot/   → email → OTP → /otp/reset/ → new password
+```
+
+**Staff/Teacher/Admin** use password login:
+```
+/login/ → email + password → dashboard
+```
+
+**Google OAuth** (all roles):
+```
+/accounts/google/login/ → OAuth → dashboard
+```
+
+**Profile Completion** (after first login):
+```
+Student  → profile pic, student number, grade level (7-10), section, phone, DOB, ID pic
+Teacher  → profile pic, section, DOB, ID pic, about me  (or SKIP)
+Counselor→ profile pic, DOB  (or SKIP)
     ↓
 Auto-enrollment: student section + year_level → matched classes enrolled
-    ↓
-Role-based Dashboard
 ```
 
 ---
@@ -172,7 +215,7 @@ Class Detail (/class/class/<id>/) — Tabbed UI
   │           └─ Score + Feedback + AI Suggest (Gemini)
   ├─ Announcements tab → Post (normal/urgent)
   ├─ Materials tab → Upload / Delete
-  └─ Roster tab → Manage Students (add/drop, year level filter)
+  └─ Roster tab → Manage Students (checkboxes + bulk add, year level filter)
         ↓
 Mark Attendance (/class/class/<id>/attendance/) → Present/Absent/Late
         ↓
@@ -219,7 +262,8 @@ Messages (/messages/) → real-time chat, read receipts, file attachments
 Counselor Dashboard
   ├─ At-risk counts (high/medium)
   ├─ Alert badge (5s polling)
-  └─ Pending interventions
+  ├─ Pending interventions
+  └─ Quick Actions: BT AI Assistant | Download PDF | Download DOCX | View Reports
         ↓
 At-Risk Students (/wellness/at-risk/) → filter by risk level, search
   └─ Student Profile → full risk assessment, GPA, attendance, wellness
@@ -231,17 +275,31 @@ Alerts (/wellness/alerts/) → color-coded severity, mark read/resolved,
                               bulk create interventions for critical/high
         ↓
 Reports (/wellness/reports/) → risk distribution, intervention stats, academic overview
+        ↓
+BT AI Assistant (/ai/counselor/)
+  ├─ Create Intervention (student picker with risk badges)
+  ├─ Auto-Create All Interventions (high-risk students)
+  ├─ Generate Report (stats + AI summary)
+  ├─ Analyze Behavior (attendance + submissions + wellness)
+  ├─ Weekly Summary
+  ├─ Draft Parent Email
+  ├─ Search Student (filter by grade/section/risk)
+  └─ Ask AI Anything
 ```
 
 ---
 
 ### **5. Admin Workflow**
 ```
-Admin Dashboard → system stats, risk charts, recent alerts
+Admin Dashboard → 5-column stats (students/teachers/counselors/classes/high-risk)
+  ├─ Risk distribution charts
+  ├─ Quick Actions: Add Staff | Create Class | Enroll Student | Advanced Settings
+  │                 Download PDF | Download DOCX | BT AI Assistant
   ├─ User Management (/manage/users/) → add/edit/delete, assign roles
   ├─ Cleanup Users (/manage/cleanup-users/)
   ├─ Create Class (/manage/create-class/)
-  ├─ Enroll Student (/manage/enroll-student/)
+  ├─ Enroll Student (/manage/enroll-student/) → checkbox list + section/grade/search filters
+  ├─ BT AI Assistant (/ai/admin/) → Generate System Report | Ask AI
   └─ Django Admin (/admin/) → full model access
 ```
 
@@ -274,10 +332,10 @@ Conversation Thread
 ### **7. Real-Time & Notifications**
 ```
 base.html polls /notifications/poll/ every 5s → returns:
-  ├─ messages  → unread message count (chat badge)
+  ├─ messages      → unread message count (chat badge)
   ├─ announcements → unread announcement count (students)
-  ├─ grades    → assignments graded in last 24h (students)
-  └─ alerts    → unresolved alerts (counselors/admins)
+  ├─ grades        → assignments graded in last 24h (students)
+  └─ alerts        → unresolved alerts (counselors/admins)
 
 Toast popups:
   💬 New message (all roles)
@@ -285,70 +343,88 @@ Toast popups:
   🏆 Assignment graded (students)
   ⚠️  New alert (counselors/admins)
 
-Bell icon dropdown → recent notification history
+Bell icon dropdown → notification history persisted in localStorage per user
+                     key: notifItems_{{ user.id }}
+                     cleared on "Clear All"
 ```
 
 ---
 
 ## 🧠 **Key Code Concepts**
 
+### **OTP Model** (`accounts/models.py`)
+```python
+class OTPCode(models.Model):
+    contact_value = models.CharField(max_length=255)  # email
+    code = models.CharField(max_length=6)
+    is_used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        return not self.is_used and (timezone.now() - self.created_at).seconds < 600
+
+    @classmethod
+    def generate(cls, contact_value):
+        code = str(random.randint(100000, 999999))
+        return cls.objects.create(contact_value=contact_value, code=code)
+```
+
+### **OTP Email via Brevo** (`accounts/otp_utils.py`)
+```python
+def send_otp_email(email, code):
+    requests.post('https://api.brevo.com/v3/smtp/email',
+        headers={'api-key': settings.BREVO_API_KEY, 'Content-Type': 'application/json'},
+        json={'sender': {...}, 'to': [{'email': email}],
+              'subject': 'Your BrightTrack verification code',
+              'htmlContent': f'<p>Your code: <strong>{code}</strong></p>'},
+        timeout=10)
+```
+
+### **Settings — Email** (`settings.py`)
+```python
+BREVO_API_KEY = config('BREVO_API_KEY', default='').strip()
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@brighttrack.com')
+# No SMTP settings — Render free tier blocks all outbound SMTP
+```
+
 ### **Assignment Submission Types** (`academics/models.py`)
 ```python
-class Assignment(models.Model):
-    SUBMISSION_TYPE_CHOICES = [
-        ('file_upload', 'File Upload'),
-        ('text_entry', 'Text Entry'),
-        ('both', 'File or Text'),
-    ]
-    submission_type = models.CharField(max_length=20, choices=..., default='file_upload')
+SUBMISSION_TYPE_CHOICES = [
+    ('file_upload', 'File Upload'),
+    ('text_entry', 'Text Entry'),
+    ('both', 'File or Text'),
+]
 ```
 
 ### **Submission with Text Content** (`academics/models.py`)
 ```python
 class Submission(models.Model):
-    text_content = models.TextField(blank=True)   # for text_entry / both
+    text_content = models.TextField(blank=True)
     file = models.FileField(upload_to='submissions/', blank=True, null=True)
     score = models.IntegerField(null=True, blank=True)
-    feedback = models.TextField(blank=True)        # used for both grade feedback AND teacher comments
+    feedback = models.TextField(blank=True)  # grade feedback AND teacher comments
     graded_at = models.DateTimeField(null=True, blank=True)
 ```
 
-### **Announcement Read Toggle** (`academics/announcement_views.py`)
+### **PDF/DOCX Reports** (`accounts/report_views.py`)
 ```python
-def toggle_announcement_read(request, announcement_id):
-    # Adds user to read_by if not present, removes if present
-    # Returns {'success': True, 'is_read': bool}
-    # Dashboard hides read announcements; class detail always shows all
+def download_report(request):
+    # Accessible to admin and counselor roles
+    # ?format=pdf  → reportlab PDF with summary + risk tables
+    # ?format=docx → python-docx DOCX with same structure
 ```
 
-### **Teacher Comment (AJAX)** (`academics/views.py`)
-```python
-def comment_submission(request, submission_id):
-    # POST /class/submission/<id>/comment/
-    # Saves feedback without touching score or graded_at
-    # Student sees comment immediately in assignments/grades pages
+### **Notification Persistence** (`base.html`)
+```javascript
+const NOTIF_KEY = 'notifItems_{{ user.id }}';
+let notifItems = JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]');
+// Restored on every page load; cleared on "Clear All"
 ```
 
-### **Read Receipts** (`messaging/views.py`)
+### **Bulk Student Enrollment** (`academics/views.py`)
 ```python
-def poll_messages(request, conversation_id):
-    # Returns messages with is_read per message
-    # Returns last_read_sent_id (last sent message read by recipient)
-    # Frontend shows "Read" only under that message
-```
-
-### **Notifications Poll** (`accounts/views.py`)
-```python
-def notifications_poll(request):
-    # Single endpoint polled every 5s
-    # Returns: messages, announcements, grades, alerts counts
-```
-
-### **Storage Config** (`settings.py`)
-```python
-# Cloudinary active only in production
-if CLOUDINARY_CLOUD_NAME and not DEBUG:
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+def bulk_add_students(request, class_id):
+    # POST with student[] list → adds all selected students to class
 ```
 
 ### **Auto-Enrollment** (`accounts/views.py` + `academics/views.py`)
@@ -364,16 +440,29 @@ for student in students:
     class_obj.students.add(student)
 ```
 
+### **AI Chat Markdown Rendering** (`counselor_chat.html`, `admin_chat.html`)
+```javascript
+function formatAIResponse(text) {
+    return text
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/^---+$/gm, '<hr>')
+        .replace(/^#{1,3}\s+(.+)$/gm, '<p class="font-semibold">$1</p>')
+        .replace(/^[\*\-]\s+(.+)$/gm, '<div>• $1</div>')
+        ...
+}
+```
+
 ---
 
 ## ✅ **Features Summary**
 
 ### **Authentication & Onboarding**
-- Role-based login (student/teacher/counselor/admin)
+- Students: OTP email flow (login + register + forgot password)
+- Staff/Teacher/Admin: email + password login
 - Google OAuth (allauth)
-- Student public registration
 - Role-specific profile completion with skip option
-- Auto section + grade level class enrollment
+- Auto section + grade level class enrollment on profile completion
 
 ### **Teacher**
 - Class CRUD with tabbed detail UI + icon quick-actions
@@ -385,6 +474,7 @@ for student in students:
 - Daily attendance marking
 - Post announcements (normal/urgent)
 - Upload/delete class materials
+- Manage students: checkboxes + bulk add
 - Student monitoring + concern submission
 
 ### **Student**
@@ -401,12 +491,16 @@ for student in students:
 - Bulk intervention creation for critical/high risk
 - Alert management (color-coded, mark read/resolved)
 - Reports & analytics
+- Download PDF / DOCX reports
+- BT AI Assistant (8 actions: interventions, reports, behavior, email drafts, search)
 
 ### **Admin**
 - Web-based user management (no shell needed)
-- Class creation + student enrollment tools
+- Class creation + multi-select student enrollment
+- Counselor count stat card (5-column dashboard grid)
+- Download PDF / DOCX system reports
+- BT AI Assistant (Generate System Report, Ask AI)
 - Django admin full model access
-- System stats dashboard
 
 ### **Messaging**
 - Real-time chat (3s polling, AJAX send)
@@ -418,7 +512,7 @@ for student in students:
 ### **Real-Time**
 - 5s notification polling (messages, announcements, grades, alerts)
 - Bell dropdown + toast popups per role
-- Chat live indicator
+- Notification history persisted in localStorage per user
 
 ---
 
@@ -437,6 +531,8 @@ CLOUDINARY_API_SECRET=<secret>
 GOOGLE_CLIENT_ID=<id>
 GOOGLE_CLIENT_SECRET=<secret>
 GEMINI_API_KEY=<key>
+BREVO_API_KEY=<xkeysib-...>
+DEFAULT_FROM_EMAIL=<sender-email>
 ```
 
 ### **build.sh**
@@ -447,10 +543,15 @@ python manage.py migrate
 python manage.py migrate sites || true
 python manage.py configure_site || true
 python manage.py create_superuser || true
+python manage.py seed_demo || true
 ```
 
 ### **Python Version**
 `.python-version` → `3.12.0` (required — Django 5.0 incompatible with Python 3.14)
+
+### **Demo Credentials**
+- Admin: `admin@campuscare.com` / `admin123`
+- Demo students: password `demo1234`, section `Demo`, Grade 9
 
 ---
 
@@ -458,12 +559,8 @@ python manage.py create_superuser || true
 
 1. Role-based access control on every view (`@login_required` + role checks)
 2. CSRF protection on all AJAX endpoints
-3. All secrets in environment variables
+3. All secrets in environment variables (`.strip()` on BREVO_API_KEY to avoid `\n`)
 4. Cloudinary for secure media in production
 5. `DEBUG=False` in production
 6. Content filtering prevents inappropriate messages from students
-
-
-i want to remove of creating dummy account for student. the student must input email or number to login of register a account. for example student input a email, the student will recieve a OTP/authentication code to put that in register or login. guide me to implement this in my work
-
-create a md file for this implementation
+7. OTP codes expire after 10 minutes, single-use
