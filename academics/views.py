@@ -175,6 +175,25 @@ def add_student(request, class_id, student_id):
     return redirect(redirect_url)
 
 @login_required
+def bulk_add_students(request, class_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    if request.user.role != 'teacher' or class_obj.teacher != request.user:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    if request.method == 'POST':
+        from accounts.models import User
+        student_ids = request.POST.getlist('students')
+        added = []
+        for sid in student_ids:
+            student = get_object_or_404(User, id=sid, role='student')
+            if student not in class_obj.students.all():
+                class_obj.students.add(student)
+                added.append(student.get_full_name())
+        if added:
+            messages.success(request, f'Added: {", ".join(added)}')
+    return redirect('academics:manage_students', class_id=class_id)
+
+@login_required
 def drop_student(request, class_id, student_id):
     class_obj = get_object_or_404(Class, id=class_id)
     
