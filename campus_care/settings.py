@@ -176,7 +176,7 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
 # Email (OTP)
-BREVO_API_KEY = config('BREVO_API_KEY', default='')
+BREVO_API_KEY = config('BREVO_API_KEY', default='').strip()
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@brighttrack.com')
 
 # Default primary key field type
