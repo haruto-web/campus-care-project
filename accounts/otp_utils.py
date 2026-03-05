@@ -1,18 +1,22 @@
-from django.core.mail import send_mail
+import requests
 from django.conf import settings
-import socket
 
 
 def send_otp_email(email, code):
-    old_timeout = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(10)
-    try:
-        send_mail(
-            subject='Your BrightTrack Verification Code',
-            message=f'Your verification code is: {code}\n\nThis code expires in 10 minutes. Do not share it with anyone.',
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False,
-        )
-    finally:
-        socket.setdefaulttimeout(old_timeout)
+    response = requests.post(
+        'https://api.brevo.com/v3/smtp/email',
+        headers={
+            'api-key': settings.BREVO_API_KEY,
+            'Content-Type': 'application/json',
+        },
+        json={
+            'sender': {'name': 'BrightTrack', 'email': settings.DEFAULT_FROM_EMAIL},
+            'to': [{'email': email}],
+            'subject': 'Your BrightTrack Verification Code',
+            'textContent': f'Your verification code is: {code}\n\nThis code expires in 10 minutes.',
+        },
+        timeout=10,
+    )
+    if response.status_code not in (200, 201):
+        raise Exception(f'Brevo API error: {response.text}')
+
