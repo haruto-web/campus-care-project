@@ -1,10 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 from django.db.models import Count, Q
 from accounts.models import User
 from academics.models import Class
 from academics.forms import ClassForm
+import logging
+
+logger = logging.getLogger('brighttrack.audit')
 
 @login_required
 def admin_create_user(request):
@@ -149,6 +153,7 @@ def admin_manage_users(request):
     return render(request, 'admin/manage_users.html', context)
 
 @login_required
+@require_POST
 def admin_delete_user(request, user_id):
     if request.user.role.lower() != 'admin':
         messages.error(request, 'Permission denied. Admin access required.')
@@ -163,6 +168,7 @@ def admin_delete_user(request, user_id):
     
     user_name = user.get_full_name()
     user_role = user.role
+    logger.warning(f'User {user_name} (role={user_role}, id={user_id}) deleted by admin {request.user.username}')
     user.delete()
     
     messages.success(request, f'{user_role.capitalize()} {user_name} has been removed successfully.')
@@ -328,6 +334,12 @@ def admin_cleanup_users(request):
         return redirect('dashboard')
     
     if request.method == 'POST':
+        # Require typed confirmation phrase
+        confirmation = request.POST.get('confirmation', '').strip()
+        if confirmation != 'DELETE ALL USERS':
+            messages.error(request, 'Please type "DELETE ALL USERS" exactly to confirm.')
+            return redirect('admin_cleanup_users')
+
         # Count users before deletion
         total_before = User.objects.count()
         admins_count = User.objects.filter(role='admin').count()
@@ -335,6 +347,7 @@ def admin_cleanup_users(request):
         # Delete non-admin users
         deleted_count = User.objects.exclude(role='admin').delete()[0]
         
+        logger.critical(f'MASS DELETION by admin {request.user.username}: {deleted_count} users deleted, {admins_count} admins kept')
         messages.success(request, f'Cleanup complete! Deleted {deleted_count} users. {admins_count} admin accounts kept safe.')
         return redirect('dashboard')
     
@@ -363,6 +376,16 @@ def admin_create_superuser(request):
             messages.error(request, 'Username already exists.')
             return render(request, 'admin/create_superuser.html')
         
+        # Validate password strength
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            for msg in e.messages:
+                messages.error(request, msg)
+            return render(request, 'admin/create_superuser.html')
+        
         # Create superuser
         user = User.objects.create_user(
             username=username,
@@ -374,6 +397,7 @@ def admin_create_superuser(request):
             profile_completed=True
         )
         
+        logger.warning(f'Superuser {username} created by admin {request.user.username}')
         messages.success(request, f'Superuser {username} created successfully! You can now access Django admin.')
         return redirect('dashboard')
     

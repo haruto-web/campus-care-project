@@ -5,6 +5,8 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.db.models import Count, Avg, Q
 from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django.core.cache import cache
 from datetime import datetime, timedelta
 from academics.models import Class, Assignment, Submission, Attendance, Grade
 from wellness.models import WellnessCheckIn, RiskAssessment, Alert, Intervention
@@ -146,6 +148,13 @@ def otp_request_view(request):
             messages.error(request, 'Please enter a valid email address.')
             return render(request, 'accounts/otp_request.html')
 
+        # Rate limit: max 3 OTP sends per email per 15 minutes
+        rate_key = f'otp_send_{email}'
+        send_count = cache.get(rate_key, 0)
+        if send_count >= 3:
+            messages.error(request, 'Too many verification requests. Please wait 15 minutes before trying again.')
+            return render(request, 'accounts/otp_request.html')
+
         otp = OTPCode.generate(email)
         try:
             send_otp_email(email, otp.code)
@@ -155,6 +164,7 @@ def otp_request_view(request):
             messages.error(request, 'Failed to send verification code. Please try again later.')
             return render(request, 'accounts/otp_request.html')
 
+        cache.set(rate_key, send_count + 1, 900)  # 15-minute window
         request.session['otp_email'] = email
         request.session.pop('otp_purpose', None)
         return redirect('otp_verify')
@@ -169,18 +179,27 @@ def otp_verify_view(request):
         return redirect('otp_request')
 
     if request.method == 'POST':
+        # Rate limit: max 5 verify attempts per email per 30 minutes
+        attempt_key = f'otp_attempts_{email}'
+        attempts = cache.get(attempt_key, 0)
+        if attempts >= 5:
+            messages.error(request, 'Too many failed attempts. Please wait 30 minutes before trying again.')
+            return render(request, 'accounts/otp_verify.html', {'email': email})
+
         entered = request.POST.get('code', '').strip()
         otp = OTPCode.objects.filter(
             contact_value=email, code=entered, is_used=False
         ).order_by('-created_at').first()
 
         if not otp or not otp.is_valid():
+            cache.set(attempt_key, attempts + 1, 1800)  # 30-minute lockout window
             messages.error(request, 'Invalid or expired code. Please try again.')
             return render(request, 'accounts/otp_verify.html', {'email': email})
 
         otp.is_used = True
         otp.save()
         request.session['otp_verified'] = True
+        cache.delete(attempt_key)  # Reset attempts on success
 
         if request.session.get('otp_purpose') == 'reset':
             return redirect('otp_reset_password')
@@ -301,6 +320,16 @@ def otp_register_view(request):
             messages.error(request, 'Password must be at least 8 characters.')
             return render(request, 'accounts/otp_register.html', {'email': email})
 
+        # Validate password strength using Django validators
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            validate_password(password)
+        except DjangoValidationError as e:
+            for msg in e.messages:
+                messages.error(request, msg)
+            return render(request, 'accounts/otp_register.html', {'email': email})
+
         import uuid
         base = f"{first_name.lower()}{last_name.lower()}"
         username = f"{base}{str(uuid.uuid4())[:4]}"
@@ -351,6 +380,7 @@ def login_view(request):
     
     return render(request, 'accounts/login.html')
 
+@require_POST
 def logout_view(request):
     logout(request)
     return redirect('login')
