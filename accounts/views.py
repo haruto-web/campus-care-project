@@ -233,7 +233,7 @@ def otp_login_password_view(request):
         if user is not None:
             for key in ['otp_email', 'otp_verified']:
                 request.session.pop(key, None)
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('dashboard')
         else:
             messages.error(request, 'Incorrect password.')
@@ -404,6 +404,7 @@ def dashboard_view(request):
     else:
         return admin_dashboard(request)
 
+@login_required
 def student_dashboard(request):
     user = request.user
     classes = user.enrolled_classes.all()
@@ -454,6 +455,7 @@ def student_dashboard(request):
     }
     return render(request, 'dashboard/student_dashboard.html', context)
 
+@login_required
 def teacher_dashboard(request):
     user = request.user
     classes = Class.objects.filter(teacher=user)
@@ -539,6 +541,7 @@ def teacher_dashboard(request):
     }
     return render(request, 'dashboard/teacher_dashboard.html', context)
 
+@login_required
 def counselor_dashboard(request):
     # Get risk assessments
     high_risk_students = RiskAssessment.objects.filter(
@@ -594,6 +597,7 @@ def counselor_dashboard(request):
     }
     return render(request, 'dashboard/counselor_dashboard.html', context)
 
+@login_required
 def admin_dashboard(request):
     from django.db.models import Count
     from datetime import timedelta
@@ -870,7 +874,10 @@ def complete_profile_view(request):
     
     if request.GET.get('skip'):
         request.user.profile_completed = True
-        request.user.save()
+        try:
+            request.user.save()
+        except Exception:
+            pass  # Profile flag will be set on next visit
         return redirect('dashboard')
     
     if request.method == 'POST':
