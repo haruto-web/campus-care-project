@@ -122,8 +122,9 @@ def create_intervention(request, student_id=None):
                 profile = get_student_profile_for_intervention(selected_student)
                 result = client.recommend_intervention(profile)
                 ai_recommendations = result.get('recommendations', [])
-            except:
-                pass
+            except Exception as e:
+                import logging
+                logging.getLogger('brighttrack').warning(f'AI recommendation failed for student {selected_student.id}: {e}')
     
     if request.method == 'POST':
         form = InterventionForm(request.POST)

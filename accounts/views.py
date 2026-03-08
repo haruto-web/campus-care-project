@@ -7,9 +7,11 @@ from django.db.models import Count, Avg, Q
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.cache import cache
+from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import datetime, timedelta
 from academics.models import Class, Assignment, Submission, Attendance, Grade
 from wellness.models import WellnessCheckIn, RiskAssessment, Alert, Intervention
+from campus_care.validators import validate_image_upload
 from .models import User, OTPCode
 from .otp_utils import send_otp_email
 
@@ -668,12 +670,19 @@ def profile_view(request):
     if request.method == 'POST':
         request.user.first_name = request.POST.get('first_name')
         request.user.last_name = request.POST.get('last_name')
-        request.user.email = request.POST.get('email')
         request.user.phone = request.POST.get('phone', '')
+        
+        # Protect email changes — require re-verification
+        new_email = request.POST.get('email', '').strip()
+        if new_email and new_email != request.user.email:
+            messages.warning(request, 'Email changes require verification. Your email was not updated.')
         
         if request.FILES.get('profile_picture'):
             try:
+                validate_image_upload(request.FILES['profile_picture'])
                 request.user.profile_picture = request.FILES['profile_picture']
+            except DjangoValidationError as e:
+                messages.warning(request, f'Profile picture rejected: {e.message}')
             except Exception:
                 messages.warning(request, 'Profile picture upload failed. Other changes saved.')
         

@@ -2,44 +2,50 @@
 
 {% block title %}Teacher Dashboard{% endblock %}
 
+{% block page_title %}Teacher Dashboard{% endblock %}
+
 {% block content %}
 <div class="space-y-6">
-    <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">Teacher Dashboard</h2>
-    
+    <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">Teacher Dashboard</h2>
+
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <a href="{% url 'academics:my_classes' %}" class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
+        <a href="{% url 'academics:my_classes' %}"
+            class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
             <h3 class="text-3xl font-bold text-blue-600">{{ classes.count }}</h3>
             <p class="text-gray-600">My Classes</p>
         </a>
-        <div class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer" onclick="toggleStudentsBySection()">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center hover:shadow-lg transition-shadow cursor-pointer"
+            onclick="toggleStudentsBySection()">
             <h3 class="text-3xl font-bold text-green-600">{{ total_students }}</h3>
             <p class="text-gray-600">Total Students</p>
         </div>
-        <div class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer" onclick="toggleAtRiskBySection()">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center hover:shadow-lg transition-shadow cursor-pointer"
+            onclick="toggleAtRiskBySection()">
             <h3 class="text-3xl font-bold text-red-600">{{ at_risk_count }}</h3>
             <p class="text-gray-600">At-Risk Students</p>
         </div>
-        <div class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer" onclick="togglePendingBySection()">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center hover:shadow-lg transition-shadow cursor-pointer"
+            onclick="togglePendingBySection()">
             <h3 class="text-3xl font-bold text-yellow-600">{{ pending_grades }}</h3>
             <p class="text-gray-600">Pending Grades</p>
         </div>
     </div>
-    
+
     <!-- Section Breakdown Panels -->
-    <div id="students-breakdown" class="hidden bg-white rounded-lg shadow p-6">
+    <div id="students-breakdown" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
         <h5 class="text-lg font-semibold mb-4">Students by Section</h5>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for section_data in students_by_section %}
             <div class="p-4 border rounded-lg">
-                <h6 class="font-semibold text-gray-800">{{ section_data.section }}</h6>
+                <h6 class="font-semibold text-gray-800 dark:text-white">{{ section_data.section }}</h6>
                 <p class="text-2xl font-bold text-green-600">{{ section_data.count }}</p>
                 <p class="text-sm text-gray-600">students</p>
             </div>
             {% endfor %}
         </div>
     </div>
-    
-    <div id="atrisk-breakdown" class="hidden bg-white rounded-lg shadow p-6">
+
+    <div id="atrisk-breakdown" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
         <h5 class="text-lg font-semibold mb-4">At-Risk Students by Section</h5>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for section_data in atrisk_by_section %}
@@ -51,8 +57,8 @@
             {% endfor %}
         </div>
     </div>
-    
-    <div id="pending-breakdown" class="hidden bg-white rounded-lg shadow p-6">
+
+    <div id="pending-breakdown" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
         <h5 class="text-lg font-semibold mb-4">Pending Grades by Section</h5>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for section_data in pending_by_section %}
@@ -64,11 +70,11 @@
             {% endfor %}
         </div>
     </div>
-    
 
-    
+
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
             <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4">
                 <div class="flex items-center">
                     <i class="bi bi-book text-2xl mr-3"></i>
@@ -80,45 +86,50 @@
             </div>
             <div class="p-6">
                 {% if classes %}
-                    <div class="space-y-3">
+                <div class="space-y-3">
                     {% for class in classes %}
-                        <a href="{% url 'academics:class_detail' class.id %}" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition group">
-                            <div class="flex justify-between items-center">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                                        {{ class.code|slice:":2"|upper }}
-                                    </div>
-                                    <div>
-                                        <h6 class="font-bold text-gray-900 group-hover:text-blue-700">{{ class.name }}</h6>
-                                        <div class="flex items-center text-sm text-gray-600">
-                                            <i class="bi bi-people mr-1"></i>
-                                            <span>{{ class.students.count }} students</span>
-                                            <span class="mx-2">•</span>
-                                            <span>{{ class.section }} Section</span>
-                                            <span class="mx-2">•</span>
-                                            <span>Grade {{ class.year_level|default:"?" }}</span>
-                                        </div>
-                                    </div>
+                    <a href="{% url 'academics:class_detail' class.id %}"
+                        class="block p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition group">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-3">
+                                <div
+                                    class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
+                                    {{ class.code|slice:":2"|upper }}
                                 </div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{{ class.semester }}</span>
-                                    <i class="bi bi-arrow-right text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all"></i>
+                                <div>
+                                    <h6 class="font-bold text-gray-900 dark:text-white group-hover:text-blue-700">{{
+                                        class.name }}</h6>
+                                    <div class="flex items-center text-sm text-gray-600">
+                                        <i class="bi bi-people mr-1"></i>
+                                        <span>{{ class.students.count }} students</span>
+                                        <span class="mx-2">•</span>
+                                        <span>{{ class.section }} Section</span>
+                                        <span class="mx-2">•</span>
+                                        <span>Grade {{ class.year_level|default:"?" }}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </a>
+                            <div class="flex items-center space-x-2">
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{{
+                                    class.semester }}</span>
+                                <i
+                                    class="bi bi-arrow-right text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all"></i>
+                            </div>
+                        </div>
+                    </a>
                     {% endfor %}
-                    </div>
+                </div>
                 {% else %}
-                    <div class="text-center py-8">
-                        <i class="bi bi-book text-4xl text-gray-400 mb-3"></i>
-                        <p class="text-gray-600 font-medium">No classes assigned yet</p>
-                        <p class="text-gray-500 text-sm">Contact admin to get classes assigned</p>
-                    </div>
+                <div class="text-center py-8">
+                    <i class="bi bi-book text-4xl text-gray-400 mb-3"></i>
+                    <p class="text-gray-600 font-medium">No classes assigned yet</p>
+                    <p class="text-gray-500 text-sm">Contact admin to get classes assigned</p>
+                </div>
                 {% endif %}
             </div>
         </div>
-        
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
             <div class="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-4">
                 <div class="flex items-center">
                     <i class="bi bi-exclamation-triangle-fill text-2xl mr-3"></i>
@@ -130,47 +141,50 @@
             </div>
             <div class="p-6">
                 {% if at_risk_students %}
-                    <div class="space-y-3">
+                <div class="space-y-3">
                     {% for student in at_risk_students|slice:":5" %}
-                        <div class="bg-red-50 border border-red-200 rounded-lg p-4 hover:bg-red-100 transition">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                        {{ student.get_full_name|slice:":1"|upper }}
-                                    </div>
-                                    <div>
-                                        <h6 class="font-bold text-gray-900">{{ student.get_full_name }}</h6>
-                                        <div class="flex items-center text-sm text-gray-600">
-                                            <i class="bi bi-mortarboard mr-1"></i>
-                                            <span>Grade {{ student.year_level|default:"?" }}</span>
-                                            <span class="mx-2">•</span>
-                                            <span>{{ student.section|default:"No Section" }}</span>
-                                        </div>
-                                    </div>
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 hover:bg-red-100 transition">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div
+                                    class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                    {{ student.get_full_name|slice:":1"|upper }}
                                 </div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="px-2 py-1 bg-red-600 text-white rounded-full text-xs font-bold">HIGH RISK</span>
-                                    <a href="{% url 'student_profile' student.id %}" class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium">
-                                        View Profile
-                                    </a>
+                                <div>
+                                    <h6 class="font-bold text-gray-900">{{ student.get_full_name }}</h6>
+                                    <div class="flex items-center text-sm text-gray-600">
+                                        <i class="bi bi-mortarboard mr-1"></i>
+                                        <span>Grade {{ student.year_level|default:"?" }}</span>
+                                        <span class="mx-2">•</span>
+                                        <span>{{ student.section|default:"No Section" }}</span>
+                                    </div>
                                 </div>
                             </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="px-2 py-1 bg-red-600 text-white rounded-full text-xs font-bold">HIGH
+                                    RISK</span>
+                                <a href="{% url 'student_profile' student.id %}"
+                                    class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium">
+                                    View Profile
+                                </a>
+                            </div>
                         </div>
+                    </div>
                     {% endfor %}
-                    </div>
+                </div>
                 {% else %}
-                    <div class="text-center py-8">
-                        <i class="bi bi-check-circle text-4xl text-green-500 mb-3"></i>
-                        <p class="text-gray-600 font-medium">No students need immediate attention</p>
-                        <p class="text-gray-500 text-sm">All your students are doing well!</p>
-                    </div>
+                <div class="text-center py-8">
+                    <i class="bi bi-check-circle text-4xl text-green-500 mb-3"></i>
+                    <p class="text-gray-600 font-medium">No students need immediate attention</p>
+                    <p class="text-gray-500 text-sm">All your students are doing well!</p>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
 
     <!-- Recent Submissions Section -->
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
         <div class="bg-gradient-to-r from-green-600 to-emerald-700 px-6 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
@@ -189,78 +203,91 @@
         </div>
         <div class="p-6">
             {% if submissions_by_class %}
-                <div class="space-y-6">
+            <div class="space-y-6">
                 {% for class_data in submissions_by_class %}
-                    <div class="border border-gray-200 rounded-lg overflow-hidden">
-                        <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                                        {{ class_data.class.code|slice:":2"|upper }}
-                                    </div>
-                                    <div>
-                                        <h6 class="font-bold text-gray-900">{{ class_data.class.code }} - {{ class_data.class.name }}</h6>
-                                        <p class="text-sm text-gray-600">
-                                            {{ class_data.submissions|length }} recent submission{{ class_data.submissions|length|pluralize }} • 
-                                            Grade {{ class_data.class.year_level|default:"?" }} {{ class_data.class.section|default:"" }}
-                                        </p>
-                                    </div>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div
+                                    class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                                    {{ class_data.class.code|slice:":2"|upper }}
                                 </div>
-                                <a href="{% url 'academics:class_detail' class_data.class.id %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                    View Class ›
-                                </a>
-                            </div>
-                        </div>
-                        <div class="divide-y divide-gray-100">
-                            {% for submission in class_data.submissions %}
-                            <div class="p-4 hover:bg-gray-50 transition-colors">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3 min-w-0 flex-1">
-                                        <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
-                                            {{ submission.student.get_full_name|slice:":1"|upper }}
-                                        </div>
-                                        <div class="min-w-0 flex-1">
-                                            <div class="flex items-center space-x-2">
-                                                <h6 class="font-semibold text-gray-900 text-sm">{{ submission.student.get_full_name }}</h6>
-                                                {% if submission.student.year_level %}
-                                                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Gr.{{ submission.student.year_level }}</span>
-                                                {% endif %}
-                                            </div>
-                                            <p class="text-sm text-gray-600 truncate">{{ submission.assignment.title }}</p>
-                                            <div class="flex items-center text-xs text-gray-500 mt-1">
-                                                <i class="bi bi-clock mr-1"></i>
-                                                <span>{{ submission.submitted_at|date:"M d, g:i A" }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center space-x-3">
-                                        {% if submission.score %}
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                                <i class="bi bi-check-circle mr-1"></i>Graded
-                                            </span>
-                                        {% else %}
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
-                                                <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1 animate-pulse"></span>Pending
-                                            </span>
-                                        {% endif %}
-                                        <a href="{% url 'academics:grade_submission' submission.id %}" class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md transition-all duration-200">
-                                            <i class="bi bi-pencil mr-1"></i>
-                                            Grade
-                                        </a>
-                                    </div>
+                                <div>
+                                    <h6 class="font-bold text-gray-900">{{ class_data.class.code }} - {{
+                                        class_data.class.name }}</h6>
+                                    <p class="text-sm text-gray-600">
+                                        {{ class_data.submissions|length }} recent submission{{
+                                        class_data.submissions|length|pluralize }} •
+                                        Grade {{ class_data.class.year_level|default:"?" }} {{
+                                        class_data.class.section|default:"" }}
+                                    </p>
                                 </div>
                             </div>
-                            {% endfor %}
+                            <a href="{% url 'academics:class_detail' class_data.class.id %}"
+                                class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                View Class ›
+                            </a>
                         </div>
                     </div>
+                    <div class="divide-y divide-gray-100">
+                        {% for submission in class_data.submissions %}
+                        <div class="p-4 hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3 min-w-0 flex-1">
+                                    <div
+                                        class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                                        {{ submission.student.get_full_name|slice:":1"|upper }}
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center space-x-2">
+                                            <h6 class="font-semibold text-gray-900 text-sm">{{
+                                                submission.student.get_full_name }}</h6>
+                                            {% if submission.student.year_level %}
+                                            <span
+                                                class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Gr.{{
+                                                submission.student.year_level }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="text-sm text-gray-600 truncate">{{ submission.assignment.title }}</p>
+                                        <div class="flex items-center text-xs text-gray-500 mt-1">
+                                            <i class="bi bi-clock mr-1"></i>
+                                            <span>{{ submission.submitted_at|date:"M d, g:i A" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    {% if submission.score %}
+                                    <span
+                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                        <i class="bi bi-check-circle mr-1"></i>Graded
+                                    </span>
+                                    {% else %}
+                                    <span
+                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                        <span
+                                            class="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1 animate-pulse"></span>Pending
+                                    </span>
+                                    {% endif %}
+                                    <a href="{% url 'academics:grade_submission' submission.id %}"
+                                        class="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md transition-all duration-200">
+                                        <i class="bi bi-pencil mr-1"></i>
+                                        Grade
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endfor %}
-                </div>
+            </div>
             {% else %}
-                <div class="text-center py-12">
-                    <i class="bi bi-file-earmark-text text-6xl text-gray-300 mb-4"></i>
-                    <h6 class="text-lg font-semibold text-gray-600 mb-2">No recent submissions</h6>
-                    <p class="text-gray-500">Student submissions will appear here when they submit assignments</p>
-                </div>
+            <div class="text-center py-12">
+                <i class="bi bi-file-earmark-text text-6xl text-gray-300 mb-4"></i>
+                <h6 class="text-lg font-semibold text-gray-600 mb-2">No recent submissions</h6>
+                <p class="text-gray-500">Student submissions will appear here when they submit assignments</p>
+            </div>
             {% endif %}
         </div>
     </div>
@@ -269,48 +296,48 @@
 
 {% block extra_js %}
 <script>
-function toggleStudentsBySection() {
-    const panel = document.getElementById('students-breakdown');
-    const otherPanels = ['atrisk-breakdown', 'pending-breakdown'];
-    
-    // Hide other panels
-    otherPanels.forEach(id => {
-        document.getElementById(id).classList.add('hidden');
-    });
-    
-    // Toggle current panel
-    panel.classList.toggle('hidden');
-}
+    function toggleStudentsBySection() {
+        const panel = document.getElementById('students-breakdown');
+        const otherPanels = ['atrisk-breakdown', 'pending-breakdown'];
 
-function toggleAtRiskBySection() {
-    const panel = document.getElementById('atrisk-breakdown');
-    const otherPanels = ['students-breakdown', 'pending-breakdown'];
-    
-    // Hide other panels
-    otherPanels.forEach(id => {
-        document.getElementById(id).classList.add('hidden');
-    });
-    
-    // Toggle current panel
-    panel.classList.toggle('hidden');
-}
+        // Hide other panels
+        otherPanels.forEach(id => {
+            document.getElementById(id).classList.add('hidden');
+        });
 
-function togglePendingBySection() {
-    const panel = document.getElementById('pending-breakdown');
-    const otherPanels = ['students-breakdown', 'atrisk-breakdown'];
-    
-    // Hide other panels
-    otherPanels.forEach(id => {
-        document.getElementById(id).classList.add('hidden');
-    });
-    
-    // Toggle current panel
-    panel.classList.toggle('hidden');
-}
+        // Toggle current panel
+        panel.classList.toggle('hidden');
+    }
 
-// Toggle functions for stat cards
-document.addEventListener('DOMContentLoaded', function() {
-    // Any initialization code can go here
-});
+    function toggleAtRiskBySection() {
+        const panel = document.getElementById('atrisk-breakdown');
+        const otherPanels = ['students-breakdown', 'pending-breakdown'];
+
+        // Hide other panels
+        otherPanels.forEach(id => {
+            document.getElementById(id).classList.add('hidden');
+        });
+
+        // Toggle current panel
+        panel.classList.toggle('hidden');
+    }
+
+    function togglePendingBySection() {
+        const panel = document.getElementById('pending-breakdown');
+        const otherPanels = ['students-breakdown', 'atrisk-breakdown'];
+
+        // Hide other panels
+        otherPanels.forEach(id => {
+            document.getElementById(id).classList.add('hidden');
+        });
+
+        // Toggle current panel
+        panel.classList.toggle('hidden');
+    }
+
+    // Toggle functions for stat cards
+    document.addEventListener('DOMContentLoaded', function () {
+        // Any initialization code can go here
+    });
 </script>
 {% endblock %}

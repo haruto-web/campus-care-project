@@ -1,231 +1,263 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" class="">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="BrightTrack LMS — Learning Management System for campus care and student wellness.">
     <title>{% block title %}BrightTrack{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
-        // Load saved theme immediately
+        tailwind.config = { darkMode: 'class' }
         if (localStorage.getItem('theme') === 'dark') {
             document.documentElement.classList.add('dark');
         }
     </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
+
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     {% if user.is_authenticated %}
-    <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <!-- Logo -->
-                <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 text-xl font-bold text-gray-900 dark:text-white flex-shrink-0">
-                    <i class="bi bi-heart-pulse text-red-600"></i>
-                    <span>BrightTrack</span>
-                </a>
-                <!-- Desktop Nav -->
-                <div class="hidden md:flex items-center space-x-1">
-                    <a href="{% url 'dashboard' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">Dashboard</a>
-                    {% if user.role == 'student' %}
-                    <a href="{% url 'academics:my_classes' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">My Classes</a>
-                    <a href="{% url 'academics:student_assignments' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">Assignments</a>
-                    {% elif user.role == 'teacher' %}
-                    <a href="{% url 'academics:my_classes' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">My Classes</a>
-                    <a href="{% url 'students_list' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">Students</a>
-                    {% elif user.role == 'counselor' %}
-                    <a href="{% url 'wellness:at_risk_students' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">At-Risk</a>
-                    <a href="{% url 'wellness:interventions_list' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">Interventions</a>
-                    <a href="{% url 'wellness:alerts_list' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">Alerts</a>
-                    <a href="{% url 'wellness:reports' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">Reports</a>
-                    {% elif user.role == 'admin' %}
-                    <a href="{% url 'admin_teachers_list' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">Teachers</a>
-                    <a href="{% url 'admin_create_class' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">Create Class</a>
-                    <a href="{% url 'admin_enroll_student' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">Enroll</a>
-                    {% endif %}
-                </div>
-                <!-- Right: User dropdown + hamburger -->
-                <div class="flex items-center space-x-2">
-                    <!-- Messages icon -->
-                    <a href="{% url 'messaging:inbox' %}" class="relative hidden md:flex items-center p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-                        <i class="bi bi-chat-dots text-xl"></i>
-                        <span id="msgBadge" class="{% if unread_messages_count == 0 %}hidden{% endif %} absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">{{ unread_messages_count }}</span>
-                    </a>
-                    <!-- Notification Bell -->
-                    <div class="relative hidden md:block">
-                        <button onclick="toggleNotifDropdown()" class="relative p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-                            <i class="bi bi-bell text-xl"></i>
-                            <span id="notifBadge" class="hidden absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">0</span>
-                        </button>
-                        <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-                            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                                <span class="font-semibold text-sm text-gray-700 dark:text-gray-300">Notifications</span>
-                                <button onclick="clearNotificationHistory()" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
-                                    Clear All
-                                </button>
-                            </div>
-                            <div id="notifList" class="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
-                                <p class="text-sm text-gray-400 text-center py-8">No new notifications</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="relative hidden md:block">
-                        <button onclick="toggleDropdown()" class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded font-medium">
-                            <i class="bi bi-person-circle text-xl"></i>
-                            <span class="max-w-[120px] truncate">{{ user.get_full_name }}</span>
-                            <i class="bi bi-chevron-down text-sm"></i>
-                        </button>
-                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
-                            <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">Settings</p>
-                            </div>
-                            {% if user.role == 'student' %}
-                            <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">Quick Actions</p>
-                            </div>
-                            <a href="{% url 'academics:student_assignments' %}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <i class="bi bi-clipboard-check mr-3"></i><span>View All Assignments</span>
-                            </a>
-                            <a href="{% url 'academics:student_grades' %}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <i class="bi bi-bar-chart mr-3"></i><span>Check My Grades</span>
-                            </a>
-                            <a href="{% url 'wellness:wellness_checkin' %}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <i class="bi bi-heart mr-3"></i><span>Wellness Check-in</span>
-                            </a>
-                            <hr class="my-1 border-gray-200 dark:border-gray-700">
-                            {% elif user.role == 'teacher' %}
-                            <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">Quick Actions</p>
-                            </div>
-                            <a href="{% url 'academics:my_classes' %}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <i class="bi bi-book mr-3"></i><span>Manage Classes</span>
-                            </a>
-                            <a href="{% url 'students_list' %}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <i class="bi bi-people mr-3"></i><span>View Students</span>
-                            </a>
-                            <hr class="my-1 border-gray-200 dark:border-gray-700">
-                            {% endif %}
-                            <a href="{% url 'profile' %}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <i class="bi bi-person mr-3"></i><span>Profile</span>
-                            </a>
-                            <button onclick="toggleTheme()" class="w-full flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <i class="bi bi-moon mr-3" id="themeIcon"></i>
-                                <span id="themeText">Dark Mode</span>
-                            </button>
-                            <hr class="my-1 border-gray-200 dark:border-gray-700">
-                            <a href="{% url 'logout' %}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <i class="bi bi-box-arrow-right mr-3"></i><span>Logout</span>
-                            </a>
-                        </div>
-                    </div>
-                    <!-- Hamburger (mobile) -->
-                    <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <i class="bi bi-list text-2xl" id="hamburgerIcon"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- Mobile Menu -->
-        <div id="mobileMenu" class="hidden md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-            <div class="px-4 py-3 space-y-1">
-                <a href="{% url 'dashboard' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Dashboard</a>
-                {% if user.role == 'student' %}
-                <a href="{% url 'academics:my_classes' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">My Classes</a>
-                <a href="{% url 'academics:student_assignments' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Assignments</a>
-                {% elif user.role == 'teacher' %}
-                <a href="{% url 'academics:my_classes' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">My Classes</a>
-                <a href="{% url 'students_list' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Students</a>
-                {% elif user.role == 'counselor' %}
-                <a href="{% url 'wellness:at_risk_students' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">At-Risk Students</a>
-                <a href="{% url 'wellness:interventions_list' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Interventions</a>
-                <a href="{% url 'wellness:alerts_list' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Alerts</a>
-                <a href="{% url 'wellness:reports' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Reports</a>
-                {% elif user.role == 'admin' %}
-                <a href="{% url 'admin_teachers_list' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Teachers</a>
-                <a href="{% url 'admin_create_class' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Create Class</a>
-                <a href="{% url 'admin_enroll_student' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Enroll Student</a>
-                {% endif %}
-                {% if user.role == 'student' %}
-                <hr class="border-gray-200 dark:border-gray-700 my-2">
-                <div class="px-3 py-1">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">Quick Actions</p>
-                </div>
-                <a href="{% url 'academics:student_assignments' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium"><i class="bi bi-clipboard-check mr-2"></i>View All Assignments</a>
-                <a href="{% url 'academics:student_grades' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium"><i class="bi bi-bar-chart mr-2"></i>Check My Grades</a>
-                <a href="{% url 'wellness:wellness_checkin' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium"><i class="bi bi-heart mr-2"></i>Wellness Check-in</a>
-                {% elif user.role == 'teacher' %}
-                <hr class="border-gray-200 dark:border-gray-700 my-2">
-                <div class="px-3 py-1">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">Quick Actions</p>
-                </div>
-                <a href="{% url 'academics:my_classes' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium"><i class="bi bi-book mr-2"></i>Manage Classes</a>
-                <a href="{% url 'students_list' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium"><i class="bi bi-people mr-2"></i>View Students</a>
-                {% endif %}
-                <hr class="border-gray-200 dark:border-gray-700 my-2">
-                <a href="{% url 'messaging:inbox' %}" class="flex items-center justify-between px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">
-                    <span><i class="bi bi-chat-dots mr-2"></i>Messages</span>
-                    <span id="msgBadgeMobile" class="{% if unread_messages_count == 0 %}hidden{% endif %} bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">{{ unread_messages_count }}</span>
-                </a>
-                <a href="{% url 'profile' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Profile</a>
-                <button onclick="toggleTheme()" class="w-full text-left px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">
-                    <i class="bi bi-moon mr-2" id="themeIconMobile"></i><span id="themeTextMobile">Dark Mode</span>
-                </button>
-                <a href="{% url 'logout' %}" class="block px-3 py-2 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">Logout</a>
-            </div>
-        </div>
-    </nav>
-    {% endif %}
+    <!-- ===== SIDEBAR ===== -->
+    <div id="sidebarOverlay" class="bt-sidebar-overlay" onclick="closeSidebar()"></div>
+    <aside id="sidebar" class="bt-sidebar">
+        <!-- Logo -->
+        <a href="{% url 'dashboard' %}" class="bt-sidebar-logo">
+            <i class="bi bi-heart-pulse"></i>
+            <span>BrightTrack</span>
+        </a>
 
-    <main class="{% if user.is_authenticated %}max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6{% endif %}">
-        {% if messages %}
+        <!-- Navigation -->
+        <nav class="bt-sidebar-nav">
+            <div class="bt-sidebar-section">Main</div>
+            <a href="{% url 'dashboard' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-grid-1x2"></i><span>Dashboard</span>
+            </a>
+
+            {% if user.role == 'student' %}
+            <a href="{% url 'academics:my_classes' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'my_classes' %}active{% endif %}">
+                <i class="bi bi-book"></i><span>My Classes</span>
+            </a>
+            <a href="{% url 'academics:student_assignments' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'student_assignments' %}active{% endif %}">
+                <i class="bi bi-clipboard-check"></i><span>Assignments</span>
+            </a>
+            <a href="{% url 'academics:student_grades' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'student_grades' %}active{% endif %}">
+                <i class="bi bi-bar-chart"></i><span>Grades</span>
+            </a>
+            <a href="{% url 'academics:student_attendance' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'student_attendance' %}active{% endif %}">
+                <i class="bi bi-calendar-check"></i><span>Attendance</span>
+            </a>
+            <div class="bt-sidebar-section">Wellness</div>
+            <a href="{% url 'wellness:wellness_checkin' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'wellness_checkin' %}active{% endif %}">
+                <i class="bi bi-heart"></i><span>Check-in</span>
+            </a>
+
+            {% elif user.role == 'teacher' %}
+            <a href="{% url 'academics:my_classes' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'my_classes' %}active{% endif %}">
+                <i class="bi bi-book"></i><span>My Classes</span>
+            </a>
+            <a href="{% url 'students_list' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'students_list' %}active{% endif %}">
+                <i class="bi bi-people"></i><span>Students</span>
+            </a>
+            <div class="bt-sidebar-section">Wellness</div>
+            <a href="{% url 'wellness:view_concerns' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'view_concerns' %}active{% endif %}">
+                <i class="bi bi-flag"></i><span>Concerns</span>
+            </a>
+
+            {% elif user.role == 'counselor' %}
+            <a href="{% url 'wellness:at_risk_students' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'at_risk_students' %}active{% endif %}">
+                <i class="bi bi-exclamation-triangle"></i><span>At-Risk Students</span>
+            </a>
+            <a href="{% url 'wellness:alerts_list' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'alerts_list' %}active{% endif %}">
+                <i class="bi bi-bell"></i><span>Alerts</span>
+            </a>
+            <a href="{% url 'wellness:interventions_list' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'interventions_list' %}active{% endif %}">
+                <i class="bi bi-journal-medical"></i><span>Interventions</span>
+            </a>
+            <a href="{% url 'wellness:reports' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
+                <i class="bi bi-file-earmark-bar-graph"></i><span>Reports</span>
+            </a>
+            <div class="bt-sidebar-section">AI Tools</div>
+            <a href="{% url 'ai_assistant:counselor_chat_view' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'counselor_chat_view' %}active{% endif %}">
+                <i class="bi bi-robot"></i><span>AI Assistant</span>
+            </a>
+
+            {% elif user.role == 'admin' %}
+            <a href="{% url 'admin_manage_users' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_manage_users' %}active{% endif %}">
+                <i class="bi bi-people-fill"></i><span>Manage Users</span>
+            </a>
+            <a href="{% url 'admin_teachers_list' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_teachers_list' %}active{% endif %}">
+                <i class="bi bi-person-badge"></i><span>Teachers</span>
+            </a>
+            <div class="bt-sidebar-section">Academics</div>
+            <a href="{% url 'admin_create_class' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_create_class' %}active{% endif %}">
+                <i class="bi bi-plus-square"></i><span>Create Class</span>
+            </a>
+            <a href="{% url 'admin_enroll_student' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_enroll_student' %}active{% endif %}">
+                <i class="bi bi-person-plus"></i><span>Enroll Students</span>
+            </a>
+            <div class="bt-sidebar-section">System</div>
+            <a href="{% url 'admin_create_user' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_create_user' %}active{% endif %}">
+                <i class="bi bi-person-add"></i><span>Create User</span>
+            </a>
+            <a href="{% url 'admin_create_superuser' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_create_superuser' %}active{% endif %}">
+                <i class="bi bi-shield-lock"></i><span>Create Superuser</span>
+            </a>
+            <a href="{% url 'ai_assistant:admin_chat_view' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_chat_view' %}active{% endif %}">
+                <i class="bi bi-robot"></i><span>AI Assistant</span>
+            </a>
+            {% endif %}
+
+            <!-- Messaging — all roles -->
+            <div class="bt-sidebar-section">Communication</div>
+            <a href="{% url 'messaging:inbox' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'inbox' %}active{% endif %}">
+                <i class="bi bi-chat-dots"></i><span>Messages</span>
+                {% if unread_messages_count %}<span class="bt-sidebar-badge" id="sidebarMsgBadge">{{
+                    unread_messages_count }}</span>{% endif %}
+            </a>
+        </nav>
+
+        <!-- Sidebar Footer — User -->
+        <div class="bt-sidebar-footer">
+            <a href="{% url 'profile' %}" class="bt-sidebar-user">
+                {% if user.profile_picture %}
+                <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="bt-sidebar-avatar">
+                {% else %}
+                <div class="bt-sidebar-avatar">{{ user.first_name|first }}{{ user.last_name|first }}</div>
+                {% endif %}
+                <div class="bt-sidebar-user-info">
+                    <div class="bt-sidebar-user-name">{{ user.get_full_name }}</div>
+                    <div class="bt-sidebar-user-role">{{ user.role }}</div>
+                </div>
+            </a>
+        </div>
+    </aside>
+
+    <!-- ===== TOP BAR ===== -->
+    <header class="bt-topbar">
+        <div class="bt-topbar-left">
+            <button class="bt-hamburger" onclick="toggleSidebar()">
+                <i class="bi bi-list"></i>
+            </button>
+            <h1 class="bt-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+        </div>
+        <div class="bt-topbar-right">
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()" class="bt-topbar-btn" title="Toggle theme">
+                <i class="bi bi-moon" id="themeIcon"></i>
+            </button>
+            <!-- Notifications -->
+            <div class="relative">
+                <button onclick="toggleNotifDropdown()" class="bt-topbar-btn">
+                    <i class="bi bi-bell"></i>
+                    <span id="notifBadge" class="bt-topbar-badge hidden">0</span>
+                </button>
+                <div id="notifDropdown" class="bt-dropdown hidden">
+                    <div class="bt-dropdown-header">
+                        <span>Notifications</span>
+                        <button onclick="clearNotificationHistory()"
+                            class="text-xs text-indigo-500 hover:text-indigo-700 font-medium">Clear All</button>
+                    </div>
+                    <div id="notifList" class="max-h-80 overflow-y-auto">
+                        <p class="text-sm text-gray-400 text-center py-8">No new notifications</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Logout -->
+            <form method="POST" action="{% url 'logout' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bt-topbar-btn" title="Logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="bt-main">
+        <div class="bt-content">
+            {% if messages %}
             {% for message in messages %}
-            <div class="mb-4 p-4 rounded-lg border {% if message.tags == 'success' %}bg-green-50 text-green-800 border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-800 border-red-200{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border-yellow-200{% else %}bg-blue-50 text-blue-800 border-blue-200{% endif %}">
+            <div
+                class="bt-alert {% if message.tags == 'success' %}bt-alert-success{% elif message.tags == 'error' %}bt-alert-error{% elif message.tags == 'warning' %}bt-alert-warning{% else %}bt-alert-info{% endif %} bt-fade-in">
+                <i
+                    class="bi {% if message.tags == 'success' %}bi-check-circle{% elif message.tags == 'error' %}bi-x-circle{% elif message.tags == 'warning' %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %}"></i>
                 {{ message }}
             </div>
             {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Non-authenticated users: no sidebar, just content -->
+    <main>
+        {% if messages %}
+        {% for message in messages %}
+        <div class="bt-alert {% if message.tags == 'success' %}bt-alert-success{% elif message.tags == 'error' %}bt-alert-error{% elif message.tags == 'warning' %}bt-alert-warning{% else %}bt-alert-info{% endif %} bt-fade-in"
+            style="max-width:600px;margin:16px auto;">
+            <i
+                class="bi {% if message.tags == 'success' %}bi-check-circle{% elif message.tags == 'error' %}bi-x-circle{% elif message.tags == 'warning' %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %}"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
         {% endif %}
-        
         {% block content %}{% endblock %}
     </main>
+    {% endif %}
 
     {% block extra_js %}{% endblock %}
+
     <script>
-    function toggleDropdown() {
-        document.getElementById('userDropdown').classList.toggle('hidden');
-    }
-    document.addEventListener('click', function(event) {
-        const dropdown = document.getElementById('userDropdown');
-        if (dropdown && !dropdown.contains(event.target) && !event.target.closest('[onclick="toggleDropdown()"]')) {
-            dropdown.classList.add('hidden');
+        /* === Sidebar Toggle (mobile) === */
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('open');
         }
-    });
-    function toggleMobileMenu() {
-        const menu = document.getElementById('mobileMenu');
-        const icon = document.getElementById('hamburgerIcon');
-        menu.classList.toggle('hidden');
-        icon.className = menu.classList.contains('hidden') ? 'bi bi-list text-2xl' : 'bi bi-x text-2xl';
-    }
-    function toggleTheme() {
-        const html = document.documentElement;
-        const isDark = html.classList.toggle('dark');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        updateThemeIcons(isDark);
-    }
-    function updateThemeIcons(isDark) {
-        const pairs = [['themeIcon','themeText'],['themeIconMobile','themeTextMobile']];
-        pairs.forEach(([iconId, textId]) => {
-            const icon = document.getElementById(iconId);
-            const text = document.getElementById(textId);
-            if (icon) icon.className = (isDark ? 'bi bi-sun' : 'bi bi-moon') + ' mr-3';
-            if (text) text.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('open');
+        }
+
+        /* === Theme === */
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            const icon = document.getElementById('themeIcon');
+            if (icon) icon.className = isDark ? 'bi bi-sun' : 'bi bi-moon';
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            const icon = document.getElementById('themeIcon');
+            if (icon && localStorage.getItem('theme') === 'dark') icon.className = 'bi bi-sun';
         });
-    }
-    document.addEventListener('DOMContentLoaded', function() {
-        updateThemeIcons(localStorage.getItem('theme') === 'dark');
-    });
     </script>
 
     {% if user.is_authenticated %}
@@ -233,116 +265,113 @@
     <div id="toastContainer" class="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none"></div>
 
     <script>
-    // Notification bell dropdown
-    function toggleNotifDropdown() {
-        document.getElementById('notifDropdown').classList.toggle('hidden');
-    }
-    
-    function closeNotifDropdown() {
-        document.getElementById('notifDropdown').classList.add('hidden');
-    }
-    
-    document.addEventListener('click', function(e) {
-        const nd = document.getElementById('notifDropdown');
-        if (nd && !nd.contains(e.target) && !e.target.closest('[onclick="toggleNotifDropdown()"]')) {
-            nd.classList.add('hidden');
+        /* === Notification Dropdown === */
+        function toggleNotifDropdown() {
+            document.getElementById('notifDropdown').classList.toggle('hidden');
         }
-    });
+        function closeNotifDropdown() {
+            document.getElementById('notifDropdown').classList.add('hidden');
+        }
+        document.addEventListener('click', function (e) {
+            const nd = document.getElementById('notifDropdown');
+            if (nd && !nd.contains(e.target) && !e.target.closest('[onclick="toggleNotifDropdown()"]')) {
+                nd.classList.add('hidden');
+            }
+        });
 
-    // Toast helper
-    function showToast(msg, color) {
-        const t = document.createElement('div');
-        t.className = `pointer-events-auto px-4 py-3 rounded-lg shadow-lg text-white text-sm font-medium flex items-center gap-2 ${color}`;
-        t.innerHTML = msg;
-        document.getElementById('toastContainer').appendChild(t);
-        setTimeout(() => t.remove(), 5000);
-    }
-
-    // Notification system
-    const NOTIF_KEY = 'notifItems_{{ user.id }}';
-    let notifItems = JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]');
-    let prevCounts = {messages: {{ unread_messages_count }}, announcements: 0, grades: 0, alerts: 0};
-    let isFirstLoad = true;
-
-    // Restore notifications on load
-    updateNotifList();
-    const nb0 = document.getElementById('notifBadge');
-    if (nb0 && notifItems.length > 0) { nb0.textContent = notifItems.length; nb0.classList.remove('hidden'); }
-
-    function updateNotifUI(data) {
-        const mb = document.getElementById('msgBadge');
-        const mbm = document.getElementById('msgBadgeMobile');
-        if (mb) { mb.textContent = data.messages; mb.classList.toggle('hidden', data.messages === 0); }
-        if (mbm) { mbm.textContent = data.messages; mbm.classList.toggle('hidden', data.messages === 0); }
-
-        if (isFirstLoad) {
-            prevCounts = {messages: data.messages, announcements: data.announcements, grades: data.grades, alerts: data.alerts};
-            isFirstLoad = false;
-            return;
+        /* === Toast === */
+        function showToast(msg, color) {
+            const t = document.createElement('div');
+            t.className = `pointer-events-auto px-4 py-3 rounded-lg shadow-lg text-white text-sm font-medium flex items-center gap-2 ${color}`;
+            t.textContent = msg;
+            document.getElementById('toastContainer').appendChild(t);
+            setTimeout(() => t.remove(), 5000);
         }
 
-        if (data.messages > prevCounts.messages) {
-            showToast('<i class="bi bi-chat-dots"></i> New message received', 'bg-blue-600');
-            addNotifItem('<i class="bi bi-chat-dots mr-2 text-blue-500"></i> New message', '/messages/');
-        }
-        if (data.announcements > prevCounts.announcements) {
-            showToast('<i class="bi bi-megaphone"></i> New announcement posted', 'bg-indigo-600');
-            addNotifItem('<i class="bi bi-megaphone mr-2 text-indigo-500"></i> New announcement', '/class/my-classes/');
-        }
-        if (data.grades > prevCounts.grades) {
-            showToast('<i class="bi bi-trophy"></i> Assignment graded!', 'bg-purple-600');
-            addNotifItem('<i class="bi bi-trophy mr-2 text-purple-500"></i> Assignment graded', '/class/student/grades/');
-        }
-        if (data.alerts > prevCounts.alerts) {
-            showToast('<i class="bi bi-exclamation-triangle"></i> New student alert', 'bg-red-600');
-            addNotifItem('<i class="bi bi-exclamation-triangle mr-2 text-red-500"></i> Student alert', '/wellness/alerts/');
-        }
+        /* === Notification Polling === */
+        const NOTIF_KEY = 'notifItems_{{ user.id }}';
+        let notifItems = JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]');
+        let prevCounts = { messages: {{ unread_messages_count }}, announcements: 0, grades: 0, alerts: 0};
+        let isFirstLoad = true;
 
-        prevCounts = {messages: data.messages, announcements: data.announcements, grades: data.grades, alerts: data.alerts};
-    }
-
-    function addNotifItem(html, url) {
-        const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        notifItems.unshift({html, url, time: timestamp});
-        if (notifItems.length > 20) notifItems.pop();
-        localStorage.setItem(NOTIF_KEY, JSON.stringify(notifItems));
         updateNotifList();
-        const nb = document.getElementById('notifBadge');
-        if (nb) { nb.textContent = notifItems.length; nb.classList.remove('hidden'); }
-    }
+        const nb0 = document.getElementById('notifBadge');
+        if (nb0 && notifItems.length > 0) { nb0.textContent = notifItems.length; nb0.classList.remove('hidden'); }
 
-    function updateNotifList() {
-        const list = document.getElementById('notifList');
-        if (!list) return;
-        if (notifItems.length === 0) {
-            list.innerHTML = '<p class="text-sm text-gray-400 text-center py-8">No new notifications</p>';
-            return;
+        function updateNotifUI(data) {
+            // Update sidebar message badge
+            const smb = document.getElementById('sidebarMsgBadge');
+            if (smb) { smb.textContent = data.messages; smb.style.display = data.messages === 0 ? 'none' : ''; }
+
+            if (isFirstLoad) {
+                prevCounts = { messages: data.messages, announcements: data.announcements, grades: data.grades, alerts: data.alerts };
+                isFirstLoad = false;
+                return;
+            }
+
+            if (data.messages > prevCounts.messages) {
+                showToast('New message received', 'bg-blue-600');
+                addNotifItem('<i class="bi bi-chat-dots mr-2 text-blue-500"></i> New message', '/messages/');
+            }
+            if (data.announcements > prevCounts.announcements) {
+                showToast('New announcement posted', 'bg-indigo-600');
+                addNotifItem('<i class="bi bi-megaphone mr-2 text-indigo-500"></i> New announcement', '/class/my-classes/');
+            }
+            if (data.grades > prevCounts.grades) {
+                showToast('Assignment graded!', 'bg-purple-600');
+                addNotifItem('<i class="bi bi-trophy mr-2 text-purple-500"></i> Assignment graded', '/class/student/grades/');
+            }
+            if (data.alerts > prevCounts.alerts) {
+                showToast('New student alert', 'bg-red-600');
+                addNotifItem('<i class="bi bi-exclamation-triangle mr-2 text-red-500"></i> Student alert', '/wellness/alerts/');
+            }
+
+            prevCounts = { messages: data.messages, announcements: data.announcements, grades: data.grades, alerts: data.alerts };
         }
-        list.innerHTML = notifItems.map(n =>
-            `<a href="${n.url}" onclick="closeNotifDropdown()" class="flex items-center justify-between px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition block">
+
+        function addNotifItem(html, url) {
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            notifItems.unshift({ html, url, time: timestamp });
+            if (notifItems.length > 20) notifItems.pop();
+            localStorage.setItem(NOTIF_KEY, JSON.stringify(notifItems));
+            updateNotifList();
+            const nb = document.getElementById('notifBadge');
+            if (nb) { nb.textContent = notifItems.length; nb.classList.remove('hidden'); }
+        }
+
+        function updateNotifList() {
+            const list = document.getElementById('notifList');
+            if (!list) return;
+            if (notifItems.length === 0) {
+                list.innerHTML = '<p class="text-sm text-gray-400 text-center py-8">No new notifications</p>';
+                return;
+            }
+            list.innerHTML = notifItems.map(n =>
+                `<a href="${n.url}" onclick="closeNotifDropdown()" class="flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition block" style="color:var(--bt-text)">
                 <div class="flex items-center flex-1">${n.html}</div>
-                <span class="text-xs text-gray-400 ml-2">${n.time}</span>
+                <span class="text-xs ml-2" style="color:var(--bt-text-muted)">${n.time}</span>
             </a>`
-        ).join('');
-    }
+            ).join('');
+        }
 
-    function clearNotificationHistory() {
-        notifItems = [];
-        localStorage.removeItem(NOTIF_KEY);
-        updateNotifList();
-        const nb = document.getElementById('notifBadge');
-        if (nb) { nb.textContent = '0'; nb.classList.add('hidden'); }
-    }
+        function clearNotificationHistory() {
+            notifItems = [];
+            localStorage.removeItem(NOTIF_KEY);
+            updateNotifList();
+            const nb = document.getElementById('notifBadge');
+            if (nb) { nb.textContent = '0'; nb.classList.add('hidden'); }
+        }
 
-    function pollNotifications() {
-        fetch('/notifications/poll/')
-            .then(r => r.json())
-            .then(data => updateNotifUI(data))
-            .catch(() => {});
-    }
+        function pollNotifications() {
+            fetch('/notifications/poll/')
+                .then(r => r.json())
+                .then(data => updateNotifUI(data))
+                .catch(() => { });
+        }
 
-    setInterval(pollNotifications, 5000);
+        setInterval(pollNotifications, 5000);
     </script>
     {% endif %}
 </body>
+
 </html>

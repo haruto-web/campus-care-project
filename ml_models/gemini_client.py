@@ -1,20 +1,33 @@
 from google import genai
 from django.conf import settings
 from django.core.cache import cache
-import json
 import hashlib
+import json
+import re
+
+
+def _sanitize_for_prompt(text):
+    """Strip control characters and limit length for AI prompt safety."""
+    if not text:
+        return ''
+    # Allow alphanumeric, common punctuation, and some special characters often used in data/text
+    text = re.sub(r'[^\w\s.,!?;:\'"\-@#()\[\]{}]', '', str(text))
+    return text[:1000]
+
+
+def _cache_key(*args):
+    """Generate a SHA-256 cache key from multiple arguments."""
+    raw = json.dumps(args, sort_keys=True, default=str)
+    return f"gemini_{hashlib.sha256(raw.encode()).hexdigest()[:32]}" # Use first 32 chars for brevity
+
 
 class GeminiClient:
     def __init__(self):
         self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
     
-    def _get_cache_key(self, prompt):
-        """Generate cache key from prompt"""
-        return f"gemini_{hashlib.md5(prompt.encode()).hexdigest()}"
-    
     def _call_with_cache(self, prompt, cache_hours=24):
         """Call Gemini with caching"""
-        cache_key = self._get_cache_key(prompt)
+        cache_key = _cache_key(prompt)
         
         # Check cache first
         cached = cache.get(cache_key)
@@ -59,7 +72,7 @@ Return JSON only:
         """Analyze sentiment of wellness check-in text"""
         prompt = f"""Analyze this student's wellness response for emotional distress.
 
-Text: "{text}"
+Text: "{_sanitize_for_prompt(text)}"
 
 Return JSON only:
 {{
@@ -73,10 +86,17 @@ Return JSON only:
     
     def recommend_intervention(self, student_profile):
         """Recommend interventions for at-risk student"""
+        # Sanitize student profile data before sending to AI
+        safe_profile = {}
+        for k, v in student_profile.items():
+            if isinstance(v, str):
+                safe_profile[k] = _sanitize_for_prompt(v)
+            else:
+                safe_profile[k] = v
         prompt = f"""Recommend top 2 interventions for this at-risk student.
 
 Student Profile:
-{json.dumps(student_profile, indent=2)}
+{json.dumps(safe_profile, indent=2)}
 
 Available interventions: One-on-One Counseling, Group Counseling, Academic Tutoring, Peer Mentoring, Parent Meeting, Study Skills Workshop
 
@@ -119,11 +139,12 @@ Return JSON only:
     def generate_text(self, prompt):
         """Generate text response for general queries"""
         try:
-            # Use gemini-2.5-flash without JSON mode for text generation
             response = self.client.models.generate_content(
                 model='gemini-2.5-flash',
                 contents=prompt
             )
             return response.text
         except Exception as e:
-            return f"I apologize, but I encountered an error: {str(e)}. Please try again."
+            import logging
+            logging.getLogger('brighttrack').error(f'Gemini API error: {e}', exc_info=True)
+            return 'I apologize, but I encountered an error processing your request. Please try again later.'
