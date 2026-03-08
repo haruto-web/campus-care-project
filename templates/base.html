@@ -202,10 +202,12 @@
     <!-- ===== MAIN CONTENT ===== -->
     <div class="bt-main">
         <div class="bt-content">
+            {% endif %}
+
             {% if messages %}
             {% for message in messages %}
-            <div
-                class="bt-alert {% if message.tags == 'success' %}bt-alert-success{% elif message.tags == 'error' %}bt-alert-error{% elif message.tags == 'warning' %}bt-alert-warning{% else %}bt-alert-info{% endif %} bt-fade-in">
+            <div class="bt-alert {% if message.tags == 'success' %}bt-alert-success{% elif message.tags == 'error' %}bt-alert-error{% elif message.tags == 'warning' %}bt-alert-warning{% else %}bt-alert-info{% endif %} bt-fade-in"
+                {% if not user.is_authenticated %}style="max-width:600px;margin:16px auto;" {% endif %}>
                 <i
                     class="bi {% if message.tags == 'success' %}bi-check-circle{% elif message.tags == 'error' %}bi-x-circle{% elif message.tags == 'warning' %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %}"></i>
                 {{ message }}
@@ -214,24 +216,10 @@
             {% endif %}
 
             {% block content %}{% endblock %}
+
+            {% if user.is_authenticated %}
         </div>
     </div>
-
-    {% else %}
-    <!-- Non-authenticated users: no sidebar, just content -->
-    <main>
-        {% if messages %}
-        {% for message in messages %}
-        <div class="bt-alert {% if message.tags == 'success' %}bt-alert-success{% elif message.tags == 'error' %}bt-alert-error{% elif message.tags == 'warning' %}bt-alert-warning{% else %}bt-alert-info{% endif %} bt-fade-in"
-            style="max-width:600px;margin:16px auto;">
-            <i
-                class="bi {% if message.tags == 'success' %}bi-check-circle{% elif message.tags == 'error' %}bi-x-circle{% elif message.tags == 'warning' %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %}"></i>
-            {{ message }}
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% block content %}{% endblock %}
-    </main>
     {% endif %}
 
     {% block extra_js %}{% endblock %}
