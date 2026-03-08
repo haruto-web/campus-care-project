@@ -19,8 +19,7 @@
                     <img src="{{ user.profile_picture.url }}" alt="Profile" class="w-32 h-32 rounded-full object-cover border-4 border-blue-600">
                     {% else %}
                     <div class="w-32 h-32 rounded-full bg-blue-600 flex items-center justify-center text-white text-4xl font-bold border-4 border-blue-600">
-                        {{ user.first_name.0 }}{{ user.last_name.0 }}
-                    </div>
+                        {{ user.first_name.0 }}{{ user.last_name.0 }}</div>
                     {% endif %}
                     <label for="profile_picture" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition">
                         <i class="bi bi-camera"></i>

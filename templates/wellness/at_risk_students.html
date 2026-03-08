@@ -58,8 +58,7 @@
                             <!-- Student Header -->
                             <div class="flex items-center mb-4">
                                 <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg {% if data.risk_level == 'high' %}bg-red-500{% elif data.risk_level == 'medium' %}bg-yellow-500{% else %}bg-green-500{% endif %}">
-                                    {{ data.student.get_full_name|slice:":1"|upper }}
-                                </div>
+                                    {{ data.student.get_full_name|slice:":1"|upper }}</div>
                                 <div class="ml-3">
                                     <h5 class="text-lg font-bold text-gray-800">{{ data.student.get_full_name }}</h5>
                                     <p class="text-sm text-gray-600">Grade {{ data.student.year_level|default:"?" }} - {{ data.student.section|default:"No Section" }}</p>

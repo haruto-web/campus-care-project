@@ -58,8 +58,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-purple-600 dark:text-purple-400 text-sm font-medium">Announcements</p>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white" id="unread-count">{{
-                        announcements|length }}</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white" id="unread-count">{{ announcements|length }}</p>
                 </div>
                 <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-lg flex items-center justify-center">
                     <i class="bi bi-megaphone text-purple-600 dark:text-purple-400 text-xl"></i>
@@ -93,20 +92,17 @@
                             class="flex items-start justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-2 mb-1">
-                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded font-medium">{{
-                                        assignment.class_obj.code }}</span>
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded font-medium">{{ assignment.class_obj.code }}</span>
                                     <span class="text-xs text-gray-500 dark:text-gray-400">{{ assignment.total_points }}
                                         points</span>
                                 </div>
                                 <h4 class="font-medium text-gray-900 dark:text-white mb-1">{{ assignment.title }}</h4>
                                 {% if assignment.description %}
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{
-                                    assignment.description|truncatechars:80 }}</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ assignment.description|truncatechars:80 }}</p>
                                 {% endif %}
                                 <div class="flex items-center text-xs text-gray-500 dark:text-gray-400">
                                     <i class="bi bi-clock mr-1"></i>
-                                    Due: {{ assignment.due_date|date:"M j, g:i A" }}
-                                </div>
+                                    Due: {{ assignment.due_date|date:"M j, g:i A" }}</div>
                             </div>
                             <div class="ml-4">
                                 <a href="{% url 'academics:submit_assignment' assignment.id %}"
@@ -153,8 +149,7 @@
                             <div class="flex items-start justify-between mb-2">
                                 <div class="flex items-center space-x-2">
                                     <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded font-medium">
-                                        {{ announcement.class_obj.code|default:"SCHOOL" }}
-                                    </span>
+                                        {{ announcement.class_obj.code|default:"SCHOOL" }}</span>
                                     {% if announcement.priority == 'urgent' %}
                                     <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded font-medium">
                                         <i class="bi bi-exclamation-triangle mr-1"></i>URGENT
@@ -162,8 +157,7 @@
                                     {% endif %}
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <span class="text-xs text-gray-500">{{ announcement.created_at|date:"M j, g:i A"
-                                        }}</span>
+                                    <span class="text-xs text-gray-500">{{ announcement.created_at|date:"M j, g:i A" }}</span>
                                     <label class="flex items-center cursor-pointer" title="Mark as read">
                                         <input type="checkbox" class="announcement-checkbox w-4 h-4 accent-purple-600"
                                             data-id="{{ announcement.id }}" {% if announcement.is_read %}checked{% endif
@@ -207,8 +201,7 @@
                         <div class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                             <div>
                                 <h4 class="font-medium text-gray-900 dark:text-white">{{ class.code }}</h4>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ class.name|truncatechars:25 }}
-                                </p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ class.name|truncatechars:25 }}</p>
                             </div>
                             <a href="{% url 'academics:class_detail' class.id %}"
                                 class="text-green-600 hover:text-green-800">

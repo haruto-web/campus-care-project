@@ -138,8 +138,7 @@
             <a href="{% url 'messaging:inbox' %}"
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'inbox' %}active{% endif %}">
                 <i class="bi bi-chat-dots"></i><span>Messages</span>
-                {% if unread_messages_count %}<span class="bt-sidebar-badge" id="sidebarMsgBadge">{{
-                    unread_messages_count }}</span>{% endif %}
+                {% if unread_messages_count %}<span class="bt-sidebar-badge" id="sidebarMsgBadge">{{ unread_messages_count }}</span>{% endif %}
             </a>
         </nav>
 
@@ -210,8 +209,7 @@
                 {% if not user.is_authenticated %}style="max-width:600px;margin:16px auto;" {% endif %}>
                 <i
                     class="bi {% if message.tags == 'success' %}bi-check-circle{% elif message.tags == 'error' %}bi-x-circle{% elif message.tags == 'warning' %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %}"></i>
-                {{ message }}
-            </div>
+                {{ message }}</div>
             {% endfor %}
             {% endif %}
 

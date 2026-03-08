@@ -186,14 +186,11 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                                    <span class="text-red-600 font-semibold text-sm">{{
-                                        assessment.student.get_full_name|slice:":1"|upper }}</span>
+                                    <span class="text-red-600 font-semibold text-sm">{{ assessment.student.get_full_name|slice:":1"|upper }}</span>
                                 </div>
                                 <div class="ml-3">
-                                    <p class="text-sm font-medium text-gray-900">{{ assessment.student.get_full_name }}
-                                    </p>
-                                    <p class="text-sm text-gray-500">Grade {{ assessment.student.year_level|default:"?"
-                                        }} - {{ assessment.student.section|default:"No Section" }}</p>
+                                    <p class="text-sm font-medium text-gray-900">{{ assessment.student.get_full_name }}</p>
+                                    <p class="text-sm text-gray-500">Grade {{ assessment.student.year_level|default:"?" }} - {{ assessment.student.section|default:"No Section" }}</p>
                                 </div>
                             </div>
                         </td>
@@ -264,15 +261,15 @@
             labels: ['Students', 'Teachers', 'Counselors', 'Admins'],
             datasets: [{
                 data: [{{ total_students }}, {{ total_teachers }}, {{ total_counselors }}, {{ total_admins }}],
-        backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B']
+                backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B']
             }]
         },
         options: {
-        responsive: true,
-        plugins: {
-            legend: { position: 'bottom' }
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
         }
-    }
     });
 
     // Risk Level Bar Chart
@@ -284,18 +281,18 @@
             datasets: [{
                 label: 'Students',
                 data: [{{ high_risk_count }}, {{ medium_risk_count }}, {{ low_risk_count }}],
-        backgroundColor: ['#EF4444', '#F59E0B', '#10B981']
+                backgroundColor: ['#EF4444', '#F59E0B', '#10B981']
             }]
         },
         options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            y: { beginAtZero: true }
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
         }
-    }
     });
 </script>
 {% endblock %}

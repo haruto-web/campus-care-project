@@ -10,12 +10,10 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <div class="flex items-center gap-3 mb-1">
-                    <span class="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full tracking-wide">{{
-                        class.code }}</span>
+                    <span class="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full tracking-wide">{{ class.code }}</span>
                     {% if class.year_level %}<span class="bg-white/20 text-white text-xs px-3 py-1 rounded-full">Grade
                         {{ class.year_level }}</span>{% endif %}
-                    {% if class.section %}<span class="bg-white/20 text-white text-xs px-3 py-1 rounded-full">{{
-                        class.section }}</span>{% endif %}
+                    {% if class.section %}<span class="bg-white/20 text-white text-xs px-3 py-1 rounded-full">{{ class.section }}</span>{% endif %}
                 </div>
                 <h1 class="text-2xl sm:text-3xl font-bold">{{ class.name }}</h1>
                 {% if class.description %}<p class="text-blue-200 text-sm mt-1">{{ class.description }}</p>{% endif %}
@@ -36,10 +34,8 @@
         <div class="flex flex-wrap gap-4 mt-4 text-sm text-blue-100">
             <span class="flex items-center gap-1"><i class="bi bi-person"></i> {{ class.teacher.get_full_name }}</span>
             <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i> {{ class.semester }}</span>
-            {% if class.schedule %}<span class="flex items-center gap-1"><i class="bi bi-clock"></i> {{ class.schedule
-                }}</span>{% endif %}
-            {% if class.room %}<span class="flex items-center gap-1"><i class="bi bi-geo-alt"></i> Room {{ class.room
-                }}</span>{% endif %}
+            {% if class.schedule %}<span class="flex items-center gap-1"><i class="bi bi-clock"></i> {{ class.schedule }}</span>{% endif %}
+            {% if class.room %}<span class="flex items-center gap-1"><i class="bi bi-geo-alt"></i> Room {{ class.room }}</span>{% endif %}
         </div>
     </div>
 
@@ -93,8 +89,7 @@
             <button onclick="showTab('announcements')" id="tab-announcements"
                 class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap flex items-center gap-2 text-gray-500 hover:text-gray-800">
                 <i class="bi bi-megaphone"></i> Announcements
-                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ announcements|length
-                    }}</span>
+                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ announcements|length }}</span>
             </button>
             <button onclick="showTab('materials')" id="tab-materials"
                 class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap flex items-center gap-2 text-gray-500 hover:text-gray-800">
@@ -104,8 +99,7 @@
             <button onclick="showTab('roster')" id="tab-roster"
                 class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap flex items-center gap-2 text-gray-500 hover:text-gray-800">
                 <i class="bi bi-people"></i> Roster
-                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ class.students.count
-                    }}</span>
+                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ class.students.count }}</span>
             </button>
         </div>
 
@@ -136,13 +130,10 @@
                             </div>
                             <div class="min-w-0">
                                 <h4 class="font-semibold text-gray-900 truncate">{{ assignment.title }}</h4>
-                                <p class="text-sm text-gray-500 mt-0.5 line-clamp-1">{{
-                                    assignment.description|truncatewords:15 }}</p>
+                                <p class="text-sm text-gray-500 mt-0.5 line-clamp-1">{{ assignment.description|truncatewords:15 }}</p>
                                 <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500">
-                                    <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i> Due {{
-                                        assignment.due_date|date:"M d, Y · g:i A" }}</span>
-                                    <span class="flex items-center gap-1"><i class="bi bi-trophy"></i> {{
-                                        assignment.total_points }} pts</span>
+                                    <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i> Due {{ assignment.due_date|date:"M d, Y · g:i A" }}</span>
+                                    <span class="flex items-center gap-1"><i class="bi bi-trophy"></i> {{ assignment.total_points }} pts</span>
                                     <span class="px-2 py-0.5 rounded-full text-xs font-medium
                                         {% if assignment.submission_type == 'text_entry' %}bg-green-100 text-green-700
                                         {% elif assignment.submission_type == 'both' %}bg-purple-100 text-purple-700
@@ -220,8 +211,7 @@
                                 {% endif %}
                             </div>
                             <p class="text-gray-700 text-sm">{{ announcement.content }}</p>
-                            <p class="text-xs text-gray-400 mt-2">{{ announcement.author.get_full_name }} · {{
-                                announcement.created_at|date:"M d, Y" }}</p>
+                            <p class="text-xs text-gray-400 mt-2">{{ announcement.author.get_full_name }} · {{ announcement.created_at|date:"M d, Y" }}</p>
                         </div>
                     </div>
                 </div>
@@ -255,10 +245,8 @@
                         </div>
                         <div class="min-w-0">
                             <a href="{{ material.file.url }}" target="_blank"
-                                class="font-semibold text-gray-800 hover:text-purple-600 truncate block">{{
-                                material.title }}</a>
-                            {% if material.description %}<p class="text-xs text-gray-500 truncate">{{
-                                material.description }}</p>{% endif %}
+                                class="font-semibold text-gray-800 hover:text-purple-600 truncate block">{{ material.title }}</a>
+                            {% if material.description %}<p class="text-xs text-gray-500 truncate">{{ material.description }}</p>{% endif %}
                             <p class="text-xs text-gray-400 mt-0.5">{{ material.uploaded_at|date:"M d, Y" }}</p>
                         </div>
                     </div>
@@ -305,8 +293,7 @@
                 <div class="border rounded-xl p-3 flex items-center gap-3 hover:shadow-md transition">
                     <div
                         class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
-                        {{ student.get_full_name|slice:":1"|upper }}
-                    </div>
+                        {{ student.get_full_name|slice:":1"|upper }}</div>
                     <div class="min-w-0">
                         <p class="font-semibold text-gray-800 truncate">{{ student.get_full_name }}</p>
                         <p class="text-xs text-gray-500 truncate">{{ student.email }}</p>

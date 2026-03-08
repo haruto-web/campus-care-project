@@ -63,16 +63,13 @@
                                 <div class="flex items-center gap-4 text-sm text-gray-500">
                                     <span>
                                         <i class="bi bi-book mr-1"></i>
-                                        {{ material.class_obj.code }} - {{ material.class_obj.name }}
-                                    </span>
+                                        {{ material.class_obj.code }} - {{ material.class_obj.name }}</span>
                                     <span>
                                         <i class="bi bi-person mr-1"></i>
-                                        {{ material.uploaded_by.get_full_name }}
-                                    </span>
+                                        {{ material.uploaded_by.get_full_name }}</span>
                                     <span>
                                         <i class="bi bi-calendar mr-1"></i>
-                                        {{ material.uploaded_at|date:"M d, Y" }}
-                                    </span>
+                                        {{ material.uploaded_at|date:"M d, Y" }}</span>
                                 </div>
                             </div>
                         </div>
@@ -87,8 +84,7 @@
 
             <!-- Pagination info -->
             <div class="mt-6 text-center text-gray-600">
-                Showing {{ materials|length }} material{{ materials|length|pluralize }}
-            </div>
+                Showing {{ materials|length }} material{{ materials|length|pluralize }}</div>
         {% else %}
             <div class="text-center py-12">
                 <i class="bi bi-file-earmark text-6xl text-gray-300 mb-4"></i>

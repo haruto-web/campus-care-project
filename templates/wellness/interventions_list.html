@@ -73,8 +73,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">
                                         <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm {% if intervention.status == 'scheduled' %}bg-blue-500{% elif intervention.status == 'completed' %}bg-green-500{% else %}bg-gray-500{% endif %}">
-                                            {{ intervention.student.get_full_name|slice:":1"|upper }}
-                                        </div>
+                                            {{ intervention.student.get_full_name|slice:":1"|upper }}</div>
                                         <div class="ml-3">
                                             <a href="{% url 'student_profile' intervention.student.id %}" class="text-blue-600 hover:text-blue-900 font-medium">{{ intervention.student.get_full_name }}</a>
                                             <p class="text-sm text-gray-500">Grade {{ intervention.student.year_level|default:"?" }}</p>

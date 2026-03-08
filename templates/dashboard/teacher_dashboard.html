@@ -94,11 +94,9 @@
                             <div class="flex items-center space-x-3">
                                 <div
                                     class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                                    {{ class.code|slice:":2"|upper }}
-                                </div>
+                                    {{ class.code|slice:":2"|upper }}</div>
                                 <div>
-                                    <h6 class="font-bold text-gray-900 dark:text-white group-hover:text-blue-700">{{
-                                        class.name }}</h6>
+                                    <h6 class="font-bold text-gray-900 dark:text-white group-hover:text-blue-700">{{ class.name }}</h6>
                                     <div class="flex items-center text-sm text-gray-600">
                                         <i class="bi bi-people mr-1"></i>
                                         <span>{{ class.students.count }} students</span>
@@ -110,8 +108,7 @@
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2">
-                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{{
-                                    class.semester }}</span>
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{{ class.semester }}</span>
                                 <i
                                     class="bi bi-arrow-right text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all"></i>
                             </div>
@@ -148,8 +145,7 @@
                             <div class="flex items-center space-x-3">
                                 <div
                                     class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                    {{ student.get_full_name|slice:":1"|upper }}
-                                </div>
+                                    {{ student.get_full_name|slice:":1"|upper }}</div>
                                 <div>
                                     <h6 class="font-bold text-gray-900">{{ student.get_full_name }}</h6>
                                     <div class="flex items-center text-sm text-gray-600">
@@ -211,17 +207,12 @@
                             <div class="flex items-center space-x-3">
                                 <div
                                     class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                                    {{ class_data.class.code|slice:":2"|upper }}
-                                </div>
+                                    {{ class_data.class.code|slice:":2"|upper }}</div>
                                 <div>
-                                    <h6 class="font-bold text-gray-900">{{ class_data.class.code }} - {{
-                                        class_data.class.name }}</h6>
+                                    <h6 class="font-bold text-gray-900">{{ class_data.class.code }} - {{ class_data.class.name }}</h6>
                                     <p class="text-sm text-gray-600">
-                                        {{ class_data.submissions|length }} recent submission{{
-                                        class_data.submissions|length|pluralize }} •
-                                        Grade {{ class_data.class.year_level|default:"?" }} {{
-                                        class_data.class.section|default:"" }}
-                                    </p>
+                                        {{ class_data.submissions|length }} recent submission{{ class_data.submissions|length|pluralize }} •
+                                        Grade {{ class_data.class.year_level|default:"?" }} {{ class_data.class.section|default:"" }}</p>
                                 </div>
                             </div>
                             <a href="{% url 'academics:class_detail' class_data.class.id %}"
@@ -237,16 +228,13 @@
                                 <div class="flex items-center space-x-3 min-w-0 flex-1">
                                     <div
                                         class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
-                                        {{ submission.student.get_full_name|slice:":1"|upper }}
-                                    </div>
+                                        {{ submission.student.get_full_name|slice:":1"|upper }}</div>
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-center space-x-2">
-                                            <h6 class="font-semibold text-gray-900 text-sm">{{
-                                                submission.student.get_full_name }}</h6>
+                                            <h6 class="font-semibold text-gray-900 text-sm">{{ submission.student.get_full_name }}</h6>
                                             {% if submission.student.year_level %}
                                             <span
-                                                class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Gr.{{
-                                                submission.student.year_level }}</span>
+                                                class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Gr.{{ submission.student.year_level }}</span>
                                             {% endif %}
                                         </div>
                                         <p class="text-sm text-gray-600 truncate">{{ submission.assignment.title }}</p>

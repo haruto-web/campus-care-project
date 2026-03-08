@@ -111,8 +111,7 @@
                                     {% elif user.role == 'teacher' %}bg-green-100 text-green-800
                                     {% elif user.role == 'counselor' %}bg-purple-100 text-purple-800
                                     {% else %}bg-red-100 text-red-800{% endif %}">
-                                    {{ user.role|title }}
-                                </span>
+                                    {{ user.role|title }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                 {% if user.year_level %}
