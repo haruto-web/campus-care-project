@@ -109,10 +109,6 @@
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_teachers_list' %}active{% endif %}">
                 <i class="bi bi-person-badge"></i><span>Teachers</span>
             </a>
-            <a href="{% url 'admin_audit_log' %}"
-                class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_audit_log' %}active{% endif %}">
-                <i class="bi bi-journal-text"></i><span>Audit Log</span>
-            </a>
             {% if user.admin_role == 'superadmin' or user.admin_role == 'admin' or user.admin_role == 'registrar' %}
             <div class="bt-sidebar-section">Academics</div>
             <a href="{% url 'admin_enroll_student' %}"
@@ -135,10 +131,6 @@
             <a href="{% url 'admin_create_superuser' %}"
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_create_superuser' %}active{% endif %}">
                 <i class="bi bi-shield-lock"></i><span>Create Superuser</span>
-            </a>
-            <a href="{% url 'admin_manage_admins' %}"
-                class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_manage_admins' %}active{% endif %}">
-                <i class="bi bi-shield-shaded"></i><span>Manage Admins</span>
             </a>
             {% endif %}
             <a href="{% url 'ai_assistant:admin_chat_view' %}"

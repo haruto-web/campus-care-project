@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
 from django.db.models import Count, Q
-from accounts.models import User
+from accounts.models import User, AuditLog
 from academics.models import Class
 from academics.forms import ClassForm
 import logging
@@ -402,3 +403,79 @@ def admin_create_superuser(request):
         return redirect('dashboard')
     
     return render(request, 'admin/create_superuser.html')
+
+
+@login_required
+def admin_audit_log(request):
+    if request.user.role.lower() != 'admin':
+        messages.error(request, 'Permission denied. Admin access required.')
+        return redirect('dashboard')
+
+    logs = AuditLog.objects.select_related('actor').all()
+
+    action_filter = request.GET.get('action', '')
+    actor_filter = request.GET.get('actor', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+
+    if action_filter:
+        logs = logs.filter(action=action_filter)
+    if actor_filter:
+        logs = logs.filter(
+            Q(actor__first_name__icontains=actor_filter) |
+            Q(actor__last_name__icontains=actor_filter) |
+            Q(actor__username__icontains=actor_filter)
+        )
+    if date_from:
+        logs = logs.filter(timestamp__date__gte=date_from)
+    if date_to:
+        logs = logs.filter(timestamp__date__lte=date_to)
+
+    paginator = Paginator(logs, 50)
+    page = paginator.get_page(request.GET.get('page'))
+
+    context = {
+        'page_obj': page,
+        'action_choices': AuditLog.ACTION_CHOICES,
+        'action_filter': action_filter,
+        'actor_filter': actor_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    return render(request, 'admin/audit_log.html', context)
+
+
+@login_required
+def admin_manage_admins(request):
+    if request.user.role.lower() != 'admin' or request.user.admin_role != 'superadmin':
+        messages.error(request, 'Permission denied. Superadmin access required.')
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        target_id = request.POST.get('user_id')
+        new_role = request.POST.get('admin_role', '')
+        target = get_object_or_404(User, id=target_id, role='admin')
+
+        if target == request.user:
+            messages.error(request, 'You cannot change your own admin role.')
+            return redirect('admin_manage_admins')
+
+        valid_roles = [r[0] for r in User.ADMIN_ROLE_CHOICES]
+        if new_role not in valid_roles:
+            messages.error(request, 'Invalid role.')
+            return redirect('admin_manage_admins')
+
+        old_role = target.admin_role
+        target.admin_role = new_role
+        target.save()
+
+        from accounts.utils import log_action
+        log_action(request, 'ADMIN_ROLE_CHANGED', 'User', target.id, target.get_full_name(),
+                   extra_data={'old_role': old_role, 'new_role': new_role})
+
+        messages.success(request, f'{target.get_full_name()} role changed to {new_role}.')
+        return redirect('admin_manage_admins')
+
+    admins = User.objects.filter(role='admin').order_by('last_name', 'first_name')
+    context = {'admins': admins, 'role_choices': User.ADMIN_ROLE_CHOICES}
+    return render(request, 'admin/manage_admins.html', context)
