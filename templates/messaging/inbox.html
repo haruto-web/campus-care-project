@@ -16,8 +16,7 @@
         <a href="{% url 'messaging:conversation' item.conv.id %}"
            class="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition {% if item.unread %}bg-blue-50{% endif %}">
             <div class="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-base flex-shrink-0">
-                {{ item.other.first_name|first|upper }}{{ item.other.last_name|first|upper }}
-            </div>
+                {{ item.other.first_name|first|upper }}{{ item.other.last_name|first|upper }}</div>
             <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
                     <p class="font-semibold text-gray-800 {% if item.unread %}text-blue-700{% endif %}">
@@ -37,8 +36,7 @@
             </div>
             {% if item.unread %}
             <span class="flex-shrink-0 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                {{ item.unread }}
-            </span>
+                {{ item.unread }}</span>
             {% endif %}
         </a>
         {% endfor %}

@@ -94,8 +94,8 @@ def get_student_academic_pattern_data(student):
     assignment_scores = [{
         'title': sub.assignment.title,
         'score': float(sub.score),
-        'max_points': float(sub.assignment.points),
-        'percentage': round((float(sub.score) / float(sub.assignment.points)) * 100, 1),
+        'max_points': float(sub.assignment.total_points),
+        'percentage': round((float(sub.score) / float(sub.assignment.total_points)) * 100, 1),
         'date': str(sub.graded_at.date())
     } for sub in submissions]
     

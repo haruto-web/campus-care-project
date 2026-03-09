@@ -5,9 +5,11 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
 from django.views.decorators.http import require_POST
+from django.core.exceptions import ValidationError
 from .models import Conversation, Message
 from accounts.models import User
 from .content_filter import contains_inappropriate_content, filter_message_content
+from campus_care.validators import validate_document_upload
 
 # Role-based allowed recipients
 ALLOWED_RECIPIENTS = {
@@ -43,6 +45,14 @@ def conversation(request, conv_id):
     if request.method == 'POST':
         body = request.POST.get('body', '').strip()
         attachment = request.FILES.get('attachment')
+        
+        # Validate attachment file type if present
+        if attachment:
+            try:
+                validate_document_upload(attachment)
+            except ValidationError as e:
+                messages.error(request, f'Attachment rejected: {e.message}')
+                return redirect('messaging:conversation', conv_id=conv.id)
         
         # Content filtering for students
         if request.user.role == 'student' and body:
@@ -95,7 +105,10 @@ def poll_messages(request, conv_id):
     if request.user not in conv.participants.all():
         return JsonResponse({'error': 'denied'}, status=403)
 
-    after_id = int(request.GET.get('after', 0))
+    try:
+        after_id = int(request.GET.get('after', 0))
+    except (ValueError, TypeError):
+        after_id = 0
     new_msgs = conv.messages.filter(id__gt=after_id).select_related('sender')
     # Mark incoming as read
     new_msgs.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
@@ -142,6 +155,21 @@ def new_message(request, recipient_id=None):
         if recipient.role not in allowed_roles:
             messages.error(request, 'You cannot message this user.')
             return redirect('messaging:inbox')
+        
+        # Validate attachment file type if present
+        if attachment:
+            try:
+                validate_document_upload(attachment)
+            except ValidationError as e:
+                messages.error(request, f'Attachment rejected: {e.message}')
+                return render(request, 'messaging/new_message.html', {
+                    'recipients_json': recipients_data,
+                    'recipients': recipients_qs,
+                    'selected_recipient': recipient,
+                    'sections': sections,
+                    'year_levels': year_levels,
+                    'available_roles': sorted(set(allowed_roles)),
+                })
         
         # Content filtering for students
         if request.user.role == 'student' and body:

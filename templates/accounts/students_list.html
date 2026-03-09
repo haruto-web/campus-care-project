@@ -82,8 +82,7 @@
                 <div class="p-6">
                     <div class="flex items-center mb-4">
                         <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4">
-                            {{ student_data.student.get_full_name|slice:":1"|upper }}
-                        </div>
+                            {{ student_data.student.get_full_name|slice:":1"|upper }}</div>
                         <div class="flex-1">
                             <h3 class="font-bold text-gray-900 text-lg">{{ student_data.student.get_full_name }}</h3>
                             <p class="text-sm text-gray-600">{{ student_data.student.email }}</p>

@@ -13,8 +13,7 @@
                     <img src="{{ student.profile_picture.url }}" class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover" alt="Profile">
                     {% else %}
                     <div class="w-32 h-32 bg-white rounded-full flex items-center justify-center text-4xl font-bold text-blue-600 shadow-lg">
-                        {{ student.first_name.0 }}{{ student.last_name.0 }}
-                    </div>
+                        {{ student.first_name.0 }}{{ student.last_name.0 }}</div>
                     {% endif %}
                     {% if risk_assessment %}
                     <div class="absolute -bottom-2 -right-2">
@@ -81,8 +80,7 @@
                                 {% if ai_prediction.prediction_value.risk_level == 'high' %}bg-red-100 text-red-800
                                 {% elif ai_prediction.prediction_value.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
                                 {% else %}bg-green-100 text-green-800{% endif %}">
-                                {{ ai_prediction.prediction_value.risk_level|upper }}
-                            </span>
+                                {{ ai_prediction.prediction_value.risk_level|upper }}</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
                             <div class="h-3 rounded-full 
@@ -93,8 +91,7 @@
                         </div>
                         <p class="text-xs text-gray-500 mt-2">
                             Confidence: {{ ai_prediction.confidence|floatformat:0 }}% | 
-                            Updated: {{ ai_prediction.created_at|date:"M d, Y" }}
-                        </p>
+                            Updated: {{ ai_prediction.created_at|date:"M d, Y" }}</p>
                     </div>
                     
                     <!-- Risk Factors -->
@@ -164,8 +161,7 @@
                             {% elif academic_pattern.pattern_type == 'declining' %}text-red-600
                             {% elif academic_pattern.pattern_type == 'inconsistent' %}text-orange-600
                             {% else %}text-blue-600{% endif %}">
-                            {{ academic_pattern.pattern_type|title }}
-                        </p>
+                            {{ academic_pattern.pattern_type|title }}</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-md text-center">
                         <p class="text-sm text-gray-600 mb-1">Attendance Pattern</p>
@@ -173,8 +169,7 @@
                             {% if academic_pattern.attendance_pattern == 'regular' %}text-green-600
                             {% elif academic_pattern.attendance_pattern == 'declining' %}text-red-600
                             {% else %}text-yellow-600{% endif %}">
-                            {{ academic_pattern.attendance_pattern|title }}
-                        </p>
+                            {{ academic_pattern.attendance_pattern|title }}</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-md text-center">
                         <p class="text-sm text-gray-600 mb-1">Performance Pattern</p>
@@ -183,8 +178,7 @@
                             {% elif academic_pattern.performance_pattern == 'declining' %}text-red-600
                             {% elif academic_pattern.performance_pattern == 'erratic' %}text-orange-600
                             {% else %}text-blue-600{% endif %}">
-                            {{ academic_pattern.performance_pattern|title }}
-                        </p>
+                            {{ academic_pattern.performance_pattern|title }}</p>
                     </div>
                 </div>
                 

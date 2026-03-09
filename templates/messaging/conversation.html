@@ -8,8 +8,7 @@
             <i class="bi bi-arrow-left text-xl"></i>
         </a>
         <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold">
-            {{ other.first_name|first|upper }}{{ other.last_name|first|upper }}
-        </div>
+            {{ other.first_name|first|upper }}{{ other.last_name|first|upper }}</div>
         <div>
             <p class="font-bold text-gray-800 dark:text-white">{{ other.get_full_name }}</p>
             <p class="text-xs text-gray-400 capitalize">{{ other.role }}</p>
@@ -40,8 +39,7 @@
                         {% endif %}
                     {% endif %}
                     <p class="text-xs mt-1 {% if msg.sender == request.user %}text-blue-200{% else %}text-gray-400{% endif %}">
-                        {{ msg.created_at|date:"M d, g:i A" }}
-                    </p>
+                        {{ msg.created_at|date:"M d, g:i A" }}</p>
                 </div>
                 {% if msg.sender == request.user %}
                 <p class="text-right text-xs text-gray-400 mt-0.5 read-receipt" data-for-msg="{{ msg.id }}">

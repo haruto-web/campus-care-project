@@ -2,54 +2,67 @@
 
 {% block title %}Dashboard{% endblock %}
 
+{% block page_title %}Dashboard{% endblock %}
+
 {% block content %}
-<div class="max-w-6xl mx-auto px-4 py-6">
+<div class="space-y-6">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p class="text-gray-600">Welcome back, {{ user.get_full_name }}!</p>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <p class="text-gray-600 dark:text-gray-400">Welcome back, {{ user.get_full_name }}!</p>
         </div>
         <div class="flex items-center space-x-4">
-            <button class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition" onclick="window.location.reload()">
+            <button class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition"
+                onclick="window.location.reload()">
                 <i class="bi bi-arrow-clockwise mr-1"></i> Refresh
             </button>
-            <a href="{% url 'academics:student_assignments' %}" class="p-2 text-gray-600 hover:text-blue-600 transition" title="My Assignments">
+            <a href="{% url 'academics:student_assignments' %}" class="p-2 text-gray-600 hover:text-blue-600 transition"
+                title="My Assignments">
                 <i class="bi bi-clipboard-check text-xl"></i>
             </a>
-            <a href="{% url 'academics:my_classes' %}" class="p-2 text-gray-600 hover:text-blue-600 transition" title="My Classes">
+            <a href="{% url 'academics:my_classes' %}" class="p-2 text-gray-600 hover:text-blue-600 transition"
+                title="My Classes">
                 <i class="bi bi-book text-xl"></i>
             </a>
         </div>
     </div>
 
     <!-- Quick Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <a href="{% url 'academics:my_classes' %}" class="bg-blue-50 border border-blue-200 rounded-lg p-4 hover:bg-blue-100 transition cursor-pointer">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="{% url 'academics:my_classes' %}"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:shadow-md transition cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-blue-600 text-sm font-medium">My Classes</p>
-                    <p class="text-2xl font-bold text-blue-900">{{ classes|length }}</p>
+                    <p class="text-indigo-600 dark:text-indigo-400 text-sm font-medium">My Classes</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ classes|length }}</p>
                 </div>
-                <i class="bi bi-book text-blue-500 text-2xl"></i>
+                <div class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg flex items-center justify-center">
+                    <i class="bi bi-book text-indigo-600 dark:text-indigo-400 text-xl"></i>
+                </div>
             </div>
         </a>
-        <a href="{% url 'academics:student_assignments' %}" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 hover:bg-yellow-100 transition cursor-pointer">
+        <a href="{% url 'academics:student_assignments' %}"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:shadow-md transition cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-yellow-600 text-sm font-medium">Pending Tasks</p>
-                    <p class="text-2xl font-bold text-yellow-900">{{ assignments|length }}</p>
+                    <p class="text-amber-600 dark:text-amber-400 text-sm font-medium">Pending Tasks</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ assignments|length }}</p>
                 </div>
-                <i class="bi bi-clock text-yellow-500 text-2xl"></i>
+                <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-lg flex items-center justify-center">
+                    <i class="bi bi-clock text-amber-600 dark:text-amber-400 text-xl"></i>
+                </div>
             </div>
         </a>
-        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-purple-600 text-sm font-medium">Announcements</p>
-                    <p class="text-2xl font-bold text-purple-900" id="unread-count">{{ announcements|length }}</p>
+                    <p class="text-purple-600 dark:text-purple-400 text-sm font-medium">Announcements</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white" id="unread-count">{{ announcements|length }}</p>
                 </div>
-                <i class="bi bi-megaphone text-purple-500 text-2xl"></i>
+                <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-lg flex items-center justify-center">
+                    <i class="bi bi-megaphone text-purple-600 dark:text-purple-400 text-xl"></i>
+                </div>
             </div>
         </div>
     </div>
@@ -59,105 +72,113 @@
         <!-- Left Column - Today's Tasks -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Today's Assignments -->
-            <div class="bg-white rounded-lg shadow-md border">
-                <div class="bg-blue-50 px-6 py-4 border-b border-blue-100">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                <div
+                    class="bg-indigo-50 dark:bg-indigo-900/20 px-6 py-4 border-b border-indigo-100 dark:border-indigo-800">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                            <i class="bi bi-calendar-check text-blue-600 mr-2"></i>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
+                            <i class="bi bi-calendar-check text-indigo-600 dark:text-indigo-400 mr-2"></i>
                             Today's Tasks
                         </h3>
-                        <span class="text-sm text-blue-600">{{ assignments|length }} pending</span>
+                        <span class="text-sm text-indigo-600 dark:text-indigo-400">{{ assignments|length }}
+                            pending</span>
                     </div>
                 </div>
                 <div class="p-6">
                     {% if assignments %}
-                        <div class="space-y-4">
-                            {% for assignment in assignments|slice:":5" %}
-                            <div class="flex items-start justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                                <div class="flex-1">
-                                    <div class="flex items-center space-x-2 mb-1">
-                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded font-medium">{{ assignment.class_obj.code }}</span>
-                                        <span class="text-xs text-gray-500">{{ assignment.total_points }} points</span>
-                                    </div>
-                                    <h4 class="font-medium text-gray-900 mb-1">{{ assignment.title }}</h4>
-                                    {% if assignment.description %}
-                                    <p class="text-sm text-gray-600 mb-2">{{ assignment.description|truncatechars:80 }}</p>
-                                    {% endif %}
-                                    <div class="flex items-center text-xs text-gray-500">
-                                        <i class="bi bi-clock mr-1"></i>
-                                        Due: {{ assignment.due_date|date:"M j, g:i A" }}
-                                    </div>
+                    <div class="space-y-4">
+                        {% for assignment in assignments|slice:":5" %}
+                        <div
+                            class="flex items-start justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded font-medium">{{ assignment.class_obj.code }}</span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ assignment.total_points }}
+                                        points</span>
                                 </div>
-                                <div class="ml-4">
-                                    <a href="{% url 'academics:submit_assignment' assignment.id %}" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition">
-                                        View
-                                    </a>
-                                </div>
+                                <h4 class="font-medium text-gray-900 dark:text-white mb-1">{{ assignment.title }}</h4>
+                                {% if assignment.description %}
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ assignment.description|truncatechars:80 }}</p>
+                                {% endif %}
+                                <div class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="bi bi-clock mr-1"></i>
+                                    Due: {{ assignment.due_date|date:"M j, g:i A" }}</div>
                             </div>
-                            {% endfor %}
+                            <div class="ml-4">
+                                <a href="{% url 'academics:submit_assignment' assignment.id %}"
+                                    class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition">
+                                    View
+                                </a>
+                            </div>
                         </div>
-                        {% if assignments|length > 5 %}
-                        <div class="mt-4 text-center">
-                            <a href="{% url 'academics:student_assignments' %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                View all {{ assignments|length }} assignments →
-                            </a>
-                        </div>
-                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% if assignments|length > 5 %}
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'academics:student_assignments' %}"
+                            class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            View all {{ assignments|length }} assignments →
+                        </a>
+                    </div>
+                    {% endif %}
                     {% else %}
-                        <div class="text-center py-8">
-                            <i class="bi bi-check-circle text-green-500 text-4xl mb-3"></i>
-                            <p class="text-gray-600">No assignments due today!</p>
-                            <p class="text-sm text-gray-500 mt-1">Great job staying on top of your work!</p>
-                        </div>
+                    <div class="text-center py-8">
+                        <i class="bi bi-check-circle text-green-500 text-4xl mb-3"></i>
+                        <p class="text-gray-600">No assignments due today!</p>
+                        <p class="text-sm text-gray-500 mt-1">Great job staying on top of your work!</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
 
             <!-- Recent Announcements -->
-            <div class="bg-white rounded-lg shadow-md border">
-                <div class="bg-purple-50 px-6 py-4 border-b border-purple-100">
-                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                <div
+                    class="bg-purple-50 dark:bg-purple-900/20 px-6 py-4 border-b border-purple-100 dark:border-purple-800">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
                         <i class="bi bi-megaphone text-purple-600 mr-2"></i>
                         Recent Announcements
                     </h3>
                 </div>
                 <div class="p-6">
                     {% if announcements %}
-                        <div class="space-y-4" id="announcements-list">
-                            {% for announcement in announcements %}
-                            <div class="p-4 border border-gray-200 rounded-lg announcement-item {% if announcement.is_read %}hidden{% endif %}" data-id="{{ announcement.id }}" data-read="{{ announcement.is_read|yesno:'true,false' }}">
-                                <div class="flex items-start justify-between mb-2">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded font-medium">
-                                            {{ announcement.class_obj.code|default:"SCHOOL" }}
-                                        </span>
-                                        {% if announcement.priority == 'urgent' %}
-                                        <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded font-medium">
-                                            <i class="bi bi-exclamation-triangle mr-1"></i>URGENT
-                                        </span>
-                                        {% endif %}
-                                    </div>
-                                    <div class="flex items-center space-x-2">
-                                        <span class="text-xs text-gray-500">{{ announcement.created_at|date:"M j, g:i A" }}</span>
-                                        <label class="flex items-center cursor-pointer" title="Mark as read">
-                                            <input type="checkbox" class="announcement-checkbox w-4 h-4 accent-purple-600" data-id="{{ announcement.id }}" {% if announcement.is_read %}checked{% endif %} onchange="toggleRead(this)">
-                                        </label>
-                                    </div>
+                    <div class="space-y-4" id="announcements-list">
+                        {% for announcement in announcements %}
+                        <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg announcement-item {% if announcement.is_read %}hidden{% endif %}"
+                            data-id="{{ announcement.id }}" data-read="{{ announcement.is_read|yesno:'true,false' }}">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded font-medium">
+                                        {{ announcement.class_obj.code|default:"SCHOOL" }}</span>
+                                    {% if announcement.priority == 'urgent' %}
+                                    <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded font-medium">
+                                        <i class="bi bi-exclamation-triangle mr-1"></i>URGENT
+                                    </span>
+                                    {% endif %}
                                 </div>
-                                <h4 class="font-medium text-gray-900 mb-2">{{ announcement.title }}</h4>
-                                <p class="text-sm text-gray-600">{{ announcement.content|truncatechars:120 }}</p>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs text-gray-500">{{ announcement.created_at|date:"M j, g:i A" }}</span>
+                                    <label class="flex items-center cursor-pointer" title="Mark as read">
+                                        <input type="checkbox" class="announcement-checkbox w-4 h-4 accent-purple-600"
+                                            data-id="{{ announcement.id }}" {% if announcement.is_read %}checked{% endif
+                                            %} onchange="toggleRead(this)">
+                                    </label>
+                                </div>
                             </div>
-                            {% endfor %}
+                            <h4 class="font-medium text-gray-900 dark:text-white mb-2">{{ announcement.title }}</h4>
+                            <p class="text-sm text-gray-600">{{ announcement.content|truncatechars:120 }}</p>
                         </div>
-                        <div id="all-read-msg" class="text-center py-8 hidden">
-                            <i class="bi bi-check-circle text-purple-400 text-4xl mb-3"></i>
-                            <p class="text-gray-600">All announcements read!</p>
-                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="all-read-msg" class="text-center py-8 hidden">
+                        <i class="bi bi-check-circle text-purple-400 text-4xl mb-3"></i>
+                        <p class="text-gray-600">All announcements read!</p>
+                    </div>
                     {% else %}
-                        <div class="text-center py-8">
-                            <i class="bi bi-megaphone text-gray-300 text-4xl mb-3"></i>
-                            <p class="text-gray-600">No recent announcements</p>
-                        </div>
+                    <div class="text-center py-8">
+                        <i class="bi bi-megaphone text-gray-300 text-4xl mb-3"></i>
+                        <p class="text-gray-600">No recent announcements</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -166,40 +187,42 @@
         <!-- Right Column - Quick Info -->
         <div class="space-y-6">
             <!-- My Classes -->
-            <div class="bg-white rounded-lg shadow-md border">
-                <div class="bg-green-50 px-6 py-4 border-b border-green-100">
-                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                <div class="bg-green-50 dark:bg-green-900/20 px-6 py-4 border-b border-green-100 dark:border-green-800">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
                         <i class="bi bi-book text-green-600 mr-2"></i>
                         My Classes
                     </h3>
                 </div>
                 <div class="p-6">
                     {% if classes %}
-                        <div class="space-y-3">
-                            {% for class in classes|slice:":4" %}
-                            <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                                <div>
-                                    <h4 class="font-medium text-gray-900">{{ class.code }}</h4>
-                                    <p class="text-sm text-gray-600">{{ class.name|truncatechars:25 }}</p>
-                                </div>
-                                <a href="{% url 'academics:class_detail' class.id %}" class="text-green-600 hover:text-green-800">
-                                    <i class="bi bi-arrow-right"></i>
-                                </a>
+                    <div class="space-y-3">
+                        {% for class in classes|slice:":4" %}
+                        <div class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">{{ class.code }}</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ class.name|truncatechars:25 }}</p>
                             </div>
-                            {% endfor %}
-                        </div>
-                        {% if classes|length > 4 %}
-                        <div class="mt-4 text-center">
-                            <a href="{% url 'academics:my_classes' %}" class="text-green-600 hover:text-green-800 text-sm font-medium">
-                                View all classes →
+                            <a href="{% url 'academics:class_detail' class.id %}"
+                                class="text-green-600 hover:text-green-800">
+                                <i class="bi bi-arrow-right"></i>
                             </a>
                         </div>
-                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% if classes|length > 4 %}
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'academics:my_classes' %}"
+                            class="text-green-600 hover:text-green-800 text-sm font-medium">
+                            View all classes →
+                        </a>
+                    </div>
+                    {% endif %}
                     {% else %}
-                        <div class="text-center py-6">
-                            <i class="bi bi-book text-gray-300 text-3xl mb-2"></i>
-                            <p class="text-gray-600 text-sm">No classes enrolled</p>
-                        </div>
+                    <div class="text-center py-6">
+                        <i class="bi bi-book text-gray-300 text-3xl mb-2"></i>
+                        <p class="text-gray-600 text-sm">No classes enrolled</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -210,32 +233,32 @@
 
 {% block extra_js %}
 <script>
-const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
-function updateUnreadCount() {
-    const visible = document.querySelectorAll('.announcement-item:not(.hidden)').length;
-    const countEl = document.getElementById('unread-count');
-    if (countEl) countEl.textContent = visible;
-    const allRead = document.getElementById('all-read-msg');
-    if (allRead) allRead.classList.toggle('hidden', visible > 0);
-}
-function toggleRead(checkbox) {
-    const id = checkbox.dataset.id;
-    const item = document.querySelector('.announcement-item[data-id="' + id + '"]');
-    fetch('/class/announcement/' + id + '/toggle-read/', {
-        method: 'POST',
-        headers: {'X-CSRFToken': CSRF}
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            if (data.is_read) {
-                item.classList.add('hidden');
-            } else {
-                item.classList.remove('hidden');
-                checkbox.checked = false;
+    const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+    function updateUnreadCount() {
+        const visible = document.querySelectorAll('.announcement-item:not(.hidden)').length;
+        const countEl = document.getElementById('unread-count');
+        if (countEl) countEl.textContent = visible;
+        const allRead = document.getElementById('all-read-msg');
+        if (allRead) allRead.classList.toggle('hidden', visible > 0);
+    }
+    function toggleRead(checkbox) {
+        const id = checkbox.dataset.id;
+        const item = document.querySelector('.announcement-item[data-id="' + id + '"]');
+        fetch('/class/announcement/' + id + '/toggle-read/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF }
+        }).then(r => r.json()).then(data => {
+            if (data.success) {
+                if (data.is_read) {
+                    item.classList.add('hidden');
+                } else {
+                    item.classList.remove('hidden');
+                    checkbox.checked = false;
+                }
+                updateUnreadCount();
             }
-            updateUnreadCount();
-        }
-    });
-}
-document.addEventListener('DOMContentLoaded', updateUnreadCount);
+        });
+    }
+    document.addEventListener('DOMContentLoaded', updateUnreadCount);
 </script>
 {% endblock %}

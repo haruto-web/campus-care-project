@@ -75,8 +75,7 @@
                                     <td class="py-3 px-4 text-center">
                                         {% if grade.score is not None %}
                                         <span class="font-semibold text-gray-800">
-                                            {{ grade.score }}/{{ grade.assignment.total_points }}
-                                        </span>
+                                            {{ grade.score }}/{{ grade.assignment.total_points }}</span>
                                         {% else %}
                                         <span class="text-gray-400">-</span>
                                         {% endif %}
@@ -105,8 +104,7 @@
                                     <td colspan="5" class="py-2 px-4">
                                         <p class="text-sm text-gray-600">
                                             <i class="bi bi-chat-left-text mr-1"></i>
-                                            <span class="font-semibold">Feedback:</span> {{ grade.feedback }}
-                                        </p>
+                                            <span class="font-semibold">Feedback:</span> {{ grade.feedback }}</p>
                                     </td>
                                 </tr>
                                 {% endif %}
