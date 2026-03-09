@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-# Deploy: March 2 2026
 set -o errexit
 
 pip install -r requirements.txt
