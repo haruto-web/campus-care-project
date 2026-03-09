@@ -14,6 +14,7 @@ from wellness.models import WellnessCheckIn, RiskAssessment, Alert, Intervention
 from campus_care.validators import validate_image_upload
 from .models import User, OTPCode
 from .otp_utils import send_otp_email
+from .utils import log_action
 
 def landing_view(request):
     if request.user.is_authenticated:
@@ -376,16 +377,19 @@ def login_view(request):
                 messages.error(request, 'Students must log in using email OTP.')
                 return redirect('otp_request')
             login(request, user)
+            log_action(request, 'LOGIN', 'User', user.id, user.get_full_name())
             return redirect('dashboard')
         else:
+            log_action(request, 'LOGIN_FAILED', 'User', None, email)
             messages.error(request, 'Invalid email or password.')
     
     return render(request, 'accounts/login.html')
 
 @require_POST
 def logout_view(request):
+    log_action(request, 'LOGOUT', 'User', request.user.id, request.user.get_full_name())
     logout(request)
-    return redirect('login')
+    return redirect('landing')
 
 @login_required
 def dashboard_view(request):
