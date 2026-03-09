@@ -97,23 +97,36 @@
                     {% endif %}
 
                     {% if available_students %}
-                        <div class="space-y-3 max-h-[500px] overflow-y-auto">
-                            {% for student in available_students %}
-                            <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                                <div>
-                                    <h6 class="font-semibold text-gray-800">{{ student.get_full_name }}</h6>
-                                    <small class="text-gray-600">{{ student.email }}</small>
-                                    {% if student.year_level %}
-                                    <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Grade {{ student.year_level }}</span>
-                                    {% endif %}
-                                </div>
-                                <a href="{% url 'academics:add_student' class.id student.id %}" 
-                                   class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
-                                    <i class="bi bi-plus-circle"></i> Add
-                                </a>
+                        <form method="post" action="{% url 'academics:bulk_add_students' class.id %}">
+                            {% csrf_token %}
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-gray-500"><input type="checkbox" id="selectAll" class="mr-1"> Select All</label>
+                                <button type="submit" class="bg-green-600 text-white px-4 py-1.5 rounded-lg hover:bg-green-700 text-sm">
+                                    <i class="bi bi-plus-circle"></i> Add Selected
+                                </button>
                             </div>
-                            {% endfor %}
-                        </div>
+                            <div class="space-y-2 max-h-[500px] overflow-y-auto">
+                                {% for student in available_students %}
+                                <label class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <div class="flex items-center gap-3">
+                                        <input type="checkbox" name="students" value="{{ student.id }}" class="student-cb">
+                                        <div>
+                                            <div class="font-semibold text-gray-800 text-sm">{{ student.get_full_name }}</div>
+                                            <div class="text-xs text-gray-500">{{ student.email }}</div>
+                                        </div>
+                                    </div>
+                                    {% if student.year_level %}
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Grade {{ student.year_level }}</span>
+                                    {% endif %}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </form>
+                        <script>
+                        document.getElementById('selectAll').addEventListener('change', function() {
+                            document.querySelectorAll('.student-cb').forEach(cb => cb.checked = this.checked);
+                        });
+                        </script>
                     {% else %}
                         {% if search_query %}
                             <p class="text-gray-500">No students found matching "{{ search_query }}".</p>

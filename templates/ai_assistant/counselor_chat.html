@@ -125,6 +125,17 @@ const csrftoken = '{{ csrf_token }}';
 let currentAction = null;
 let selectedStudentId = null;
 
+function formatAIResponse(text) {
+    return text
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/^---+$/gm, '<hr class="border-gray-200 my-2">')
+        .replace(/^#{1,3}\s+(.+)$/gm, '<p class="font-semibold text-gray-800 mt-3 mb-1">$1</p>')
+        .replace(/^[\*\-]\s+(.+)$/gm, '<div class="flex items-start gap-2 ml-2"><span class="text-purple-500 mt-0.5">•</span><span>$1</span></div>')
+        .replace(/\n{2,}/g, '</p><p class="mt-2">')
+        .replace(/\n/g, '<br>');
+}
+
 function addMessage(text, isUser = false) {
     const chatMessages = document.getElementById('chatMessages');
     const messageDiv = document.createElement('div');
@@ -132,17 +143,17 @@ function addMessage(text, isUser = false) {
     
     if (isUser) {
         messageDiv.innerHTML = `
-            <div class="bg-purple-600 text-white rounded-lg px-4 py-3 shadow-sm max-w-md">
+            <div class="bg-purple-600 text-white rounded-lg px-4 py-3 shadow-sm max-w-lg text-sm">
                 <p>${text}</p>
             </div>
         `;
     } else {
         messageDiv.innerHTML = `
-            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold">
+            <div class="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
                 BT
             </div>
-            <div class="ml-3 bg-white rounded-lg px-4 py-3 shadow-sm max-w-md">
-                <p class="text-gray-800">${text}</p>
+            <div class="ml-3 bg-white rounded-xl px-4 py-3 shadow-sm border border-gray-100 max-w-2xl text-sm text-gray-700 leading-relaxed">
+                ${formatAIResponse(text)}
             </div>
         `;
     }
@@ -383,46 +394,15 @@ function analyzeBehavior(studentId, studentName) {
     })
     .then(response => response.json())
     .then(data => {
-        // Format behavior analysis
-        const sections = data.response.split('\n\n');
-        let html = '<div class="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">';
-        html += '<h4 class="font-bold text-purple-800 text-sm mb-3">📊 Behavior Analysis</h4>';
-        
-        sections.forEach(section => {
-            if (section.trim()) {
-                const lines = section.split('\n');
-                if (lines[0].includes(':')) {
-                    const [title, ...content] = lines[0].split(':');
-                    html += `<div class="bg-white rounded-lg p-3">
-                        <h5 class="font-semibold text-gray-800 text-sm mb-2">${title.trim()}</h5>
-                        <div class="text-gray-600 text-sm space-y-1">`;
-                    
-                    if (content.length > 0) {
-                        html += `<p>${content.join(':').trim()}</p>`;
-                    }
-                    
-                    lines.slice(1).forEach(line => {
-                        if (line.trim().startsWith('-') || line.trim().startsWith('•')) {
-                            html += `<div class="flex items-start ml-2"><span class="text-purple-600 mr-2">•</span><span>${line.trim().substring(1).trim()}</span></div>`;
-                        } else if (line.trim()) {
-                            html += `<p>${line.trim()}</p>`;
-                        }
-                    });
-                    
-                    html += '</div></div>';
-                } else {
-                    html += `<p class="text-gray-700 text-sm">${section}</p>`;
-                }
-            }
-        });
-        html += '</div>';
-        
         const chatMessages = document.getElementById('chatMessages');
         const messageDiv = document.createElement('div');
         messageDiv.className = 'flex items-start';
         messageDiv.innerHTML = `
-            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">BT</div>
-            <div class="ml-3 max-w-2xl">${html}</div>
+            <div class="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">BT</div>
+            <div class="ml-3 bg-white rounded-xl px-4 py-3 shadow-sm border border-gray-100 max-w-2xl text-sm text-gray-700 leading-relaxed">
+                <p class="font-semibold text-purple-700 mb-2">📊 Behavior Analysis</p>
+                ${formatAIResponse(data.response)}
+            </div>
         `;
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -480,8 +460,8 @@ function generateWeeklySummary() {
                 </div>
             </div>
             
-            <div class="bg-white rounded-lg p-4 mt-4 border border-orange-100">
-                <div class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${data.response.replace(/\*\*/g, '').replace(/\*/g, '')}</div>
+            <div class="bg-white rounded-lg p-4 mt-4 border border-orange-100 text-sm text-gray-700 leading-relaxed">
+                ${formatAIResponse(data.response)}
             </div>
         </div>
         `;
@@ -490,7 +470,7 @@ function generateWeeklySummary() {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'flex items-start';
         messageDiv.innerHTML = `
-            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">BT</div>
+            <div class="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">BT</div>
             <div class="ml-3">${html}</div>
         `;
         chatMessages.appendChild(messageDiv);
@@ -634,8 +614,8 @@ function generateReport() {
                 </div>
             </div>
             
-            <div class="bg-white rounded-lg p-4 mt-4 border border-green-100">
-                <div class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${data.response.replace(/\*\*/g, '').replace(/\*/g, '')}</div>
+            <div class="bg-white rounded-lg p-4 mt-4 border border-green-100 text-sm text-gray-700 leading-relaxed">
+                ${formatAIResponse(data.response)}
             </div>
         </div>
         `;
@@ -644,7 +624,7 @@ function generateReport() {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'flex items-start';
         messageDiv.innerHTML = `
-            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">BT</div>
+            <div class="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">BT</div>
             <div class="ml-3">${html}</div>
         `;
         chatMessages.appendChild(messageDiv);
@@ -786,7 +766,7 @@ function autoCreateInterventions() {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'flex items-start';
             messageDiv.innerHTML = `
-                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">BT</div>
+                <div class="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">BT</div>
                 <div class="ml-3 max-w-2xl">${html}</div>
             `;
             chatMessages.appendChild(messageDiv);

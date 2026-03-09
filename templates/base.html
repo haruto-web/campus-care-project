@@ -258,68 +258,44 @@
         setTimeout(() => t.remove(), 5000);
     }
 
-    // Global notification polling
+    // Notification system
+    const NOTIF_KEY = 'notifItems_{{ user.id }}';
+    let notifItems = JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]');
     let prevCounts = {messages: {{ unread_messages_count }}, announcements: 0, grades: 0, alerts: 0};
-    let notifItems = [];
-    let shownNotifications = JSON.parse(localStorage.getItem('shownNotifications') || '{}');
-    let sessionId = Date.now(); // Unique session identifier
-    let isFirstLoad = true; // Prevent notifications on first page load
+    let isFirstLoad = true;
+
+    // Restore notifications on load
+    updateNotifList();
+    const nb0 = document.getElementById('notifBadge');
+    if (nb0 && notifItems.length > 0) { nb0.textContent = notifItems.length; nb0.classList.remove('hidden'); }
 
     function updateNotifUI(data) {
-        // Message badge
         const mb = document.getElementById('msgBadge');
         const mbm = document.getElementById('msgBadgeMobile');
         if (mb) { mb.textContent = data.messages; mb.classList.toggle('hidden', data.messages === 0); }
         if (mbm) { mbm.textContent = data.messages; mbm.classList.toggle('hidden', data.messages === 0); }
 
-        // Bell badge
-        const nb = document.getElementById('notifBadge');
-        const nonMsg = data.announcements + data.grades + data.alerts;
-        if (nb) { nb.textContent = nonMsg; nb.classList.toggle('hidden', nonMsg === 0); }
-
-        // Skip notifications on first load
         if (isFirstLoad) {
             prevCounts = {messages: data.messages, announcements: data.announcements, grades: data.grades, alerts: data.alerts};
             isFirstLoad = false;
             return;
         }
 
-        // Generate unique key for this session and current counts
-        const today = new Date().toDateString();
-        const notifKey = `${today}-${data.messages}-${data.announcements}-${data.grades}-${data.alerts}-${sessionId}`;
-
-        // Only show toasts if counts increased AND we haven't shown this exact notification in this session
-        if (!shownNotifications[notifKey]) {
-            let hasNewNotifications = false;
-            
-            // Only show notifications if there's a significant increase (not just +1 from polling)
-            if (data.messages > prevCounts.messages + 1) {
-                showToast('<i class="bi bi-chat-dots"></i> New message received', 'bg-blue-600');
-                addNotifItem('<i class="bi bi-chat-dots mr-2 text-blue-500"></i> New message', '/messages/');
-                hasNewNotifications = true;
-            }
-            if (data.announcements > prevCounts.announcements) {
-                showToast('<i class="bi bi-megaphone"></i> New announcement posted', 'bg-indigo-600');
-                addNotifItem('<i class="bi bi-megaphone mr-2 text-indigo-500"></i> New announcement', '/class/my-classes/');
-                hasNewNotifications = true;
-            }
-            if (data.grades > prevCounts.grades) {
-                showToast('<i class="bi bi-trophy"></i> Assignment graded!', 'bg-purple-600');
-                addNotifItem('<i class="bi bi-trophy mr-2 text-purple-500"></i> Assignment graded', '/class/student/grades/');
-                hasNewNotifications = true;
-            }
-            // Only show alert notifications if there's a significant increase
-            if (data.alerts > prevCounts.alerts + 2) {
-                showToast('<i class="bi bi-exclamation-triangle"></i> New student alert', 'bg-red-600');
-                addNotifItem('<i class="bi bi-exclamation-triangle mr-2 text-red-500"></i> Student alert', '/wellness/alerts/');
-                hasNewNotifications = true;
-            }
-            
-            // Mark this notification as shown for this session
-            if (hasNewNotifications) {
-                shownNotifications[notifKey] = true;
-                localStorage.setItem('shownNotifications', JSON.stringify(shownNotifications));
-            }
+        if (data.messages > prevCounts.messages) {
+            showToast('<i class="bi bi-chat-dots"></i> New message received', 'bg-blue-600');
+            addNotifItem('<i class="bi bi-chat-dots mr-2 text-blue-500"></i> New message', '/messages/');
+        }
+        if (data.announcements > prevCounts.announcements) {
+            showToast('<i class="bi bi-megaphone"></i> New announcement posted', 'bg-indigo-600');
+            addNotifItem('<i class="bi bi-megaphone mr-2 text-indigo-500"></i> New announcement', '/class/my-classes/');
+        }
+        if (data.grades > prevCounts.grades) {
+            showToast('<i class="bi bi-trophy"></i> Assignment graded!', 'bg-purple-600');
+            addNotifItem('<i class="bi bi-trophy mr-2 text-purple-500"></i> Assignment graded', '/class/student/grades/');
+        }
+        if (data.alerts > prevCounts.alerts) {
+            showToast('<i class="bi bi-exclamation-triangle"></i> New student alert', 'bg-red-600');
+            addNotifItem('<i class="bi bi-exclamation-triangle mr-2 text-red-500"></i> Student alert', '/wellness/alerts/');
         }
 
         prevCounts = {messages: data.messages, announcements: data.announcements, grades: data.grades, alerts: data.alerts};
@@ -328,24 +304,23 @@
     function addNotifItem(html, url) {
         const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         notifItems.unshift({html, url, time: timestamp});
-        if (notifItems.length > 20) notifItems.pop(); // Keep last 20
+        if (notifItems.length > 20) notifItems.pop();
+        localStorage.setItem(NOTIF_KEY, JSON.stringify(notifItems));
         updateNotifList();
+        const nb = document.getElementById('notifBadge');
+        if (nb) { nb.textContent = notifItems.length; nb.classList.remove('hidden'); }
     }
 
     function updateNotifList() {
         const list = document.getElementById('notifList');
         if (!list) return;
-        
         if (notifItems.length === 0) {
             list.innerHTML = '<p class="text-sm text-gray-400 text-center py-8">No new notifications</p>';
             return;
         }
-        
         list.innerHTML = notifItems.map(n =>
             `<a href="${n.url}" onclick="closeNotifDropdown()" class="flex items-center justify-between px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition block">
-                <div class="flex items-center flex-1">
-                    ${n.html}
-                </div>
+                <div class="flex items-center flex-1">${n.html}</div>
                 <span class="text-xs text-gray-400 ml-2">${n.time}</span>
             </a>`
         ).join('');
@@ -353,10 +328,10 @@
 
     function clearNotificationHistory() {
         notifItems = [];
+        localStorage.removeItem(NOTIF_KEY);
         updateNotifList();
-        // Also clear localStorage
-        localStorage.removeItem('shownNotifications');
-        shownNotifications = {};
+        const nb = document.getElementById('notifBadge');
+        if (nb) { nb.textContent = '0'; nb.classList.add('hidden'); }
     }
 
     function pollNotifications() {
@@ -365,33 +340,7 @@
             .then(data => updateNotifUI(data))
             .catch(() => {});
     }
-    
-    // Clean up old notification records (keep only last 3 days)
-    function cleanupNotificationHistory() {
-        const stored = JSON.parse(localStorage.getItem('shownNotifications') || '{}');
-        const threeDaysAgo = new Date();
-        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-        
-        const cleaned = {};
-        Object.keys(stored).forEach(key => {
-            try {
-                const dateStr = key.split('-').slice(0, 3).join('-'); // Get date part
-                const notifDate = new Date(dateStr);
-                if (notifDate >= threeDaysAgo) {
-                    cleaned[key] = stored[key];
-                }
-            } catch (e) {
-                // Skip invalid keys
-            }
-        });
-        
-        localStorage.setItem('shownNotifications', JSON.stringify(cleaned));
-    }
-    
-    // Clean up on page load
-    cleanupNotificationHistory();
-    
-    // Poll every 5 seconds
+
     setInterval(pollNotifications, 5000);
     </script>
     {% endif %}

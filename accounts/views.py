@@ -149,8 +149,10 @@ def otp_request_view(request):
         otp = OTPCode.generate(email)
         try:
             send_otp_email(email, otp.code)
-        except Exception:
-            messages.error(request, 'Failed to send verification code. Please try again.')
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f'OTP email failed: {e}')
+            messages.error(request, 'Failed to send verification code. Please try again later.')
             return render(request, 'accounts/otp_request.html')
 
         request.session['otp_email'] = email
@@ -233,8 +235,10 @@ def otp_forgot_password_view(request):
         otp = OTPCode.generate(email)
         try:
             send_otp_email(email, otp.code)
-        except Exception:
-            messages.error(request, 'Failed to send code. Please try again.')
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f'OTP email failed: {e}')
+            messages.error(request, 'Failed to send code. Please try again later.')
             return render(request, 'accounts/otp_forgot_password.html')
 
         request.session['otp_email'] = email

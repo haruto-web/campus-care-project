@@ -1,89 +1,88 @@
 {% extends 'base.html' %}
-
-{% block title %}My Concerns{% endblock %}
-
+{% block title %}My Submitted Concerns{% endblock %}
 {% block content %}
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-            <h4 class="mb-0"><i class="bi bi-flag-fill"></i> My Submitted Concerns</h4>
-            <a href="{% url 'wellness:create_concern' %}" class="btn btn-dark">
-                <i class="bi bi-plus-circle"></i> Report New Concern
-            </a>
+<div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <i class="bi bi-flag-fill text-yellow-500"></i> My Submitted Concerns
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Track concerns you've reported about students</p>
         </div>
-        <div class="card-body">
-            {% if concerns %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Student</th>
-                                <th>Type</th>
-                                <th>Severity</th>
-                                <th>Date Observed</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for concern in concerns %}
-                            <tr>
-                                <td>{{ concern.student.get_full_name }}</td>
-                                <td>
-                                    <span class="badge bg-info">{{ concern.get_concern_type_display }}</span>
-                                </td>
-                                <td>
-                                    {% if concern.severity == 'high' %}
-                                        <span class="badge bg-danger">High</span>
-                                    {% elif concern.severity == 'medium' %}
-                                        <span class="badge bg-warning">Medium</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Low</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ concern.date_observed|date:"M d, Y" }}</td>
-                                <td>
-                                    {% if concern.resolved %}
-                                        <span class="badge bg-success">Resolved</span>
-                                    {% else %}
-                                        <span class="badge bg-warning">Pending</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary" 
-                                            data-bs-toggle="collapse" 
-                                            data-bs-target="#concern{{ concern.id }}">
-                                        <i class="bi bi-eye"></i> View
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr class="collapse" id="concern{{ concern.id }}">
-                                <td colspan="6">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <h6>Description:</h6>
-                                            <p>{{ concern.description }}</p>
-                                            <small class="text-muted">
-                                                Submitted: {{ concern.created_at|date:"M d, Y h:i A" }}
-                                            </small>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="text-center py-5">
-                    <i class="bi bi-flag" style="font-size: 3rem; color: #ccc;"></i>
-                    <p class="text-muted mt-3">You haven't submitted any concerns yet.</p>
-                    <a href="{% url 'wellness:create_concern' %}" class="btn btn-warning">
-                        <i class="bi bi-plus-circle"></i> Report Your First Concern
-                    </a>
-                </div>
-            {% endif %}
-        </div>
+        <a href="{% url 'wellness:create_concern' %}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition">
+            <i class="bi bi-plus-circle"></i> Report New Concern
+        </a>
     </div>
+
+    {% if concerns %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
+                <tr>
+                    <th class="px-4 py-3 text-left">Student</th>
+                    <th class="px-4 py-3 text-left">Type</th>
+                    <th class="px-4 py-3 text-left">Severity</th>
+                    <th class="px-4 py-3 text-left">Date Observed</th>
+                    <th class="px-4 py-3 text-left">Status</th>
+                    <th class="px-4 py-3 text-left">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                {% for concern in concerns %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                    <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ concern.student.get_full_name }}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">{{ concern.get_concern_type_display }}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        {% if concern.severity == 'high' %}
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">High</span>
+                        {% elif concern.severity == 'medium' %}
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">Medium</span>
+                        {% else %}
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">Low</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ concern.date_observed|date:"M d, Y" }}</td>
+                    <td class="px-4 py-3">
+                        {% if concern.resolved %}
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Resolved</span>
+                        {% else %}
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        <button onclick="toggleConcern({{ concern.id }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs font-medium flex items-center gap-1">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                    </td>
+                </tr>
+                <tr id="concern-{{ concern.id }}" class="hidden bg-blue-50 dark:bg-gray-700/30">
+                    <td colspan="6" class="px-6 py-4">
+                        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Description</p>
+                        <p class="text-gray-800 dark:text-gray-200 text-sm">{{ concern.description }}</p>
+                        <p class="text-xs text-gray-400 mt-2">Submitted: {{ concern.created_at|date:"M d, Y h:i A" }}</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 text-center py-16">
+        <i class="bi bi-flag text-gray-300 dark:text-gray-600 text-5xl"></i>
+        <p class="text-gray-500 dark:text-gray-400 mt-4">No concerns submitted yet.</p>
+        <a href="{% url 'wellness:create_concern' %}" class="mt-4 inline-block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+            <i class="bi bi-plus-circle mr-1"></i> Report First Concern
+        </a>
+    </div>
+    {% endif %}
 </div>
+<script>
+function toggleConcern(id) {
+    const row = document.getElementById('concern-' + id);
+    row.classList.toggle('hidden');
+}
+</script>
 {% endblock %}

@@ -265,24 +265,41 @@ def admin_enroll_student(request):
         return redirect('dashboard')
     
     if request.method == 'POST':
-        student_id = request.POST.get('student')
+        student_ids = request.POST.getlist('student')
         class_id = request.POST.get('class')
         
-        if student_id and class_id:
-            student = get_object_or_404(User, id=student_id, role='student')
+        if student_ids and class_id:
             class_obj = get_object_or_404(Class, id=class_id)
-            
-            if student in class_obj.students.all():
-                messages.warning(request, f'{student.get_full_name()} is already enrolled in {class_obj.code}.')
-            else:
-                class_obj.students.add(student)
-                messages.success(request, f'{student.get_full_name()} enrolled in {class_obj.code} successfully!')
+            enrolled, skipped = [], []
+            for sid in student_ids:
+                student = get_object_or_404(User, id=sid, role='student')
+                if student in class_obj.students.all():
+                    skipped.append(student.get_full_name())
+                else:
+                    class_obj.students.add(student)
+                    enrolled.append(student.get_full_name())
+            if enrolled:
+                messages.success(request, f'Enrolled: {", ".join(enrolled)} into {class_obj.code}.')
+            if skipped:
+                messages.warning(request, f'Already enrolled: {", ".join(skipped)}.')
             return redirect('admin_enroll_student')
         else:
-            messages.error(request, 'Please select both student and class.')
+            messages.error(request, 'Please select at least one student and a class.')
     
     students = User.objects.filter(role='student').order_by('last_name', 'first_name')
     classes = Class.objects.all().select_related('teacher').order_by('code')
+
+    # Dynamic filter options from DB
+    sections = User.objects.filter(role='student').exclude(section='').values_list('section', flat=True).distinct().order_by('section')
+    grade_levels = User.objects.filter(role='student').exclude(year_level=None).values_list('year_level', flat=True).distinct().order_by('year_level')
+
+    # Apply filters
+    section_filter = request.GET.get('section', '')
+    grade_filter = request.GET.get('grade', '')
+    if section_filter:
+        students = students.filter(section__iexact=section_filter)
+    if grade_filter:
+        students = students.filter(year_level=grade_filter)
     
     # Get recent enrollments
     recent_enrollments = []
@@ -297,6 +314,10 @@ def admin_enroll_student(request):
         'students': students,
         'classes': classes,
         'recent_enrollments': recent_enrollments[:10],
+        'sections': sections,
+        'grade_levels': grade_levels,
+        'section_filter': section_filter,
+        'grade_filter': grade_filter,
     }
     return render(request, 'admin/enroll_student.html', context)
 
