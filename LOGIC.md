@@ -5,14 +5,18 @@
 ## Student
 
 ### Registration & Login
-- Students register via **email OTP flow** only (not username/password login page)
-- Flow: Enter email → receive OTP → verify → if new: fill name + password → if existing: enter password
-- Forgot password also uses OTP
-- After registration, redirected to **profile completion** (student number, section, grade level, profile pic, ID pic)
-- Skipping profile completion is not allowed for students — they are redirected back until done
+- Students register via **email + student number + password** form at `/register/`
+- Student number and email must be pre-approved by admin via CSV upload or manual entry (`ApprovedStudent` table)
+- Student number must be exactly **12 digits**
+- After submitting the form, an OTP is sent to the email — account is only created after OTP verification
+- All roles use the same `/login/` page (email + password), followed by OTP verification
+- Forgot password uses OTP flow at `/forgot-password/`
+- After registration, redirected to **profile completion** (section, grade level, address, guardian info, profile pic, ID pic)
+- Profile completion can be **skipped once** — skip is valid for 7 days, after which the student is forced back to complete it
+- After 7-day skip expires, `profile_completed` is reset to False and student is redirected on next dashboard load
 
 ### Auto-Enrollment
-- When a student completes their profile with a **section + grade level**, they are automatically enrolled in all classes that match **both** values
+- When a student completes their profile with a **section + grade level**, they are automatically enrolled in all classes matching **both** values
 - Example: Grade 7, Section Apple → enrolled in all "Grade 7 Apple" classes
 
 ### Dashboard
@@ -56,7 +60,7 @@
 ## Teacher
 
 ### Login
-- Uses **email + password** on the standard login page (not OTP)
+- Uses **email + password** → OTP verification (same flow as all roles)
 
 ### Dashboard
 - Shows: classes taught (with student counts), at-risk students (high risk only), recent submissions grouped by class (3 per class), pending grade count
@@ -106,7 +110,7 @@
 ## Counselor
 
 ### Login
-- Uses **email + password** on the standard login page (not OTP)
+- Uses **email + password** → OTP verification (same flow as all roles)
 
 ### Dashboard
 - Shows: high/medium risk student counts, unread alert badge (updates every 5 seconds), pending interventions, upcoming scheduled interventions
@@ -153,7 +157,12 @@
 ## Admin
 
 ### Login
-- Uses **email + password** on the standard login page (not OTP)
+- Uses **email + password** → OTP verification (same flow as all roles)
+
+### Admin Roles (tier-gated sidebar)
+- `superadmin` — full access: Create Superuser, System Logs, all lower tiers
+- `admin` — Create Class, Create User, Enroll Students, Upload Students
+- `registrar` — Enroll Students, Upload Students only
 
 ### Dashboard
 - System stats: total users, students, teachers, counselors, admins, classes, assignments
@@ -167,18 +176,53 @@
 - BT AI Assistant button
 
 ### User Management
-- Create teacher or counselor accounts (students self-register)
+- Create teacher or counselor accounts (students self-register via approved list)
 - When creating a teacher with subjects + sections + grade level, classes are auto-created for each subject-section combination
 - View/search/filter all users by role, name, year level, section
 - Delete users (cannot delete admin accounts)
-- Cleanup tool: deletes all non-admin users at once
+- Cleanup tool: deletes all non-admin users at once (requires typing "DELETE ALL USERS")
+
+### Student Pre-Approval
+- Upload CSV to pre-approve students for registration (`ApprovedStudent` table)
+- CSV columns: `student_number` (12 digits), `email`, `first_name`, `last_name`, `year_level` (7–10), `section` (optional)
+- Or add students manually one at a time via the "Add Manually" tab
+- `update_or_create` logic — re-uploading updates existing records
+- Registered students are marked `is_registered=True` and cannot re-register
 
 ### Class Management
 - Create classes and assign to any teacher
 - Enroll students into classes manually — multi-select with section/grade/search filters
 
+### System Logs (`/manage/audit-log/`) — superadmin only
+- View LOGIN, LOGOUT, LOGIN_FAILED, ADMIN_ROLE_CHANGED events
+- Filter by action, actor name, date range
+- Paginated (50 per page)
+
 ### Django Admin
 - Full model-level access at `/admin/`
+
+---
+
+## Authentication & Security
+
+### OTP Flow (all roles)
+- Login: credentials verified → OTP sent to email → verify at `/verify-otp/` → logged in
+- Register (students): form submitted → OTP sent → verify → account created atomically
+- Forgot password: email entered → OTP sent → verify → reset password at `/reset-password/`
+- OTP rate limits: 5 verify attempts per email per 30 minutes
+- Registration rate limit: 5 attempts per IP per 10 minutes
+- `transaction.atomic()` + `select_for_update()` prevents race conditions on registration
+
+### Password Requirements (`StrongPasswordValidator`)
+- Minimum 8 characters (Django default)
+- At least 1 uppercase letter
+- At least 1 number
+- At least 1 special character
+- Not too common (Django CommonPasswordValidator)
+
+### Session Security
+- Registration password stored server-side in Django session between form and OTP step
+- Cleared immediately after account creation
 
 ---
 
