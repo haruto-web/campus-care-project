@@ -1,11 +1,18 @@
-from django.core.mail import send_mail
+import requests
 from django.conf import settings
 
 
 def send_otp_email(email, code):
-    send_mail(
-        subject='Your BrightTrack Verification Code',
-        message=f'Your verification code is: {code}\n\nThis code expires in 10 minutes.',
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[email],
+    requests.post(
+        'https://api.brevo.com/v3/smtp/email',
+        headers={
+            'api-key': settings.BREVO_API_KEY,
+            'Content-Type': 'application/json',
+        },
+        json={
+            'sender': {'name': 'BrightTrack', 'email': settings.EMAIL_HOST_USER},
+            'to': [{'email': email}],
+            'subject': 'Your BrightTrack Verification Code',
+            'textContent': f'Your verification code is: {code}\n\nThis code expires in 10 minutes.',
+        },
     )
