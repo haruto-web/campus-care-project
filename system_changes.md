@@ -81,7 +81,7 @@ class ApprovedStudent(models.Model):
 
 ### 2. Unified Login
 
-#### [MODIFY] [views.py](file:///c:/Users/Sam/Github_Clone/campus-care-project/accounts/views.py)
+#### [MODIFY] [views.py]
 
 **Remove the student-specific block** from `login_view` (lines 375-377):
 
@@ -122,7 +122,7 @@ This makes `login_view` work for ALL roles. The existing `dashboard_view` alread
 
 ### 3. CSV-Validated Registration
 
-#### [MODIFY] [views.py](file:///c:/Users/Sam/Github_Clone/campus-care-project/accounts/views.py) — Rewrite `register_view`
+#### [MODIFY] [views.py] — Rewrite `register_view`
 
 New registration flow:
 1. Student enters: **student_number**, **email**, **password**, **confirm password**
@@ -684,7 +684,7 @@ Same as v1 plan. No changes needed.
 
 ### 3. Unified Login with OTP for ALL Roles
 
-#### [MODIFY] [views.py](file:///c:/Users/Sam/Github_Clone/campus-care-project/accounts/views.py) — `login_view`
+#### [MODIFY] [views.py] — `login_view`
 
 **Revised flow:**
 1. GET → Render login form (email + password)
@@ -799,7 +799,7 @@ def verify_otp_view(request):
 
 ### 4. Student Registration with CSV + OTP
 
-#### [MODIFY] [views.py](file:///c:/Users/Sam/Github_Clone/campus-care-project/accounts/views.py) — `register_view`
+#### [MODIFY] [views.py] — `register_view`
 
 ```python
 def register_view(request):
@@ -871,7 +871,7 @@ def register_view(request):
 
 ### 5. Complete Profile — 7-Day Enforcement
 
-#### [MODIFY] [views.py](file:///c:/Users/Sam/Github_Clone/campus-care-project/accounts/views.py) — `complete_profile_view`
+#### [MODIFY] [views.py] — `complete_profile_view`
 
 ```python
 @login_required
@@ -990,7 +990,7 @@ class StrongPasswordValidator:
 
 ### 8. Rate Limiting on Registration
 
-#### [MODIFY] [views.py](file:///c:/Users/Sam/Github_Clone/campus-care-project/accounts/views.py) — `register_view`
+#### [MODIFY] [views.py] — `register_view`
 
 Add cache-based rate limiting (same pattern already used in the existing `otp_request_view`):
 

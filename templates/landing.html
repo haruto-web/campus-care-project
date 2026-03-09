@@ -11,65 +11,17 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .hero-gradient {
-            background: linear-gradient(135deg, #312e81 0%, #4338ca 30%, #6366f1 60%, #818cf8 100%);
-        }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-
-        .feature-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
-        }
-
-        .float-animation {
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0px);
-            }
-
-            50% {
-                transform: translateY(-12px);
-            }
-        }
-
-        .fade-up {
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeUp 0.8s ease forwards;
-        }
-
-        .fade-up-delay {
-            animation-delay: 0.2s;
-        }
-
-        .fade-up-delay-2 {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes fadeUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+        * { font-family: 'Inter', sans-serif; }
+        .hero-gradient { background: linear-gradient(135deg, #312e81 0%, #4338ca 30%, #6366f1 60%, #818cf8 100%); }
+        .glass-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.15); }
+        .feature-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .feature-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(99,102,241,0.15); }
+        .float-animation { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+        .fade-up { opacity: 0; transform: translateY(30px); animation: fadeUp 0.8s ease forwards; }
+        .fade-up-delay { animation-delay: 0.2s; }
+        .fade-up-delay-2 { animation-delay: 0.4s; }
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 
@@ -81,8 +33,7 @@
             <span class="text-4xl font-bold text-gray-900">BrightTrack</span>
         </div>
         <div class="w-48 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-            <div id="loadBar" class="h-full bg-indigo-600 rounded-full" style="width:0%;transition:width 1.2s ease">
-            </div>
+            <div id="loadBar" class="h-full bg-indigo-600 rounded-full" style="width:0%;transition:width 1.2s ease"></div>
         </div>
         <p class="text-gray-500 text-sm mt-4">Loading, please wait...</p>
     </div>
@@ -108,11 +59,8 @@
                 </div>
                 <!-- Desktop -->
                 <div class="hidden sm:flex items-center gap-4">
-                    <a href="{% url 'login' %}" class="text-gray-700 hover:text-indigo-600 font-medium transition">Log
-                        In</a>
-                    <a href="{% url 'otp_request' %}"
-                        class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition font-medium shadow-md shadow-indigo-200">Student
-                        Login</a>
+                    <a href="{% url 'login' %}" class="text-gray-700 hover:text-indigo-600 font-medium transition">Log In</a>
+                    <a href="{% url 'register' %}" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition font-medium shadow-md shadow-indigo-200">Register</a>
                 </div>
                 <!-- Mobile hamburger -->
                 <button onclick="toggleLandingMenu()" class="sm:hidden p-2 rounded text-gray-700 hover:bg-gray-100">
@@ -122,11 +70,8 @@
         </div>
         <!-- Mobile menu -->
         <div id="landingMobileMenu" class="hidden sm:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-2">
-            <a href="{% url 'login' %}" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 font-medium">Log
-                In</a>
-            <a href="{% url 'otp_request' %}"
-                class="block px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 font-medium text-center">Student
-                Login</a>
+            <a href="{% url 'login' %}" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 font-medium">Log In</a>
+            <a href="{% url 'register' %}" class="block px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 font-medium text-center">Register</a>
         </div>
     </nav>
     <script>
@@ -140,58 +85,40 @@
 
     <!-- Hero Section -->
     <section class="hero-gradient relative overflow-hidden">
-        <!-- Decorative blobs -->
         <div class="absolute top-10 left-10 w-72 h-72 bg-indigo-400/20 rounded-full blur-3xl"></div>
         <div class="absolute bottom-10 right-10 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl"></div>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 relative z-10">
             <div class="grid md:grid-cols-2 gap-12 items-center">
                 <div class="fade-up">
-                    <span
-                        class="inline-flex items-center gap-2 bg-white/10 text-indigo-200 text-sm font-medium px-4 py-1.5 rounded-full mb-6 backdrop-blur">
+                    <span class="inline-flex items-center gap-2 bg-white/10 text-indigo-200 text-sm font-medium px-4 py-1.5 rounded-full mb-6 backdrop-blur">
                         <i class="bi bi-stars"></i> AI-Powered Student Wellness
                     </span>
-                    <h1
-                        class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
+                    <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
                         Empower Learning.<br>
-                        <span class="bg-gradient-to-r from-indigo-200 to-white bg-clip-text text-transparent">Track
-                            Success.</span>
+                        <span class="bg-gradient-to-r from-indigo-200 to-white bg-clip-text text-transparent">Track Success.</span>
                     </h1>
                     <p class="text-lg sm:text-xl text-indigo-100 mb-8 leading-relaxed max-w-lg">
-                        A comprehensive LMS built to support student success through intelligent monitoring, early
-                        intervention, and data-driven insights.
+                        A comprehensive LMS built to support student success through intelligent monitoring, early intervention, and data-driven insights.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <a href="{% url 'otp_request' %}"
+                        <a href="{% url 'register' %}"
                             class="bg-white text-indigo-700 px-8 py-3.5 rounded-xl hover:bg-indigo-50 transition font-semibold text-lg text-center shadow-lg shadow-indigo-900/30">
-                            <i class="bi bi-mortarboard mr-2"></i>Student Login / Register
+                            <i class="bi bi-mortarboard mr-2"></i>Student Register
                         </a>
                         <a href="{% url 'login' %}"
                             class="border-2 border-white/30 text-white px-8 py-3.5 rounded-xl hover:bg-white/10 transition font-semibold text-lg text-center backdrop-blur">
-                            <i class="bi bi-box-arrow-in-right mr-2"></i>Staff Sign In
+                            <i class="bi bi-box-arrow-in-right mr-2"></i>Sign In
                         </a>
                     </div>
                 </div>
                 <div class="relative hidden md:flex items-center justify-center">
-                    <!-- Stats floating cards -->
                     <div class="glass-card rounded-2xl p-6 max-w-sm float-animation">
                         <div class="grid grid-cols-2 gap-4 text-white">
-                            <div class="text-center">
-                                <div class="text-3xl font-bold">4</div>
-                                <div class="text-indigo-200 text-sm">User Roles</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-3xl font-bold">AI</div>
-                                <div class="text-indigo-200 text-sm">Powered</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-3xl font-bold">24/7</div>
-                                <div class="text-indigo-200 text-sm">Monitoring</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-3xl font-bold">100%</div>
-                                <div class="text-indigo-200 text-sm">Secure</div>
-                            </div>
+                            <div class="text-center"><div class="text-3xl font-bold">4</div><div class="text-indigo-200 text-sm">User Roles</div></div>
+                            <div class="text-center"><div class="text-3xl font-bold">AI</div><div class="text-indigo-200 text-sm">Powered</div></div>
+                            <div class="text-center"><div class="text-3xl font-bold">24/7</div><div class="text-indigo-200 text-sm">Monitoring</div></div>
+                            <div class="text-center"><div class="text-3xl font-bold">100%</div><div class="text-indigo-200 text-sm">Secure</div></div>
                         </div>
                     </div>
                 </div>
@@ -204,36 +131,29 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16 fade-up">
                 <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Everything You Need to Succeed</h2>
-                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Powerful tools for students, teachers, counselors,
-                    and administrators</p>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Powerful tools for students, teachers, counselors, and administrators</p>
             </div>
-
             <div class="grid md:grid-cols-3 gap-8">
                 <div class="feature-card bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
                     <div class="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center mb-5">
                         <i class="bi bi-book text-2xl text-indigo-600"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Course Management</h3>
-                    <p class="text-gray-600 leading-relaxed">Create, organize, and manage courses with ease. Upload
-                        materials, create assignments, and track student progress in real time.</p>
+                    <p class="text-gray-600 leading-relaxed">Create, organize, and manage courses with ease. Upload materials, create assignments, and track student progress in real time.</p>
                 </div>
-
                 <div class="feature-card bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
                     <div class="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center mb-5">
                         <i class="bi bi-graph-up text-2xl text-emerald-600"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Real-Time Analytics</h3>
-                    <p class="text-gray-600 leading-relaxed">Monitor student performance, attendance, and engagement
-                        with comprehensive analytics dashboards and reporting.</p>
+                    <p class="text-gray-600 leading-relaxed">Monitor student performance, attendance, and engagement with comprehensive analytics dashboards and reporting.</p>
                 </div>
-
                 <div class="feature-card bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
                     <div class="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-5">
                         <i class="bi bi-heart text-2xl text-purple-600"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Student Wellness</h3>
-                    <p class="text-gray-600 leading-relaxed">Track student wellbeing with AI-powered check-ins, identify
-                        at-risk students early, and provide timely interventions.</p>
+                    <p class="text-gray-600 leading-relaxed">Track student wellbeing with AI-powered check-ins, identify at-risk students early, and provide timely interventions.</p>
                 </div>
             </div>
         </div>
@@ -246,77 +166,53 @@
                 <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Built for Every Role</h2>
                 <p class="text-xl text-gray-600">Tailored experiences for every user in the campus community</p>
             </div>
-
             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div
-                    class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl p-6 border border-indigo-100 hover:shadow-lg transition">
+                <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl p-6 border border-indigo-100 hover:shadow-lg transition">
                     <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center mb-4">
                         <i class="bi bi-mortarboard text-xl text-white"></i>
                     </div>
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Students</h3>
                     <ul class="space-y-2 text-sm text-gray-600">
-                        <li class="flex items-center gap-2"><i
-                                class="bi bi-check-circle-fill text-indigo-500"></i>Access courses & materials</li>
-                        <li class="flex items-center gap-2"><i
-                                class="bi bi-check-circle-fill text-indigo-500"></i>Submit assignments online</li>
-                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-indigo-500"></i>Track
-                            grades & progress</li>
-                        <li class="flex items-center gap-2"><i
-                                class="bi bi-check-circle-fill text-indigo-500"></i>Wellness check-ins</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-indigo-500"></i>Access courses & materials</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-indigo-500"></i>Submit assignments online</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-indigo-500"></i>Track grades & progress</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-indigo-500"></i>Wellness check-ins</li>
                     </ul>
                 </div>
-
-                <div
-                    class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 border border-emerald-100 hover:shadow-lg transition">
+                <div class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 border border-emerald-100 hover:shadow-lg transition">
                     <div class="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center mb-4">
                         <i class="bi bi-person-workspace text-xl text-white"></i>
                     </div>
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Teachers</h3>
                     <ul class="space-y-2 text-sm text-gray-600">
-                        <li class="flex items-center gap-2"><i
-                                class="bi bi-check-circle-fill text-emerald-500"></i>Create & manage courses</li>
-                        <li class="flex items-center gap-2"><i
-                                class="bi bi-check-circle-fill text-emerald-500"></i>Grade assignments</li>
-                        <li class="flex items-center gap-2"><i
-                                class="bi bi-check-circle-fill text-emerald-500"></i>Track attendance</li>
-                        <li class="flex items-center gap-2"><i
-                                class="bi bi-check-circle-fill text-emerald-500"></i>Identify at-risk students</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-emerald-500"></i>Create & manage courses</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-emerald-500"></i>Grade assignments</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-emerald-500"></i>Track attendance</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-emerald-500"></i>Identify at-risk students</li>
                     </ul>
                 </div>
-
-                <div
-                    class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-6 border border-purple-100 hover:shadow-lg transition">
+                <div class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-6 border border-purple-100 hover:shadow-lg transition">
                     <div class="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center mb-4">
                         <i class="bi bi-heart-pulse text-xl text-white"></i>
                     </div>
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Counselors</h3>
                     <ul class="space-y-2 text-sm text-gray-600">
-                        <li class="flex items-center gap-2"><i
-                                class="bi bi-check-circle-fill text-purple-500"></i>Monitor wellbeing</li>
-                        <li class="flex items-center gap-2"><i
-                                class="bi bi-check-circle-fill text-purple-500"></i>Create interventions</li>
-                        <li class="flex items-center gap-2"><i
-                                class="bi bi-check-circle-fill text-purple-500"></i>AI-powered insights</li>
-                        <li class="flex items-center gap-2"><i
-                                class="bi bi-check-circle-fill text-purple-500"></i>Manage alerts</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-purple-500"></i>Monitor wellbeing</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-purple-500"></i>Create interventions</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-purple-500"></i>AI-powered insights</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-purple-500"></i>Manage alerts</li>
                     </ul>
                 </div>
-
-                <div
-                    class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-100 hover:shadow-lg transition">
+                <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-100 hover:shadow-lg transition">
                     <div class="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center mb-4">
                         <i class="bi bi-shield-lock text-xl text-white"></i>
                     </div>
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Admins</h3>
                     <ul class="space-y-2 text-sm text-gray-600">
-                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-amber-500"></i>User
-                            management</li>
-                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-amber-500"></i>Class
-                            creation</li>
-                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-amber-500"></i>School
-                            analytics</li>
-                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-amber-500"></i>System
-                            oversight</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-amber-500"></i>User management</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-amber-500"></i>Class creation</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-amber-500"></i>School analytics</li>
+                        <li class="flex items-center gap-2"><i class="bi bi-check-circle-fill text-amber-500"></i>System oversight</li>
                     </ul>
                 </div>
             </div>
@@ -325,21 +221,17 @@
 
     <!-- CTA Section -->
     <section class="hero-gradient py-20 relative overflow-hidden">
-        <div
-            class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cdefs%3E%3Cpattern id=\'grid\' width=\'60\' height=\'60\' patternUnits=\'userSpaceOnUse\'%3E%3Cpath d=\'M 60 0 L 0 0 0 60\' fill=\'none\' stroke=\'rgba(255,255,255,0.05)\' stroke-width=\'1\'/%3E%3C/pattern%3E%3C/defs%3E%3Crect fill=\'url(%23grid)\' width=\'100%25\' height=\'100%25\'/%3E%3C/svg%3E')]">
-        </div>
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">Ready to Get Started?</h2>
-            <p class="text-xl text-indigo-200 mb-8 max-w-2xl mx-auto">Join educators and students using BrightTrack to
-                achieve academic success and wellbeing.</p>
+            <p class="text-xl text-indigo-200 mb-8 max-w-2xl mx-auto">Join educators and students using BrightTrack to achieve academic success and wellbeing.</p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{% url 'otp_request' %}"
+                <a href="{% url 'register' %}"
                     class="bg-white text-indigo-700 px-8 py-3.5 rounded-xl hover:bg-indigo-50 transition font-semibold text-lg text-center shadow-lg">
-                    Student Login / Register
+                    Student Register
                 </a>
                 <a href="{% url 'login' %}"
                     class="border-2 border-white/30 text-white px-8 py-3.5 rounded-xl hover:bg-white/10 transition font-semibold text-lg text-center">
-                    Staff Sign In
+                    Sign In
                 </a>
             </div>
         </div>

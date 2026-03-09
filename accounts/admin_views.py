@@ -4,9 +4,11 @@ from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
-from accounts.models import User, AuditLog
+from accounts.models import User, AuditLog, ApprovedStudent
 from academics.models import Class
 from academics.forms import ClassForm
+import csv
+import io
 import logging
 
 logger = logging.getLogger('brighttrack.audit')
@@ -59,7 +61,6 @@ def admin_create_user(request):
             sections_input = request.POST.get('section', '')
             year_level = request.POST.get('year_level', '')
             
-            # Save to user profile
             if subjects_input:
                 user.subject = subjects_input
             if sections_input:
@@ -68,9 +69,7 @@ def admin_create_user(request):
                 user.year_level = year_level
             user.save()
             
-            # Auto-create classes for each subject-section combination
             if subjects_input and sections_input and year_level:
-                # Parse comma-separated values
                 subjects = [s.strip() for s in subjects_input.split(',') if s.strip()]
                 sections = [s.strip() for s in sections_input.split(',') if s.strip()]
                 
@@ -78,8 +77,6 @@ def admin_create_user(request):
                 for subject in subjects:
                     for section in sections:
                         class_code = f'G{year_level}-{section}-{subject[:3].upper()}'
-                        
-                        # Check if class already exists
                         if not Class.objects.filter(code=class_code).exists():
                             Class.objects.create(
                                 name=subject,
@@ -108,20 +105,16 @@ def admin_manage_users(request):
         messages.error(request, 'Permission denied. Admin access required.')
         return redirect('dashboard')
     
-    # Get filter parameters
     role_filter = request.GET.get('role', 'all')
     search_query = request.GET.get('search', '')
     year_level_filter = request.GET.get('year_level', '')
     section_filter = request.GET.get('section', '')
     
-    # Start with all users
     users = User.objects.all()
     
-    # Apply role filter
     if role_filter != 'all':
         users = users.filter(role=role_filter)
     
-    # Apply search filter
     if search_query:
         users = users.filter(
             Q(first_name__icontains=search_query) |
@@ -130,11 +123,9 @@ def admin_manage_users(request):
             Q(username__icontains=search_query)
         )
     
-    # Apply year level filter
     if year_level_filter:
         users = users.filter(year_level=year_level_filter)
     
-    # Apply section filter
     if section_filter:
         users = users.filter(section__icontains=section_filter)
     
@@ -162,7 +153,6 @@ def admin_delete_user(request, user_id):
     
     user = get_object_or_404(User, id=user_id)
     
-    # Prevent deleting admin accounts
     if user.role == 'admin':
         messages.error(request, 'Cannot delete admin accounts.')
         return redirect('admin_teachers_list')
@@ -201,16 +191,12 @@ def admin_teacher_dashboard(request, teacher_id):
         return redirect('dashboard')
     
     teacher = get_object_or_404(User, id=teacher_id, role='teacher')
-    
-    # Get teacher's classes
     classes = Class.objects.filter(teacher=teacher)
     
-    # Get all students in teacher's classes
     students = set()
     for cls in classes:
         students.update(cls.students.all())
     
-    # Get at-risk students
     from wellness.models import RiskAssessment
     at_risk_students = []
     for student in students:
@@ -218,7 +204,6 @@ def admin_teacher_dashboard(request, teacher_id):
         if latest_assessment and latest_assessment.risk_level == 'high':
             at_risk_students.append(student)
     
-    # Count pending grades
     from academics.models import Submission
     pending_grades = Submission.objects.filter(
         assignment__class_obj__in=classes,
@@ -296,11 +281,9 @@ def admin_enroll_student(request):
     students = User.objects.filter(role='student').order_by('last_name', 'first_name')
     classes = Class.objects.all().select_related('teacher').order_by('code')
 
-    # Dynamic filter options from DB
     sections = User.objects.filter(role='student').exclude(section='').values_list('section', flat=True).distinct().order_by('section')
     grade_levels = User.objects.filter(role='student').exclude(year_level=None).values_list('year_level', flat=True).distinct().order_by('year_level')
 
-    # Apply filters
     section_filter = request.GET.get('section', '')
     grade_filter = request.GET.get('grade', '')
     if section_filter:
@@ -308,14 +291,10 @@ def admin_enroll_student(request):
     if grade_filter:
         students = students.filter(year_level=grade_filter)
     
-    # Get recent enrollments
     recent_enrollments = []
     for cls in classes[:5]:
         for student in cls.students.all()[:3]:
-            recent_enrollments.append({
-                'student': student,
-                'class': cls
-            })
+            recent_enrollments.append({'student': student, 'class': cls})
     
     context = {
         'students': students,
@@ -335,24 +314,18 @@ def admin_cleanup_users(request):
         return redirect('dashboard')
     
     if request.method == 'POST':
-        # Require typed confirmation phrase
         confirmation = request.POST.get('confirmation', '').strip()
         if confirmation != 'DELETE ALL USERS':
             messages.error(request, 'Please type "DELETE ALL USERS" exactly to confirm.')
             return redirect('admin_cleanup_users')
 
-        # Count users before deletion
-        total_before = User.objects.count()
         admins_count = User.objects.filter(role='admin').count()
-        
-        # Delete non-admin users
         deleted_count = User.objects.exclude(role='admin').delete()[0]
         
         logger.critical(f'MASS DELETION by admin {request.user.username}: {deleted_count} users deleted, {admins_count} admins kept')
         messages.success(request, f'Cleanup complete! Deleted {deleted_count} users. {admins_count} admin accounts kept safe.')
         return redirect('dashboard')
     
-    # Show current user counts
     context = {
         'total_users': User.objects.count(),
         'admin_count': User.objects.filter(role='admin').count(),
@@ -377,7 +350,6 @@ def admin_create_superuser(request):
             messages.error(request, 'Username already exists.')
             return render(request, 'admin/create_superuser.html')
         
-        # Validate password strength
         from django.contrib.auth.password_validation import validate_password
         from django.core.exceptions import ValidationError
         try:
@@ -387,7 +359,6 @@ def admin_create_superuser(request):
                 messages.error(request, msg)
             return render(request, 'admin/create_superuser.html')
         
-        # Create superuser
         user = User.objects.create_user(
             username=username,
             email=email,
@@ -403,6 +374,104 @@ def admin_create_superuser(request):
         return redirect('dashboard')
     
     return render(request, 'admin/create_superuser.html')
+
+
+@login_required
+def admin_upload_students(request):
+    if request.user.role != 'admin':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    if request.method == 'POST' and request.POST.get('action') == 'manual':
+        sn = request.POST.get('student_number', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        fn = request.POST.get('first_name', '').strip()
+        ln = request.POST.get('last_name', '').strip()
+        yl = request.POST.get('year_level', '').strip()
+        section = request.POST.get('section', '').strip()
+
+        if not all([sn, email, fn, ln, yl]):
+            messages.error(request, 'All fields except section are required.')
+        elif not sn.isdigit() or len(sn) != 12:
+            messages.error(request, 'Student number must be exactly 12 digits.')
+        elif yl not in ('7', '8', '9', '10'):
+            messages.error(request, 'Year level must be 7, 8, 9, or 10.')
+        else:
+            _, created = ApprovedStudent.objects.update_or_create(
+                student_number=sn,
+                defaults={'email': email, 'first_name': fn, 'last_name': ln, 'year_level': yl, 'section': section}
+            )
+            messages.success(request, f'Student {fn} {ln} {"added" if created else "updated"} successfully.')
+        return redirect('admin_upload_students')
+
+    if request.method == 'POST' and request.FILES.get('csv_file'):
+        csv_file = request.FILES['csv_file']
+        if not csv_file.name.endswith('.csv') or csv_file.content_type not in ('text/csv', 'application/vnd.ms-excel', 'text/plain'):
+            messages.error(request, 'Please upload a valid .csv file.')
+            return redirect('admin_upload_students')
+
+        if csv_file.size > 5 * 1024 * 1024:
+            messages.error(request, 'File too large. Maximum 5MB.')
+            return redirect('admin_upload_students')
+
+        def sanitize(val):
+            if val and val[0] in ('=', '+', '-', '@'):
+                return "'" + val
+            return val
+
+        decoded = csv_file.read().decode('utf-8-sig')
+        reader = csv.DictReader(io.StringIO(decoded))
+
+        required_cols = {'student_number', 'email', 'first_name', 'last_name', 'year_level'}
+        if not required_cols.issubset(set(reader.fieldnames or [])):
+            messages.error(request, f'CSV must have columns: {", ".join(required_cols)}')
+            return redirect('admin_upload_students')
+
+        created, updated, skipped = 0, 0, 0
+        errors = []
+        for i, row in enumerate(reader, start=2):
+            sn = sanitize(row.get('student_number', '').strip())
+            email = row.get('email', '').strip().lower()
+            fn = sanitize(row.get('first_name', '').strip())
+            ln = sanitize(row.get('last_name', '').strip())
+            yl = row.get('year_level', '').strip()
+            section = sanitize(row.get('section', '').strip())
+
+            if not all([sn, email, fn, ln, yl]):
+                errors.append(f'Row {i}: missing required field.')
+                skipped += 1
+                continue
+
+            if yl not in ('7', '8', '9', '10'):
+                errors.append(f'Row {i}: invalid year_level "{yl}" (must be 7-10).')
+                skipped += 1
+                continue
+
+            _, was_created = ApprovedStudent.objects.update_or_create(
+                student_number=sn,
+                defaults={
+                    'email': email,
+                    'first_name': fn,
+                    'last_name': ln,
+                    'year_level': yl,
+                    'section': section,
+                }
+            )
+            if was_created:
+                created += 1
+            else:
+                updated += 1
+
+        msg = f'Upload complete: {created} added, {updated} updated, {skipped} skipped.'
+        if errors:
+            msg += ' Errors: ' + ' | '.join(errors[:5])
+        messages.success(request, msg)
+        return redirect('admin_upload_students')
+
+    approved_students = ApprovedStudent.objects.all()
+    paginator = Paginator(approved_students, 50)
+    page = paginator.get_page(request.GET.get('page'))
+    return render(request, 'admin/upload_students.html', {'page_obj': page})
 
 
 @login_required

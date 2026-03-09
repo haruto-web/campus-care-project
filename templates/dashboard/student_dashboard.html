@@ -160,8 +160,7 @@
                                     <span class="text-xs text-gray-500">{{ announcement.created_at|date:"M j, g:i A" }}</span>
                                     <label class="flex items-center cursor-pointer" title="Mark as read">
                                         <input type="checkbox" class="announcement-checkbox w-4 h-4 accent-purple-600"
-                                            data-id="{{ announcement.id }}" {% if announcement.is_read %}checked{% endif
-                                            %} onchange="toggleRead(this)">
+                                            data-id="{{ announcement.id }}" {% if announcement.is_read %}checked{% endif %} onchange="toggleRead(this)">
                                     </label>
                                 </div>
                             </div>

@@ -40,6 +40,11 @@ class User(AbstractUser):
     id_picture = models.ImageField(upload_to='id_pictures/', blank=True, null=True)
     about_me = models.TextField(blank=True)
     profile_completed = models.BooleanField(default=False)
+    address = models.TextField(blank=True)
+    guardian_name = models.CharField(max_length=150, blank=True)
+    guardian_relation = models.CharField(max_length=50, blank=True)
+    guardian_occupation = models.CharField(max_length=100, blank=True)
+    profile_skipped_at = models.DateTimeField(blank=True, null=True)
     
     def __str__(self):
         return f"{self.get_full_name()} ({self.role})"
@@ -69,6 +74,23 @@ class OTPCode(models.Model):
 
     def __str__(self):
         return f"{self.contact_value} → {self.code}"
+
+
+class ApprovedStudent(models.Model):
+    student_number = models.CharField(max_length=20, unique=True)
+    email = models.EmailField(unique=True)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    year_level = models.CharField(max_length=2, choices=User.YEAR_LEVEL_CHOICES)
+    section = models.CharField(max_length=50, blank=True)
+    is_registered = models.BooleanField(default=False)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['last_name', 'first_name']
+
+    def __str__(self):
+        return f"{self.student_number} — {self.last_name}, {self.first_name}"
 
 
 class AuditLog(models.Model):

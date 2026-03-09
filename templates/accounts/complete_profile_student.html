@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-
 {% block title %}Complete Your Profile - BrightTrack{% endblock %}
 
 {% block content %}
@@ -7,93 +6,87 @@
     <div class="max-w-2xl w-full">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full mb-4">
-                    <i class="bi bi-person-check text-red-600 dark:text-red-400 text-3xl"></i>
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 dark:bg-indigo-900 rounded-full mb-4">
+                    <i class="bi bi-person-check text-indigo-600 dark:text-indigo-400 text-3xl"></i>
                 </div>
                 <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Complete Your Profile</h2>
                 <p class="text-gray-600 dark:text-gray-400 mt-2">Just a few more details to get started</p>
+                {% if not skip_allowed %}
+                <p class="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">
+                    <i class="bi bi-exclamation-triangle mr-1"></i>Your 7-day grace period has expired. Please complete your profile to continue.
+                </p>
+                {% endif %}
             </div>
-            
+
             <form method="post" enctype="multipart/form-data" class="space-y-6">
                 {% csrf_token %}
-                
+
                 <div>
-                    <label for="profile_picture" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Profile Picture (Optional)
-                    </label>
+                    <label for="profile_picture" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profile Picture (Optional)</label>
                     <input type="file" id="profile_picture" name="profile_picture" accept="image/*"
-                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                 </div>
-                
-                <div>
-                    <label for="student_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Student Number
-                    </label>
-                    <input type="text" id="student_number" name="student_number" placeholder="e.g., 2024-12345"
-                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
-                </div>
-                
-                <div>
-                    <label for="year_level" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Grade Level
-                    </label>
-                    <select id="year_level" name="year_level"
-                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
-                        <option value="">Select Grade Level</option>
-                        <option value="7">Grade 7</option>
-                        <option value="8">Grade 8</option>
-                        <option value="9">Grade 9</option>
-                        <option value="10">Grade 10</option>
-                    </select>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone Number (Optional)</label>
+                        <input type="tel" id="phone" name="phone" value="{{ user.phone }}"
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label for="date_of_birth" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date of Birth (Optional)</label>
+                        <input type="date" id="date_of_birth" name="date_of_birth"
+                            value="{% if user.date_of_birth %}{{ user.date_of_birth|date:'Y-m-d' }}{% endif %}"
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                    </div>
                 </div>
 
                 <div>
-                    <label for="section" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Section (Optional)
-                    </label>
-                    <input type="text" id="section" name="section" placeholder="e.g., A, B, Einstein"
-                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+                    <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Address (Optional)</label>
+                    <textarea id="address" name="address" rows="2"
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">{{ user.address }}</textarea>
                 </div>
-                
+
                 <div>
-                    <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Phone Number (Optional)
-                    </label>
-                    <input type="tel" id="phone" name="phone" placeholder="+1 (555) 123-4567"
-                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
-                </div>
-                
-                <div>
-                    <label for="date_of_birth" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Date of Birth (Optional)
-                    </label>
-                    <input type="date" id="date_of_birth" name="date_of_birth"
-                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
-                </div>
-                
-                <div>
-                    <label for="id_picture" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        ID Picture (Optional)
-                    </label>
+                    <label for="id_picture" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ID Picture (Optional)</label>
                     <input type="file" id="id_picture" name="id_picture" accept="image/*"
-                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                 </div>
-                
+
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Guardian Information (Optional)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="guardian_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Guardian Name</label>
+                            <input type="text" id="guardian_name" name="guardian_name" value="{{ user.guardian_name }}"
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label for="guardian_relation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Relation</label>
+                            <input type="text" id="guardian_relation" name="guardian_relation" value="{{ user.guardian_relation }}" placeholder="e.g. Mother, Father"
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label for="guardian_occupation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Occupation</label>
+                            <input type="text" id="guardian_occupation" name="guardian_occupation" value="{{ user.guardian_occupation }}"
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex gap-4">
-                    <button type="submit" 
-                            class="flex-1 bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition duration-200">
+                    <button type="submit"
+                        class="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition duration-200">
                         Complete Profile
                     </button>
-                    <a href="{% url 'complete_profile' %}?skip=1" 
-                       class="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200 text-center">
+                    {% if skip_allowed %}
+                    <a href="{% url 'complete_profile' %}?skip=1"
+                        class="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200 text-center">
                         Skip for Now
                     </a>
+                    {% endif %}
                 </div>
             </form>
-            
-            <p class="text-sm text-gray-500 dark:text-gray-400 text-center mt-6">
-                You can always update your profile later from the settings menu.
-            </p>
         </div>
     </div>
 </div>
