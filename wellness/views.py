@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from .models import TeacherConcern, Intervention, Alert, RiskAssessment, WellnessCheckIn
 from .forms import TeacherConcernForm, InterventionForm
 from accounts.models import User
+from accounts.utils import log_action
 
 @login_required
 def create_concern(request, student_id=None):
@@ -20,6 +21,7 @@ def create_concern(request, student_id=None):
             concern = form.save(commit=False)
             concern.teacher = request.user
             concern.save()
+            log_action(request, 'CONCERN_SUBMITTED', 'TeacherConcern', concern.id, concern.student.get_full_name())
             messages.success(request, f'Concern about {concern.student.get_full_name()} reported successfully!')
             return redirect('wellness:view_concerns')
     else:
@@ -133,6 +135,8 @@ def create_intervention(request, student_id=None):
             intervention.counselor = request.user
             intervention.save()
             
+            log_action(request, 'INTERVENTION_CREATED', 'Intervention', intervention.id, intervention.student.get_full_name())
+            
             # Mark related alerts as resolved when intervention is created
             Alert.objects.filter(
                 student=intervention.student,
@@ -206,6 +210,7 @@ def update_intervention(request, intervention_id):
         form = InterventionForm(request.POST, instance=intervention)
         if form.is_valid():
             form.save()
+            log_action(request, 'INTERVENTION_UPDATED', 'Intervention', intervention.id, intervention.student.get_full_name())
             messages.success(request, 'Intervention updated successfully!')
             return redirect('wellness:interventions_list')
     else:
@@ -344,6 +349,7 @@ def resolve_alert(request, alert_id):
     alert.resolved = True
     alert.is_read = True
     alert.save()
+    log_action(request, 'ALERT_RESOLVED', 'Alert', alert.id, alert.student.get_full_name() if alert.student else '')
     
     from django.urls import reverse
     params = request.GET.urlencode()

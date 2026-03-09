@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Audit Log — BrightTrack{% endblock %}
+{% block page_title %}Audit Log{% endblock %}
+
+{% block content %}
+<div class="bt-card mb-4">
+    <form method="get" class="flex flex-wrap gap-3 items-end">
+        <div>
+            <label class="block text-xs font-medium mb-1" style="color:var(--bt-text-muted)">Action</label>
+            <select name="action" class="bt-input text-sm">
+                <option value="">All Actions</option>
+                {% for code, label in action_choices %}
+                <option value="{{ code }}" {% if filters.action == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium mb-1" style="color:var(--bt-text-muted)">Actor</label>
+            <select name="actor" class="bt-input text-sm">
+                <option value="">All Admins</option>
+                {% for admin in admins %}
+                <option value="{{ admin.id }}" {% if filters.actor == admin.id|stringformat:"s" %}selected{% endif %}>{{ admin.get_full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium mb-1" style="color:var(--bt-text-muted)">From</label>
+            <input type="date" name="date_from" value="{{ filters.date_from }}" class="bt-input text-sm">
+        </div>
+        <div>
+            <label class="block text-xs font-medium mb-1" style="color:var(--bt-text-muted)">To</label>
+            <input type="date" name="date_to" value="{{ filters.date_to }}" class="bt-input text-sm">
+        </div>
+        <button type="submit" class="bt-btn bt-btn-primary text-sm">Filter</button>
+        <a href="{% url 'admin_audit_log' %}" class="bt-btn bt-btn-secondary text-sm">Clear</a>
+    </form>
+</div>
+
+<div class="bt-card">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b" style="border-color:var(--bt-border)">
+                    <th class="text-left py-3 px-4 font-semibold" style="color:var(--bt-text-muted)">Timestamp</th>
+                    <th class="text-left py-3 px-4 font-semibold" style="color:var(--bt-text-muted)">Actor</th>
+                    <th class="text-left py-3 px-4 font-semibold" style="color:var(--bt-text-muted)">Action</th>
+                    <th class="text-left py-3 px-4 font-semibold" style="color:var(--bt-text-muted)">Target</th>
+                    <th class="text-left py-3 px-4 font-semibold" style="color:var(--bt-text-muted)">IP</th>
+                    <th class="text-left py-3 px-4 font-semibold" style="color:var(--bt-text-muted)">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in page %}
+                <tr class="border-b hover:bg-gray-50 dark:hover:bg-gray-800 transition" style="border-color:var(--bt-border)">
+                    <td class="py-3 px-4 whitespace-nowrap" style="color:var(--bt-text-muted)">{{ log.timestamp|date:"M d, Y H:i" }}</td>
+                    <td class="py-3 px-4">
+                        {% if log.actor %}
+                        <span class="font-medium" style="color:var(--bt-text)">{{ log.actor.get_full_name }}</span>
+                        <span class="text-xs ml-1 px-1.5 py-0.5 rounded" style="background:var(--bt-surface-2);color:var(--bt-text-muted)">{{ log.actor.role }}</span>
+                        {% else %}
+                        <span style="color:var(--bt-text-muted)">System</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-4">
+                        {% if 'DELETE' in log.action or 'CLEANUP' in log.action %}
+                        <span class="text-xs font-semibold px-2 py-1 rounded bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">{{ log.get_action_display }}</span>
+                        {% elif 'CREATED' in log.action or 'ENROLLED' in log.action %}
+                        <span class="text-xs font-semibold px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">{{ log.get_action_display }}</span>
+                        {% elif 'LOGIN' in log.action %}
+                        <span class="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">{{ log.get_action_display }}</span>
+                        {% else %}
+                        <span class="text-xs font-semibold px-2 py-1 rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">{{ log.get_action_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-4" style="color:var(--bt-text)">
+                        {% if log.target_type %}<span class="text-xs" style="color:var(--bt-text-muted)">{{ log.target_type }} · </span>{% endif %}
+                        {{ log.target_label|default:"—" }}
+                    </td>
+                    <td class="py-3 px-4 text-xs" style="color:var(--bt-text-muted)">{{ log.ip_address|default:"—" }}</td>
+                    <td class="py-3 px-4">
+                        {% if log.extra_data %}
+                        <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="text-xs text-indigo-500 hover:underline">View</button>
+                        <pre class="hidden mt-1 text-xs p-2 rounded" style="background:var(--bt-surface-2);color:var(--bt-text-muted);max-width:300px;overflow:auto">{{ log.extra_data }}</pre>
+                        {% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="py-12 text-center" style="color:var(--bt-text-muted)">No audit log entries found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page.has_other_pages %}
+    <div class="flex items-center justify-between px-4 py-3 border-t" style="border-color:var(--bt-border)">
+        <span class="text-sm" style="color:var(--bt-text-muted)">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+        <div class="flex gap-2">
+            {% if page.has_previous %}
+            <a href="?page={{ page.previous_page_number }}&action={{ filters.action }}&actor={{ filters.actor }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}" class="bt-btn bt-btn-secondary text-sm">Previous</a>
+            {% endif %}
+            {% if page.has_next %}
+            <a href="?page={{ page.next_page_number }}&action={{ filters.action }}&actor={{ filters.actor }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}" class="bt-btn bt-btn-primary text-sm">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

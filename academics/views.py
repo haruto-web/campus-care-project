@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from .models import Class, Announcement, Material, Assignment, Attendance, Submission, Grade
 from .forms import ClassForm, AssignmentForm, MaterialForm
 from campus_care.validators import validate_submission_upload, validate_document_upload
+from accounts.utils import log_action
 from datetime import date, datetime, timedelta
 import json
 
@@ -90,6 +91,7 @@ def create_class(request):
                 return render(request, 'academics/create_class.html', {'form': form})
             
             class_obj.save()
+            log_action(request, 'CLASS_CREATED', 'Class', class_obj.id, class_obj.name)
             
             # Auto-enroll students with matching section AND year_level
             if class_obj.section and class_obj.year_level:
@@ -209,6 +211,7 @@ def drop_student(request, class_id, student_id):
     
     # Remove student from class
     class_obj.students.remove(student)
+    log_action(request, 'STUDENT_REMOVED_FROM_CLASS', 'Class', class_obj.id, class_obj.code, {'student': student.get_full_name()})
     
     # Delete related records (grades, attendance, submissions)
     Grade.objects.filter(student=student, class_obj=class_obj).delete()
@@ -232,6 +235,7 @@ def create_assignment(request, class_id):
             assignment = form.save(commit=False)
             assignment.class_obj = class_obj
             assignment.save()
+            log_action(request, 'ASSIGNMENT_CREATED', 'Assignment', assignment.id, assignment.title, {'class': class_obj.code})
             messages.success(request, f'Assignment "{assignment.title}" created successfully!')
             return redirect('academics:class_detail', class_id=class_id)
     else:
@@ -341,6 +345,11 @@ def grade_submission(request, submission_id):
         from django.utils import timezone
         submission.graded_at = timezone.now()
         submission.save()
+        
+        action_code = 'GRADE_CHANGED' if submission.score is not None else 'SUBMISSION_GRADED'
+        log_action(request, action_code, 'Submission', submission.id,
+                   f'{submission.student.get_full_name()} — {submission.assignment.title}',
+                   {'score': submission.score, 'max': submission.assignment.total_points})
         
         # Notify student about grading
         student = submission.student
@@ -770,6 +779,7 @@ def delete_assignment(request, assignment_id):
         return redirect('dashboard')
     
     class_id = assignment.class_obj.id
+    log_action(request, 'ASSIGNMENT_DELETED', 'Assignment', assignment_id, assignment.title)
     assignment.delete()
     messages.success(request, f'Assignment "{assignment.title}" deleted.')
     return redirect('academics:class_detail', class_id=class_id)

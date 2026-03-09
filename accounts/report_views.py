@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from accounts.utils import log_action
 
 
 def get_report_data():
@@ -35,6 +36,7 @@ def download_report(request):
 
     fmt = request.GET.get('format', 'pdf')
     data = get_report_data()
+    log_action(request, 'REPORT_DOWNLOADED', 'Report', None, fmt)
 
     if fmt == 'pdf':
         return _pdf_report(data)

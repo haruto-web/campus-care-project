@@ -3,7 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.db.models import Count, Q
-from accounts.models import User
+from accounts.models import User, AuditLog
+from accounts.utils import log_action
+from accounts.decorators import require_admin_role
 from academics.models import Class
 from academics.forms import ClassForm
 import logging
@@ -11,11 +13,8 @@ import logging
 logger = logging.getLogger('brighttrack.audit')
 
 @login_required
+@require_admin_role('superadmin', 'admin')
 def admin_create_user(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
-    
     if request.method == 'POST':
         username = request.POST.get('username')
         email = request.POST.get('email')
@@ -97,15 +96,14 @@ def admin_create_user(request):
                 return redirect('dashboard')
         
         messages.success(request, f'{role.capitalize()} account created successfully for {user.get_full_name()}!')
+        log_action(request, 'USER_CREATED', 'User', user.id, user.get_full_name(), {'role': role})
         return redirect('dashboard')
     
     return render(request, 'accounts/admin_create_user.html')
 
 @login_required
+@require_admin_role('superadmin', 'admin', 'registrar', 'data_viewer')
 def admin_manage_users(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
     
     # Get filter parameters
     role_filter = request.GET.get('role', 'all')
@@ -154,10 +152,8 @@ def admin_manage_users(request):
 
 @login_required
 @require_POST
+@require_admin_role('superadmin', 'admin')
 def admin_delete_user(request, user_id):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
     
     user = get_object_or_404(User, id=user_id)
     
@@ -168,7 +164,7 @@ def admin_delete_user(request, user_id):
     
     user_name = user.get_full_name()
     user_role = user.role
-    logger.warning(f'User {user_name} (role={user_role}, id={user_id}) deleted by admin {request.user.username}')
+    log_action(request, 'USER_DELETED', 'User', user_id, user_name, {'role': user_role})
     user.delete()
     
     messages.success(request, f'{user_role.capitalize()} {user_name} has been removed successfully.')
@@ -179,10 +175,8 @@ def admin_delete_user(request, user_id):
         return redirect('dashboard')
 
 @login_required
+@require_admin_role('superadmin', 'admin', 'registrar', 'data_viewer')
 def admin_teachers_list(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
     
     teachers = User.objects.filter(role='teacher').annotate(
         classes_count=Count('classes_taught')
@@ -194,10 +188,8 @@ def admin_teachers_list(request):
     return render(request, 'admin/teachers_list.html', context)
 
 @login_required
+@require_admin_role('superadmin', 'admin', 'registrar', 'data_viewer')
 def admin_teacher_dashboard(request, teacher_id):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
     
     teacher = get_object_or_404(User, id=teacher_id, role='teacher')
     
@@ -235,10 +227,8 @@ def admin_teacher_dashboard(request, teacher_id):
     return render(request, 'admin/teacher_dashboard_view.html', context)
 
 @login_required
+@require_admin_role('superadmin', 'admin')
 def admin_create_class(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
     
     if request.method == 'POST':
         form = ClassForm(request.POST)
@@ -250,6 +240,7 @@ def admin_create_class(request):
             class_obj.teacher = teacher
             class_obj.save()
             messages.success(request, f'Class {class_obj.code} created successfully for {teacher.get_full_name()}!')
+            log_action(request, 'CLASS_CREATED', 'Class', class_obj.id, class_obj.code, {'teacher': teacher.get_full_name()})
             return redirect('dashboard')
         else:
             messages.error(request, 'Please select a teacher.')
@@ -265,10 +256,8 @@ def admin_create_class(request):
     return render(request, 'admin/create_class.html', context)
 
 @login_required
+@require_admin_role('superadmin', 'admin', 'registrar')
 def admin_enroll_student(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
     
     if request.method == 'POST':
         student_ids = request.POST.getlist('student')
@@ -285,6 +274,7 @@ def admin_enroll_student(request):
                     class_obj.students.add(student)
                     enrolled.append(student.get_full_name())
             if enrolled:
+                log_action(request, 'STUDENT_ENROLLED', 'Class', class_obj.id, class_obj.code, {'students': enrolled})
                 messages.success(request, f'Enrolled: {", ".join(enrolled)} into {class_obj.code}.')
             if skipped:
                 messages.warning(request, f'Already enrolled: {", ".join(skipped)}.')
@@ -328,10 +318,8 @@ def admin_enroll_student(request):
     return render(request, 'admin/enroll_student.html', context)
 
 @login_required
+@require_admin_role('superadmin')
 def admin_cleanup_users(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
     
     if request.method == 'POST':
         # Require typed confirmation phrase
@@ -347,7 +335,7 @@ def admin_cleanup_users(request):
         # Delete non-admin users
         deleted_count = User.objects.exclude(role='admin').delete()[0]
         
-        logger.critical(f'MASS DELETION by admin {request.user.username}: {deleted_count} users deleted, {admins_count} admins kept')
+        log_action(request, 'BULK_USER_CLEANUP', 'User', None, f'{deleted_count} users deleted', {'deleted': deleted_count, 'admins_kept': admins_count})
         messages.success(request, f'Cleanup complete! Deleted {deleted_count} users. {admins_count} admin accounts kept safe.')
         return redirect('dashboard')
     
@@ -362,10 +350,8 @@ def admin_cleanup_users(request):
     return render(request, 'admin/cleanup_users.html', context)
 
 @login_required
+@require_admin_role('superadmin')
 def admin_create_superuser(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
     
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -397,8 +383,77 @@ def admin_create_superuser(request):
             profile_completed=True
         )
         
+        log_action(request, 'SUPERUSER_CREATED', 'User', user.id, username)
         logger.warning(f'Superuser {username} created by admin {request.user.username}')
         messages.success(request, f'Superuser {username} created successfully! You can now access Django admin.')
         return redirect('dashboard')
     
     return render(request, 'admin/create_superuser.html')
+
+
+@login_required
+@require_admin_role('superadmin', 'admin', 'registrar', 'data_viewer')
+def admin_audit_log(request):
+    from django.core.paginator import Paginator
+    from accounts.models import AuditLog
+
+    logs = AuditLog.objects.select_related('actor').all()
+
+    action_filter = request.GET.get('action', '')
+    actor_filter = request.GET.get('actor', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+
+    if action_filter:
+        logs = logs.filter(action=action_filter)
+    if actor_filter:
+        logs = logs.filter(actor__id=actor_filter)
+    if date_from:
+        logs = logs.filter(timestamp__date__gte=date_from)
+    if date_to:
+        logs = logs.filter(timestamp__date__lte=date_to)
+
+    paginator = Paginator(logs, 50)
+    page = paginator.get_page(request.GET.get('page', 1))
+
+    context = {
+        'page': page,
+        'action_choices': AuditLog.ACTION_CHOICES,
+        'admins': User.objects.filter(role='admin'),
+        'filters': {
+            'action': action_filter,
+            'actor': actor_filter,
+            'date_from': date_from,
+            'date_to': date_to,
+        },
+    }
+    return render(request, 'admin/audit_log.html', context)
+
+
+@login_required
+@require_admin_role('superadmin')
+def admin_manage_admins(request):
+    if request.method == 'POST':
+        target_id = request.POST.get('user_id')
+        new_tier = request.POST.get('admin_role')
+        valid_tiers = [c[0] for c in User.ADMIN_ROLE_CHOICES]
+
+        if new_tier not in valid_tiers:
+            messages.error(request, 'Invalid admin role.')
+            return redirect('admin_manage_admins')
+
+        target = get_object_or_404(User, id=target_id, role='admin')
+        old_tier = target.admin_role
+        target.admin_role = new_tier
+        target.save()
+        log_action(request, 'USER_ROLE_CHANGED', 'User', target.id, target.get_full_name(),
+                   {'old_admin_role': old_tier, 'new_admin_role': new_tier})
+        messages.success(request, f'{target.get_full_name()} updated to {new_tier}.')
+        return redirect('admin_manage_admins')
+
+    admins = User.objects.filter(role='admin').order_by('last_name', 'first_name')
+    context = {
+        'admins': admins,
+        'tier_choices': User.ADMIN_ROLE_CHOICES,
+    }
+    return render(request, 'admin/manage_admins.html', context)

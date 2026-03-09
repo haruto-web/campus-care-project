@@ -7,6 +7,7 @@ from ml_models.gemini_client import GeminiClient
 from ml_models.utils import get_student_profile_for_intervention
 from accounts.models import User
 from wellness.models import RiskAssessment, Alert, Intervention, WellnessCheckIn, TeacherConcern
+from accounts.utils import log_action
 from django.db.models import Q
 import json
 import logging
@@ -291,6 +292,7 @@ Format: Subject line and email body"""
         
         elif action == 'ask_ai':
             response = client.generate_text(message)
+            log_action(request, 'AI_USED', 'AI', None, 'counselor_chat', {'action': action})
             return JsonResponse({'response': response})
         
         else:
@@ -345,6 +347,7 @@ Write in a conversational, easy-to-read style:
         
         elif action == 'ask_ai':
             response = client.generate_text(message)
+            log_action(request, 'AI_USED', 'AI', None, 'admin_chat', {'action': action})
             return JsonResponse({'response': response})
         
         else:

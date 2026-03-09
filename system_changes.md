@@ -1145,3 +1145,476 @@ All `{% url %}` references to removed URL names **must** be updated or the site 
 
 > [!TIP]
 > All 9 original threats are now addressed. 5 new risks were identified and mitigated. The remaining concern is **Brevo availability** — if the email API goes down, all logins are blocked. This is an acceptable trade-off for an LMS where email verification is critical, but should be monitored.
+
+
+---
+---
+
+# Plan: Admin Audit Logging & Admin Hierarchy
+
+## What Is Audit Logging?
+
+Audit logging is a chronological record of **who did what, when, and to what**. Every meaningful action in the system — creating a user, deleting a class, uploading a CSV, changing a grade — gets written to a tamper-resistant log that only admins can read. It answers:
+
+- "Who deleted that student account?"
+- "When was this CSV uploaded and by which admin?"
+- "Did anyone change this student's grade after the fact?"
+- "Which admin approved this intervention?"
+
+This is different from Django's built-in server logs (which track HTTP requests) or Python's `logging` module (which already exists in `admin_views.py` but only logs to a file). A proper audit log is **stored in the database**, queryable, filterable, and visible in the admin UI.
+
+---
+
+## Why This Project Needs It
+
+The current system already has `logger.warning(...)` calls in `admin_views.py` for deletions and superuser creation — but those logs go to a file that:
+- Admins can't read from the UI
+- Gets wiped on Render redeploys
+- Has no structure (just text strings)
+- Covers only 2 actions out of dozens
+
+With the new admin hierarchy (multiple admins with different roles), knowing **which admin** did what becomes critical.
+
+---
+
+## Part 1: Audit Logging System
+
+### How It Works
+
+```
+Any admin/teacher/counselor action
+        ↓
+AuditLog.objects.create(...)   ← one line in any view
+        ↓
+Stored in DB: who, what, target, IP, timestamp
+        ↓
+Admin reads it at /manage/audit-log/
+```
+
+Every log entry captures:
+- **Actor** — the user who performed the action (FK to User)
+- **Action** — a short code like `USER_CREATED`, `CLASS_DELETED`, `CSV_UPLOADED`
+- **Target type** — what kind of object was affected (User, Class, Assignment, etc.)
+- **Target ID** — the PK of the affected object
+- **Target label** — human-readable name (e.g., "Juan Dela Cruz (student)")
+- **Extra data** — JSON blob for additional context (e.g., old vs new values)
+- **IP address** — from `request.META.get('REMOTE_ADDR')`
+- **Timestamp** — auto-set on creation
+
+### What Gets Logged
+
+| Category | Actions |
+|----------|---------|
+| User Management | User created, user deleted, role changed, password reset, bulk cleanup |
+| Student Registration | CSV uploaded, approved student added/removed, student registered |
+| Class Management | Class created, class deleted, student enrolled/removed |
+| Assignments | Assignment created, deleted, submission graded, grade changed |
+| Attendance | Attendance marked (bulk, per class) |
+| Wellness | Concern submitted, intervention created/updated/resolved, alert resolved |
+| Auth | Login (all roles), failed login attempt, logout, OTP sent |
+| System | Superuser created, report downloaded, AI assistant used |
+
+### New Model: `AuditLog`
+
+#### [NEW] accounts/models.py — Add `AuditLog`
+
+```python
+class AuditLog(models.Model):
+    ACTION_CHOICES = [
+        # User management
+        ('USER_CREATED', 'User Created'),
+        ('USER_DELETED', 'User Deleted'),
+        ('USER_ROLE_CHANGED', 'User Role Changed'),
+        ('USER_PASSWORD_RESET', 'User Password Reset'),
+        ('BULK_USER_CLEANUP', 'Bulk User Cleanup'),
+        # Student registration
+        ('CSV_UPLOADED', 'CSV Uploaded'),
+        ('APPROVED_STUDENT_ADDED', 'Approved Student Added'),
+        ('APPROVED_STUDENT_REMOVED', 'Approved Student Removed'),
+        ('STUDENT_REGISTERED', 'Student Registered'),
+        # Class management
+        ('CLASS_CREATED', 'Class Created'),
+        ('CLASS_DELETED', 'Class Deleted'),
+        ('CLASS_EDITED', 'Class Edited'),
+        ('STUDENT_ENROLLED', 'Student Enrolled'),
+        ('STUDENT_REMOVED_FROM_CLASS', 'Student Removed from Class'),
+        # Assignments
+        ('ASSIGNMENT_CREATED', 'Assignment Created'),
+        ('ASSIGNMENT_DELETED', 'Assignment Deleted'),
+        ('SUBMISSION_GRADED', 'Submission Graded'),
+        ('GRADE_CHANGED', 'Grade Changed'),
+        # Wellness
+        ('CONCERN_SUBMITTED', 'Concern Submitted'),
+        ('INTERVENTION_CREATED', 'Intervention Created'),
+        ('INTERVENTION_UPDATED', 'Intervention Updated'),
+        ('ALERT_RESOLVED', 'Alert Resolved'),
+        # Auth
+        ('LOGIN', 'Login'),
+        ('LOGOUT', 'Logout'),
+        ('LOGIN_FAILED', 'Login Failed'),
+        ('OTP_SENT', 'OTP Sent'),
+        # System
+        ('SUPERUSER_CREATED', 'Superuser Created'),
+        ('REPORT_DOWNLOADED', 'Report Downloaded'),
+        ('AI_USED', 'AI Assistant Used'),
+    ]
+
+    actor = models.ForeignKey(
+        'User', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='audit_logs'
+    )
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    target_type = models.CharField(max_length=50, blank=True)   # e.g. "User", "Class"
+    target_id = models.PositiveIntegerField(null=True, blank=True)
+    target_label = models.CharField(max_length=255, blank=True) # e.g. "Juan Dela Cruz (student)"
+    extra_data = models.JSONField(default=dict, blank=True)     # e.g. {"old_role": "teacher", "new_role": "counselor"}
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['actor']),
+            models.Index(fields=['action']),
+            models.Index(fields=['timestamp']),
+        ]
+
+    def __str__(self):
+        actor_name = self.actor.get_full_name() if self.actor else 'System'
+        return f"[{self.timestamp:%Y-%m-%d %H:%M}] {actor_name} → {self.action} on {self.target_label}"
+```
+
+**Why `SET_NULL` on actor FK:** If an admin account is deleted, the audit logs must be preserved (you can't delete evidence of what they did). The actor becomes `NULL` but the record stays.
+
+**Why JSON `extra_data`:** Different actions need different context. A grade change needs old/new score. A CSV upload needs row counts. A role change needs old/new role. JSON is flexible without requiring separate tables per action type.
+
+### Helper Function
+
+#### [NEW] accounts/utils.py — `log_action()`
+
+```python
+def log_action(request_or_user, action, target_type='', target_id=None, target_label='', extra_data=None, ip=None):
+    from accounts.models import AuditLog
+    from django.http import HttpRequest
+
+    actor = None
+    ip_address = ip
+
+    if isinstance(request_or_user, HttpRequest):
+        actor = request_or_user.user if request_or_user.user.is_authenticated else None
+        ip_address = ip_address or request_or_user.META.get('REMOTE_ADDR')
+    else:
+        actor = request_or_user  # User instance passed directly
+
+    AuditLog.objects.create(
+        actor=actor,
+        action=action,
+        target_type=target_type,
+        target_id=target_id,
+        target_label=target_label,
+        extra_data=extra_data or {},
+        ip_address=ip_address,
+    )
+```
+
+Usage in any view is a single line:
+```python
+log_action(request, 'USER_DELETED', 'User', user.id, user.get_full_name())
+log_action(request, 'SUBMISSION_GRADED', 'Submission', sub.id, f"{sub.student} — {sub.assignment.title}", {'score': score, 'max': total})
+```
+
+### Audit Log Viewer
+
+#### [NEW] URL: `/manage/audit-log/`
+
+#### [NEW] admin_views.py — `admin_audit_log`
+
+```python
+@login_required
+def admin_audit_log(request):
+    if request.user.role != 'admin':
+        return redirect('dashboard')
+
+    logs = AuditLog.objects.select_related('actor').all()
+
+    # Filters
+    action_filter = request.GET.get('action', '')
+    actor_filter = request.GET.get('actor', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+
+    if action_filter:
+        logs = logs.filter(action=action_filter)
+    if actor_filter:
+        logs = logs.filter(actor__id=actor_filter)
+    if date_from:
+        logs = logs.filter(timestamp__date__gte=date_from)
+    if date_to:
+        logs = logs.filter(timestamp__date__lte=date_to)
+
+    # Paginate — 50 per page
+    from django.core.paginator import Paginator
+    paginator = Paginator(logs, 50)
+    page = paginator.get_page(request.GET.get('page', 1))
+
+    context = {
+        'page': page,
+        'action_choices': AuditLog.ACTION_CHOICES,
+        'admins': User.objects.filter(role='admin'),
+        'filters': {'action': action_filter, 'actor': actor_filter, 'date_from': date_from, 'date_to': date_to},
+    }
+    return render(request, 'admin/audit_log.html', context)
+```
+
+The template shows a filterable table: timestamp, actor name + role badge, action badge (color-coded by category), target, IP address, and an expandable row for `extra_data`.
+
+### Where to Add `log_action()` Calls
+
+| File | View | Action Code |
+|------|------|-------------|
+| `admin_views.py` | `admin_create_user` | `USER_CREATED` |
+| `admin_views.py` | `admin_delete_user` | `USER_DELETED` |
+| `admin_views.py` | `admin_cleanup_users` | `BULK_USER_CLEANUP` |
+| `admin_views.py` | `admin_create_superuser` | `SUPERUSER_CREATED` |
+| `admin_views.py` | `admin_upload_students` | `CSV_UPLOADED` |
+| `admin_views.py` | `admin_create_class` | `CLASS_CREATED` |
+| `admin_views.py` | `admin_enroll_student` | `STUDENT_ENROLLED` |
+| `accounts/views.py` | `login_view` (success) | `LOGIN` |
+| `accounts/views.py` | `login_view` (fail) | `LOGIN_FAILED` |
+| `accounts/views.py` | `logout_view` | `LOGOUT` |
+| `accounts/views.py` | `register_view` (success) | `STUDENT_REGISTERED` |
+| `academics/views.py` | `create_assignment` | `ASSIGNMENT_CREATED` |
+| `academics/views.py` | `delete_assignment` | `ASSIGNMENT_DELETED` |
+| `academics/views.py` | `grade_submission` | `SUBMISSION_GRADED` / `GRADE_CHANGED` |
+| `academics/views.py` | `create_class` (teacher) | `CLASS_CREATED` |
+| `academics/views.py` | `manage_students` (remove) | `STUDENT_REMOVED_FROM_CLASS` |
+| `wellness/views.py` | `create_concern` | `CONCERN_SUBMITTED` |
+| `wellness/views.py` | `create_intervention` | `INTERVENTION_CREATED` |
+| `wellness/views.py` | `update_intervention` | `INTERVENTION_UPDATED` |
+| `wellness/views.py` | `resolve_alert` | `ALERT_RESOLVED` |
+| `report_views.py` | `download_report` | `REPORT_DOWNLOADED` |
+| `ai_assistant/views.py` | any AI call | `AI_USED` |
+
+> [!NOTE]
+> `log_action()` is a fire-and-forget call. It should be wrapped in a `try/except` so a logging failure never breaks the actual operation. Alternatively, use Django signals for decoupled logging on model saves/deletes.
+
+---
+
+## Part 2: Admin Hierarchy
+
+### Current State
+
+Right now, `role='admin'` is a single flat role. Every admin has identical access to everything. There's no way to give one admin read-only access or restrict another from deleting users.
+
+### Proposed Admin Sub-Roles
+
+Rather than a complex RBAC (Role-Based Access Control) system, the hierarchy uses **named admin tiers** that map to specific permission sets. This keeps it simple and maintainable.
+
+| Tier | Name | What They Can Do |
+|------|------|-----------------|
+| `superadmin` | Super Admin | Everything — full system access, can manage other admins, can delete admins |
+| `admin` | Admin | All current admin functions EXCEPT: cannot create/delete other admins, cannot view audit log of other admins' actions |
+| `registrar` | Registrar | Upload student CSVs, manage approved students, view enrollment data, view audit log (read-only) |
+| `data_viewer` | Data Viewer | Read-only access to all dashboards, reports, audit log — cannot create, edit, or delete anything |
+
+### New Field on User Model
+
+#### [MODIFY] accounts/models.py — Add `admin_role` to `User`
+
+```python
+ADMIN_ROLE_CHOICES = [
+    ('superadmin', 'Super Admin'),
+    ('admin', 'Admin'),
+    ('registrar', 'Registrar'),
+    ('data_viewer', 'Data Viewer'),
+]
+admin_role = models.CharField(
+    max_length=20,
+    choices=ADMIN_ROLE_CHOICES,
+    blank=True,
+    null=True,
+    help_text='Only applies when role=admin. Defines admin permission tier.'
+)
+```
+
+This field is `null` for all non-admin users. Existing admin accounts get `admin_role='superadmin'` via a data migration so they don't lose access.
+
+### Permission Helper
+
+#### [NEW] accounts/decorators.py — `require_admin_role()`
+
+```python
+from functools import wraps
+from django.shortcuts import redirect
+from django.contrib import messages
+
+def require_admin_role(*allowed_roles):
+    """
+    Usage: @require_admin_role('superadmin', 'admin')
+    Allowed roles: 'superadmin', 'admin', 'registrar', 'data_viewer'
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapper(request, *args, **kwargs):
+            if not request.user.is_authenticated or request.user.role != 'admin':
+                return redirect('dashboard')
+            if request.user.admin_role not in allowed_roles:
+                messages.error(request, 'You do not have permission to access this page.')
+                return redirect('dashboard')
+            return view_func(request, *args, **kwargs)
+        return wrapper
+    return decorator
+```
+
+### Applying the Hierarchy to Existing Views
+
+| View | Current Check | New Check |
+|------|--------------|-----------|
+| `admin_audit_log` | `role != 'admin'` | `@require_admin_role('superadmin', 'admin', 'registrar', 'data_viewer')` |
+| `admin_create_user` | `role != 'admin'` | `@require_admin_role('superadmin', 'admin')` |
+| `admin_delete_user` | `role != 'admin'` | `@require_admin_role('superadmin', 'admin')` |
+| `admin_cleanup_users` | `role != 'admin'` | `@require_admin_role('superadmin')` — superadmin only |
+| `admin_create_superuser` | `role != 'admin'` | `@require_admin_role('superadmin')` — superadmin only |
+| `admin_upload_students` | `role != 'admin'` | `@require_admin_role('superadmin', 'admin', 'registrar')` |
+| `admin_manage_users` | `role != 'admin'` | `@require_admin_role('superadmin', 'admin', 'data_viewer')` |
+| `admin_create_class` | `role != 'admin'` | `@require_admin_role('superadmin', 'admin')` |
+| `admin_enroll_student` | `@require_admin_role('superadmin', 'admin', 'registrar')` |
+| `download_report` | `role != 'admin'` | `@require_admin_role('superadmin', 'admin', 'registrar', 'data_viewer')` |
+
+### Admin Management Page
+
+#### [NEW] URL: `/manage/admins/`
+
+Only `superadmin` can access this. It lists all admin accounts with their `admin_role` and allows:
+- Creating new admin accounts with a specific tier
+- Changing an existing admin's tier
+- Deactivating (not deleting) admin accounts
+
+This replaces the current `admin_create_superuser` flow for admin-tier management.
+
+### Dashboard Sidebar — Role-Aware Navigation
+
+The admin sidebar in `base.html` currently shows all admin links to all admins. With the hierarchy, links are conditionally shown:
+
+```html
+{% if request.user.admin_role == 'superadmin' %}
+    <a href="{% url 'admin_cleanup_users' %}">Cleanup Users</a>
+    <a href="{% url 'admin_create_superuser' %}">Create Superuser</a>
+    <a href="{% url 'admin_manage_admins' %}">Manage Admins</a>
+{% endif %}
+
+{% if request.user.admin_role in 'superadmin,admin' %}
+    <a href="{% url 'admin_create_user' %}">Create User</a>
+    <a href="{% url 'admin_create_class' %}">Create Class</a>
+{% endif %}
+
+{% if request.user.admin_role in 'superadmin,admin,registrar' %}
+    <a href="{% url 'admin_upload_students' %}">Upload Students</a>
+    <a href="{% url 'admin_enroll_student' %}">Enroll Students</a>
+{% endif %}
+
+<!-- All admin tiers see these -->
+<a href="{% url 'admin_manage_users' %}">Manage Users</a>
+<a href="{% url 'admin_audit_log' %}">Audit Log</a>
+<a href="{% url 'download_report' %}">Reports</a>
+```
+
+---
+
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+    subgraph Admin Hierarchy
+        SA[Super Admin]
+        A[Admin]
+        R[Registrar]
+        DV[Data Viewer]
+    end
+
+    subgraph Permissions
+        SA --> P1[All actions]
+        SA --> P2[Manage other admins]
+        SA --> P3[Bulk delete users]
+        SA --> P4[Create superusers]
+        A --> P5[Create/delete users]
+        A --> P6[Manage classes]
+        A --> P7[Upload CSV]
+        A --> P8[View audit log]
+        R --> P7
+        R --> P9[Enroll students]
+        R --> P10[View audit log - read only]
+        DV --> P11[View all dashboards]
+        DV --> P12[Download reports]
+        DV --> P10
+    end
+
+    subgraph Audit Log
+        ANY[Any action by any role] --> AL[AuditLog.objects.create]
+        AL --> DB[(audit_log table)]
+        DB --> VIEW[/manage/audit-log/]
+        VIEW --> FILTER[Filter by actor / action / date]
+    end
+```
+
+---
+
+## Data Migration Plan
+
+1. `makemigrations accounts` — adds `AuditLog` model + `admin_role` field on `User`
+2. `migrate` — creates the table and column
+3. Data migration: set `admin_role='superadmin'` for all existing `role='admin'` users so they don't lose access
+
+```python
+# In a data migration
+def set_existing_admins_as_superadmin(apps, schema_editor):
+    User = apps.get_model('accounts', 'User')
+    User.objects.filter(role='admin').update(admin_role='superadmin')
+```
+
+---
+
+## What This Does NOT Change
+
+| Component | Status |
+|-----------|--------|
+| Student, teacher, counselor roles | Untouched |
+| Existing admin views logic | Untouched (only permission decorator changes) |
+| Dashboard views | Untouched |
+| Wellness, academics, messaging apps | Only `log_action()` calls added — no logic changes |
+| Database schema for other apps | Untouched |
+
+---
+
+## Implementation Order
+
+1. Add `AuditLog` model + `admin_role` field → migration + data migration
+2. Add `log_action()` helper to `accounts/utils.py`
+3. Add `require_admin_role()` decorator to `accounts/decorators.py`
+4. Replace `role != 'admin'` checks in `admin_views.py` with `@require_admin_role(...)`
+5. Add `log_action()` calls to all views in the table above
+6. Build `admin_audit_log` view + `audit_log.html` template
+7. Build `admin_manage_admins` view (superadmin only)
+8. Update admin sidebar in `base.html` to be role-aware
+9. Wrap all `log_action()` calls in `try/except` to prevent logging failures from breaking operations
+
+---
+
+## Security Considerations
+
+| Concern | How It's Handled |
+|---------|-----------------|
+| Admins deleting their own audit logs | `AuditLog` has no delete view — only readable, not editable from UI. Django admin access required to delete. |
+| Privilege escalation | Only `superadmin` can change `admin_role`. Regular admins cannot promote themselves. |
+| Audit log tampering | Logs are append-only from the UI. No edit endpoint exists. |
+| Sensitive data in `extra_data` | Never log passwords, OTP codes, or full session data. Log IDs and labels only. |
+| IP spoofing via `X-Forwarded-For` | Use `REMOTE_ADDR` directly, or configure `TRUSTED_PROXIES` if behind a load balancer (Render uses one). |
+| `data_viewer` seeing sensitive student data | `data_viewer` only accesses existing read-only views — no new data exposure beyond what admins already see. |
+
+---
+
+## Verdict
+
+Both features are fully attainable within this project's existing architecture. The `AuditLog` model is a standard Django model — no new dependencies. The admin hierarchy is a single `CharField` on the existing `User` model plus a decorator. Neither feature requires changes to the student, teacher, or counselor workflows.
+
+The most impactful quick win is adding `log_action()` to `admin_views.py` first (5 views, ~10 lines of code), which immediately gives visibility into the most sensitive admin operations. The hierarchy can be layered on top without disrupting anything already working.

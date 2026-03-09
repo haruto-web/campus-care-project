@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Manage Admins — BrightTrack{% endblock %}
+{% block page_title %}Manage Admins{% endblock %}
+
+{% block content %}
+<div class="bt-card">
+    <p class="text-sm mb-4" style="color:var(--bt-text-muted)">Only Super Admins can access this page. Change the permission tier of any admin account below.</p>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b" style="border-color:var(--bt-border)">
+                    <th class="text-left py-3 px-4 font-semibold" style="color:var(--bt-text-muted)">Admin</th>
+                    <th class="text-left py-3 px-4 font-semibold" style="color:var(--bt-text-muted)">Email</th>
+                    <th class="text-left py-3 px-4 font-semibold" style="color:var(--bt-text-muted)">Current Tier</th>
+                    <th class="text-left py-3 px-4 font-semibold" style="color:var(--bt-text-muted)">Change Tier</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for admin in admins %}
+                <tr class="border-b" style="border-color:var(--bt-border)">
+                    <td class="py-3 px-4 font-medium" style="color:var(--bt-text)">{{ admin.get_full_name }}</td>
+                    <td class="py-3 px-4" style="color:var(--bt-text-muted)">{{ admin.email }}</td>
+                    <td class="py-3 px-4">
+                        <span class="text-xs font-semibold px-2 py-1 rounded
+                            {% if admin.admin_role == 'superadmin' %}bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300
+                            {% elif admin.admin_role == 'admin' %}bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300
+                            {% elif admin.admin_role == 'registrar' %}bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300
+                            {% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                            {{ admin.get_admin_role_display|default:"Not set" }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        {% if admin.id != request.user.id %}
+                        <form method="post" class="flex items-center gap-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="user_id" value="{{ admin.id }}">
+                            <select name="admin_role" class="bt-input text-sm">
+                                {% for code, label in tier_choices %}
+                                <option value="{{ code }}" {% if admin.admin_role == code %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="bt-btn bt-btn-primary text-sm">Save</button>
+                        </form>
+                        {% else %}
+                        <span class="text-xs" style="color:var(--bt-text-muted)">Your account</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="py-12 text-center" style="color:var(--bt-text-muted)">No admin accounts found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

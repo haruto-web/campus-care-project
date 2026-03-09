@@ -34,5 +34,7 @@ urlpatterns = [
     path('manage/enroll-student/', admin_views.admin_enroll_student, name='admin_enroll_student'),
     path('manage/cleanup-users/', admin_views.admin_cleanup_users, name='admin_cleanup_users'),
     path('manage/create-superuser/', admin_views.admin_create_superuser, name='admin_create_superuser'),
+    path('manage/audit-log/', admin_views.admin_audit_log, name='admin_audit_log'),
+    path('manage/admins/', admin_views.admin_manage_admins, name='admin_manage_admins'),
     path('report/download/', report_views.download_report, name='download_report'),
 ]
