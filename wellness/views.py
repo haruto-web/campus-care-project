@@ -60,7 +60,7 @@ def at_risk_students_list(request):
         return redirect('dashboard')
     
     # Get all students with risk assessments
-    risk_assessments = RiskAssessment.objects.select_related('student').order_by('-risk_score')
+    risk_assessments = RiskAssessment.objects.select_related('student').filter(student__role='student').order_by('-risk_score')
     
     # Apply filters
     risk_filter = request.GET.get('risk_level', '')
@@ -239,6 +239,20 @@ def alerts_list(request):
     
     if severity_filter:
         alerts = alerts.filter(severity=severity_filter)
+    
+    # Attach concern description for teacher_concern alerts
+    from wellness.models import TeacherConcern
+    alerts = list(alerts)
+    for alert in alerts:
+        if alert.alert_type == 'teacher_concern':
+            concern = TeacherConcern.objects.filter(
+                student=alert.student
+            ).order_by('-created_at').first()
+            alert.concern_description = concern.description if concern else None
+            alert.concern_teacher = concern.teacher.get_full_name() if concern else None
+            alert.concern_type = concern.get_concern_type_display() if concern else None
+        else:
+            alert.concern_description = None
     
     # Count unread critical/high severity alerts for warning
     critical_unread = Alert.objects.filter(severity='critical', is_read=False, resolved=False).count()
