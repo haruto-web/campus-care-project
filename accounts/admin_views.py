@@ -475,6 +475,55 @@ def admin_upload_students(request):
 
 
 @login_required
+def admin_suspend_approved_student(request, student_id):
+    if request.user.role != 'admin':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    from accounts.models import ApprovedStudent
+    student = get_object_or_404(ApprovedStudent, id=student_id)
+    student.is_suspended = not student.is_suspended
+    student.save()
+    action = 'suspended' if student.is_suspended else 'unsuspended'
+    messages.success(request, f'{student.first_name} {student.last_name} has been {action}.')
+    return redirect('admin_upload_students')
+
+
+@login_required
+def admin_edit_approved_student(request, student_id):
+    if request.user.role != 'admin':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    from accounts.models import ApprovedStudent
+    student = get_object_or_404(ApprovedStudent, id=student_id)
+    if request.method == 'POST':
+        sn = request.POST.get('student_number', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        fn = request.POST.get('first_name', '').strip()
+        ln = request.POST.get('last_name', '').strip()
+        yl = request.POST.get('year_level', '').strip()
+        section = request.POST.get('section', '').strip()
+        if not all([sn, email, fn, ln, yl]):
+            messages.error(request, 'All fields except section are required.')
+        elif not sn.isdigit() or len(sn) != 12:
+            messages.error(request, 'Student number must be exactly 12 digits.')
+        elif yl not in ('7', '8', '9', '10'):
+            messages.error(request, 'Year level must be 7-10.')
+        elif ApprovedStudent.objects.filter(student_number=sn).exclude(id=student_id).exists():
+            messages.error(request, 'Another student with that number already exists.')
+        else:
+            student.student_number = sn
+            student.email = email
+            student.first_name = fn
+            student.last_name = ln
+            student.year_level = yl
+            student.section = section
+            student.save()
+            messages.success(request, f'Student {fn} {ln} updated successfully.')
+        return redirect('admin_upload_students')
+    return redirect('admin_upload_students')
+
+
+@login_required
 def admin_all_classes(request):
     if request.user.role.lower() != 'admin':
         messages.error(request, 'Permission denied.')

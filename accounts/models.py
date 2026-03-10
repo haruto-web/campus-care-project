@@ -84,6 +84,7 @@ class ApprovedStudent(models.Model):
     year_level = models.CharField(max_length=2, choices=User.YEAR_LEVEL_CHOICES)
     section = models.CharField(max_length=50, blank=True)
     is_registered = models.BooleanField(default=False)
+    is_suspended = models.BooleanField(default=False)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

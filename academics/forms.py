@@ -4,9 +4,10 @@ from .models import Class, Announcement, Assignment, Material
 class ClassForm(forms.ModelForm):
     class Meta:
         model = Class
-        fields = ['name', 'section', 'year_level', 'description', 'semester', 'schedule', 'room']
+        fields = ['name', 'code', 'section', 'year_level', 'description', 'semester', 'schedule', 'room']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., MATH-7A'}),
             'section': forms.TextInput(attrs={'class': 'form-control'}),
             'year_level': forms.Select(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),

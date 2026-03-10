@@ -113,6 +113,7 @@
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Grade</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Section</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -124,7 +125,11 @@
                         <td class="px-4 py-3 text-gray-600 dark:text-gray-400">Grade {{ s.year_level }}</td>
                         <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ s.section|default:"--" }}</td>
                         <td class="px-4 py-3">
-                            {% if s.is_registered %}
+                            {% if s.is_suspended %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                                <i class="bi bi-slash-circle"></i> Suspended
+                            </span>
+                            {% elif s.is_registered %}
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                                 <i class="bi bi-check-circle-fill"></i> Registered
                             </span>
@@ -134,7 +139,18 @@
                             </span>
                             {% endif %}
                         </td>
-                    </tr>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-2">
+                            <button onclick="openEdit({{ s.id }}, '{{ s.student_number }}', '{{ s.email }}', '{{ s.first_name|escapejs }}', '{{ s.last_name|escapejs }}', '{{ s.year_level }}', '{{ s.section|escapejs }}')"
+                                class="px-3 py-1 text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition font-medium">Edit</button>
+                            <form method="post" action="{% url 'admin_suspend_approved_student' s.id %}" style="display:inline">
+                                {% csrf_token %}
+                                <button type="submit" class="px-3 py-1 text-xs border rounded-lg transition font-medium {% if s.is_suspended %}bg-green-50 text-green-700 border-green-200 hover:bg-green-100{% else %}bg-red-50 text-red-700 border-red-200 hover:bg-red-100{% endif %}">
+                                    {% if s.is_suspended %}Unsuspend{% else %}Suspend{% endif %}
+                                </button>
+                            </form>
+                            </div>
+                        </td>
                     {% endfor %}
                 </tbody>
             </table>
@@ -159,7 +175,69 @@
     </div>
 </div>
 
+<!-- Edit Modal -->
+<div id="editModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-lg mx-4">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Edit Approved Student</h3>
+        <form method="post" id="editForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Student Number <span class="text-red-500">*</span></label>
+                    <input type="text" name="student_number" id="edit_sn" required inputmode="numeric" maxlength="12" pattern="\d{12}"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Email <span class="text-red-500">*</span></label>
+                    <input type="email" name="email" id="edit_email" required
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">First Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="first_name" id="edit_fn" required
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Last Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="last_name" id="edit_ln" required
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Year Level <span class="text-red-500">*</span></label>
+                    <select name="year_level" id="edit_yl" required
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="7">Grade 7</option>
+                        <option value="8">Grade 8</option>
+                        <option value="9">Grade 9</option>
+                        <option value="10">Grade 10</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Section <span class="text-gray-400">(optional)</span></label>
+                    <input type="text" name="section" id="edit_section"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-5">
+                <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+function openEdit(id, sn, email, fn, ln, yl, section) {
+    document.getElementById('editForm').action = '/manage/approved-student/' + id + '/edit/';
+    document.getElementById('edit_sn').value = sn;
+    document.getElementById('edit_email').value = email;
+    document.getElementById('edit_fn').value = fn;
+    document.getElementById('edit_ln').value = ln;
+    document.getElementById('edit_yl').value = yl;
+    document.getElementById('edit_section').value = section;
+    document.getElementById('editModal').classList.remove('hidden');
+}
 (function() {
     var csvTab = document.getElementById('tab-csv');
     var manualTab = document.getElementById('tab-manual');
