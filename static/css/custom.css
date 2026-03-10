@@ -1,30 +1,30 @@
 :root {
     /* Primary Colors */
-    --primary: #4A90E2;
-    --primary-dark: #357ABD;
-    --primary-light: #6FA8E8;
-    --primary-bg: #E8F2FC;
+    --primary: #4338ca;
+    --primary-dark: #3730a3;
+    --primary-light: #818cf8;
+    --primary-bg: #eef2ff;
     
     /* Secondary */
-    --secondary: #7B68EE;
-    --secondary-dark: #5D4EC9;
-    --secondary-light: #9B88F3;
+    --secondary: #5b21b6;
+    --secondary-dark: #4c1d95;
+    --secondary-light: #8b5cf6;
     
     /* Status Colors */
-    --success: #50C878;
-    --success-dark: #3DA860;
-    --warning: #FFB347;
-    --warning-dark: #E69A2E;
-    --danger: #E74C3C;
-    --danger-dark: #C0392B;
-    --info: #5DADE2;
+    --success: #059669;
+    --success-dark: #047857;
+    --warning: #d97706;
+    --warning-dark: #b45309;
+    --danger: #dc2626;
+    --danger-dark: #b91c1c;
+    --info: #2563eb;
     
     /* Neutrals */
-    --background: #F8F9FA;
-    --surface: #FFFFFF;
-    --text-primary: #2C3E50;
-    --text-secondary: #7F8C8D;
-    --border: #E1E8ED;
+    --background: #f8fafc;
+    --surface: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
 }
 
 /* Override Bootstrap colors */
@@ -58,77 +58,29 @@
     border-color: var(--success-dark) !important;
 }
 
-.bg-primary {
-    background-color: var(--primary) !important;
-}
+.bg-primary { background-color: var(--primary) !important; }
+.bg-success { background-color: var(--success) !important; }
+.bg-warning { background-color: var(--warning) !important; }
+.bg-danger  { background-color: var(--danger) !important; }
+.bg-info    { background-color: var(--info) !important; }
 
-.bg-success {
-    background-color: var(--success) !important;
-}
+.text-primary { color: var(--primary) !important; }
+.text-success { color: var(--success) !important; }
 
-.bg-warning {
-    background-color: var(--warning) !important;
-}
+.badge.bg-primary { background-color: var(--primary) !important; }
+.badge.bg-success { background-color: var(--success) !important; }
+.badge.bg-danger  { background-color: var(--danger) !important; }
+.badge.bg-info    { background-color: var(--info) !important; }
+.badge.bg-warning { background-color: var(--warning) !important; }
 
-.bg-danger {
-    background-color: var(--danger) !important;
-}
+.navbar-dark { background-color: var(--primary) !important; }
 
-.bg-info {
-    background-color: var(--info) !important;
-}
+.card-header.bg-primary { background-color: var(--primary) !important; }
+.card-header.bg-success { background-color: var(--success) !important; }
+.card-header.bg-warning { background-color: var(--warning) !important; }
+.card-header.bg-danger  { background-color: var(--danger) !important; }
 
-.text-primary {
-    color: var(--primary) !important;
-}
-
-.text-success {
-    color: var(--success) !important;
-}
-
-.badge.bg-primary {
-    background-color: var(--primary) !important;
-}
-
-.badge.bg-success {
-    background-color: var(--success) !important;
-}
-
-.badge.bg-danger {
-    background-color: var(--danger) !important;
-}
-
-.badge.bg-info {
-    background-color: var(--info) !important;
-}
-
-.badge.bg-warning {
-    background-color: var(--warning) !important;
-}
-
-.navbar-dark {
-    background-color: var(--primary) !important;
-}
-
-.card-header.bg-primary {
-    background-color: var(--primary) !important;
-}
-
-.card-header.bg-success {
-    background-color: var(--success) !important;
-}
-
-.card-header.bg-warning {
-    background-color: var(--warning) !important;
-}
-
-.card-header.bg-danger {
-    background-color: var(--danger) !important;
-}
-
-.progress-bar.bg-success {
-    background-color: var(--success) !important;
-}
+.progress-bar.bg-success { background-color: var(--success) !important; }
 
 .alert-success {
     background-color: var(--primary-bg);
@@ -137,43 +89,19 @@
 }
 
 .list-group-item-warning {
-    background-color: #FFF4E5;
+    background-color: #fffbeb;
     border-color: var(--warning);
 }
 
-/* Custom styles */
-.stat-card.bg-danger {
-    background-color: var(--danger) !important;
-}
+.stat-card.bg-danger  { background-color: var(--danger) !important; }
+.stat-card.bg-warning { background-color: var(--warning) !important; }
+.stat-card.bg-info    { background-color: var(--info) !important; }
 
-.stat-card.bg-warning {
-    background-color: var(--warning) !important;
-}
+.feature-icon { background-color: var(--primary-bg) !important; }
+.feature-icon i { color: var(--primary) !important; }
 
-.stat-card.bg-info {
-    background-color: var(--info) !important;
-}
+.hero-subtitle { color: var(--primary) !important; }
+.cta-section   { background-color: var(--primary) !important; }
 
-.feature-icon {
-    background-color: var(--primary-bg) !important;
-}
-
-.feature-icon i {
-    color: var(--primary) !important;
-}
-
-.hero-subtitle {
-    color: var(--primary) !important;
-}
-
-.cta-section {
-    background-color: var(--primary) !important;
-}
-
-a {
-    color: var(--primary);
-}
-
-a:hover {
-    color: var(--primary-dark);
-}
+a       { color: var(--primary); }
+a:hover { color: var(--primary-dark); }
