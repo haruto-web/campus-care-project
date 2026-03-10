@@ -869,7 +869,9 @@ def student_profile_view(request, student_id):
     # Calculate attendance rate
     attendance_records = Attendance.objects.filter(student=student)
     if attendance_records.exists():
-        attendance_rate = round((attendance_records.filter(status='present').count() / attendance_records.count()) * 100, 1)
+        total = attendance_records.count()
+        present_or_late = attendance_records.filter(status__in=['present', 'late']).count()
+        attendance_rate = round((present_or_late / total) * 100, 1)
     else:
         attendance_rate = None
     
@@ -960,10 +962,12 @@ def students_list_view(request):
     students_data = []
     for student in students:
         risk_assessment = RiskAssessment.objects.filter(student=student).order_by('-date').first()
-        attendance_records = Attendance.objects.filter(student=student)
+        attendance_records = Attendance.objects.filter(student=student, class_obj__in=my_classes)
         
         if attendance_records.exists():
-            attendance_rate = round((attendance_records.filter(status='present').count() / attendance_records.count()) * 100, 1)
+            total = attendance_records.count()
+            present_or_late = attendance_records.filter(status__in=['present', 'late']).count()
+            attendance_rate = round((present_or_late / total) * 100, 1)
         else:
             attendance_rate = None
         
