@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="space-y-6">
-    <h2 class="text-3xl font-bold text-gray-800">🤖 BT AI Assistant</h2>
+    <h2 class="text-3xl font-bold text-gray-800">BT AI Assistant</h2>
     
     <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg p-6 text-white">
         <div class="flex items-center space-x-4">
@@ -90,7 +90,7 @@
         <!-- Chat Area -->
         <div class="lg:col-span-2 bg-white rounded-lg shadow">
             <div class="bg-purple-600 text-white px-6 py-4 rounded-t-lg">
-                <h3 class="text-lg font-semibold">💬 Chat with BT</h3>
+                <h3 class="text-lg font-semibold">Chat with BT</h3>
             </div>
             <div class="flex flex-col" style="height: 600px;">
                 <!-- Chat Messages -->
@@ -258,12 +258,14 @@ function displayStudentResults(students) {
         } else if (s.risk_level === 'medium') {
             riskBadge = '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-semibold ml-2">Medium</span>';
         }
+        const hasIv = s.has_intervention;
+        const ivBadge = hasIv ? '<span class="px-2 py-1 bg-gray-200 text-gray-600 rounded text-xs font-semibold ml-2"><i class="bi bi-lock-fill"></i> Has Intervention</span>' : '';
         
         return `
-        <div class="p-3 border border-gray-200 rounded-lg hover:bg-purple-50 cursor-pointer transition" onclick="selectStudent(${s.id}, \`${s.name.replace(/`/g, '')}\`)">
+        <div class="p-3 border border-gray-200 rounded-lg transition ${hasIv ? 'opacity-60 cursor-not-allowed bg-gray-50' : 'hover:bg-purple-50 cursor-pointer'}" ${hasIv ? '' : `onclick="selectStudent(${s.id}, \`${s.name.replace(/\`/g, '')}\`)"`}>
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="font-semibold text-gray-800 text-sm">${s.name}${riskBadge}</p>
+                    <p class="font-semibold text-gray-800 text-sm">${s.name}${riskBadge}${ivBadge}</p>
                     <p class="text-xs text-gray-500">${s.email}</p>
                 </div>
                 <div class="text-right">
@@ -297,15 +299,18 @@ function selectStudent(studentId, studentName) {
     })
     .then(response => response.json())
     .then(data => {
-        let response = data.response + '<br><br><strong>Recommendations:</strong><ul class="list-disc ml-4 mt-2">';
-        if (Array.isArray(data.recommendations)) {
+        let response = data.response;
+        if (Array.isArray(data.recommendations) && data.recommendations.length) {
+            response += '<br><br><strong>Recommendations:</strong>';
             data.recommendations.forEach(rec => {
-                const text = typeof rec === 'string' ? rec : (rec.recommendation || JSON.stringify(rec));
-                response += `<li>${text}</li>`;
+                if (typeof rec === 'string') {
+                    response += `<div class="flex items-start gap-2 ml-2 mt-1"><span class="text-purple-500">•</span><span>${rec}</span></div>`;
+                } else {
+                    const rate = rec.success_probability ? ` <span class="text-xs text-gray-400">(${Math.round(rec.success_probability * 100)}% success rate)</span>` : '';
+                    response += `<div class="mt-2 ml-2"><p class="font-semibold text-gray-800">${rec.type || ''}` + rate + `</p><p class="text-sm text-gray-600 ml-2">${rec.reasoning || ''}</p></div>`;
+                }
             });
         }
-        response += '</ul>';
-        
         addMessage(response, false);
 
         if (data.intervention_created && data.intervention_id) {

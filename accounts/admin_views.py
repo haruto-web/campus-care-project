@@ -167,7 +167,7 @@ def admin_delete_user(request, user_id):
     if user_role == 'teacher':
         return redirect('admin_teachers_list')
     else:
-        return redirect('dashboard')
+        return redirect('admin_manage_users')
 
 @login_required
 def admin_teachers_list(request):

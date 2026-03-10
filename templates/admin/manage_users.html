@@ -152,7 +152,16 @@
 <script>
 function confirmDelete(userId, userName, userRole) {
     if (confirm(`Are you sure you want to remove ${userName} (${userRole})? This will delete their account and all associated data.`)) {
-        window.location.href = `/manage/user/${userId}/delete/`;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/manage/user/${userId}/delete/`;
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = 'csrfmiddlewaretoken';
+        csrf.value = '{{ csrf_token }}';
+        form.appendChild(csrf);
+        document.body.appendChild(form);
+        form.submit();
     }
 }
 </script>

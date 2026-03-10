@@ -8,65 +8,30 @@
         <!-- Statistics Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-white rounded-xl shadow-md p-4 border-l-4 border-blue-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600">Total Students</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ total_students }}</p>
-                    </div>
-                    <div class="bg-blue-100 p-3 rounded-lg">
-                        <i class="bi bi-people text-blue-600 text-2xl"></i>
-                    </div>
-                </div>
+                <p class="text-sm text-gray-600">Total Students</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_students }}</p>
             </div>
             
             <div class="bg-white rounded-xl shadow-md p-4 border-l-4 border-red-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600">High Risk Students</p>
-                        <p class="text-2xl font-bold text-red-600">{{ high_risk_count }}</p>
-                    </div>
-                    <div class="bg-red-100 p-3 rounded-lg">
-                        <i class="bi bi-exclamation-triangle text-red-600 text-2xl"></i>
-                    </div>
-                </div>
+                <p class="text-sm text-gray-600">High Risk Students</p>
+                <p class="text-2xl font-bold text-red-600">{{ high_risk_count }}</p>
             </div>
             
             <div class="bg-white rounded-xl shadow-md p-4 border-l-4 border-orange-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600">Unresolved Alerts</p>
-                        <p class="text-2xl font-bold text-orange-600">{{ unresolved_alerts }}</p>
-                    </div>
-                    <div class="bg-orange-100 p-3 rounded-lg">
-                        <i class="bi bi-bell text-orange-600 text-2xl"></i>
-                    </div>
-                </div>
+                <p class="text-sm text-gray-600">Unresolved Alerts</p>
+                <p class="text-2xl font-bold text-orange-600">{{ unresolved_alerts }}</p>
             </div>
             
             <div class="bg-white rounded-xl shadow-md p-4 border-l-4 border-purple-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600">Pending Sessions</p>
-                        <p class="text-2xl font-bold text-purple-600">{{ pending_interventions }}</p>
-                    </div>
-                    <div class="bg-purple-100 p-3 rounded-lg">
-                        <i class="bi bi-calendar-check text-purple-600 text-2xl"></i>
-                    </div>
-                </div>
+                <p class="text-sm text-gray-600">Pending Sessions</p>
+                <p class="text-2xl font-bold text-purple-600">{{ pending_interventions }}</p>
             </div>
         </div>
 
         <!-- Header -->
         <div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-2xl shadow-lg p-8 text-white">
-            <div class="flex items-center space-x-4">
-                <div class="bg-white/20 backdrop-blur-sm p-4 rounded-xl">
-                    <i class="bi bi-clipboard-plus text-4xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-3xl font-bold">Create Intervention</h1>
-                    <p class="text-purple-100 mt-1">Schedule a support session for a student</p>
-                </div>
-            </div>
+            <h1 class="text-3xl font-bold">Create Intervention</h1>
+            <p class="text-purple-100 mt-1">Schedule a support session for a student</p>
         </div>
 
         <!-- Form Card -->
@@ -74,37 +39,26 @@
             <!-- AI Recommendations Section -->
             {% if ai_recommendations %}
             <div class="mb-8 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6">
-                <div class="flex items-center space-x-3 mb-4">
-                    <div class="bg-purple-600 p-3 rounded-lg">
-                        <i class="bi bi-robot text-white text-2xl"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-900">AI-Recommended Interventions</h3>
-                        <p class="text-sm text-gray-600">For {{ selected_student.get_full_name }}</p>
-                    </div>
+                <div class="mb-4">
+                    <h3 class="text-xl font-bold text-gray-900">AI-Recommended Interventions</h3>
+                    <p class="text-sm text-gray-600">For {{ selected_student.get_full_name }}</p>
                 </div>
                 
                 <div class="space-y-3">
                     {% for rec in ai_recommendations %}
                     <div class="bg-white rounded-lg p-4 border border-purple-200 hover:shadow-md transition">
                         <div class="flex items-start justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <i class="bi bi-lightbulb-fill text-yellow-500 text-xl"></i>
-                                <h4 class="font-semibold text-gray-900">{{ rec.type }}</h4>
-                            </div>
+                            <h4 class="font-semibold text-gray-900">{{ rec.type }}</h4>
                             <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
                                 {{ rec.success_probability|floatformat:0 }}% Success Rate
                             </span>
                         </div>
-                        <p class="text-sm text-gray-600 ml-7">{{ rec.reasoning }}</p>
+                        <p class="text-sm text-gray-600 mt-1">{{ rec.reasoning }}</p>
                     </div>
                     {% endfor %}
                 </div>
                 
-                <div class="mt-4 flex items-center space-x-2 text-sm text-gray-500">
-                    <i class="bi bi-info-circle"></i>
-                    <span>These recommendations are AI-generated based on student data and past intervention success rates.</span>
-                </div>
+                <p class="mt-4 text-sm text-gray-500">These recommendations are AI-generated based on student data and past intervention success rates.</p>
             </div>
             {% endif %}
             
@@ -115,9 +69,7 @@
                 {% if selected_student %}
                 <!-- Pre-selected Student (Hidden Field) -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="bi bi-person-circle text-purple-600"></i> Student
-                    </label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Student</label>
                     <div class="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-300 rounded-xl">
                         <div class="flex items-center space-x-3">
                             <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full flex items-center justify-center text-white font-semibold text-lg">
@@ -130,26 +82,31 @@
                     </div>
                     <input type="hidden" name="student" value="{{ selected_student.id }}">
                 </div>
+                {% if selected_student.id in scheduled_student_ids %}
+                <div class="p-4 bg-red-50 border-2 border-red-300 rounded-xl text-red-800 text-sm font-medium">
+                    <i class="bi bi-exclamation-triangle-fill mr-2"></i>
+                    {{ selected_student.get_full_name }} already has a scheduled intervention. You cannot create another until it is completed or cancelled.
+                </div>
+                <script>document.getElementById('interventionForm').querySelector('[type=submit]').disabled = true;</script>
+                {% endif %}
                 {% else %}
                 <!-- Student Search -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="bi bi-person-circle text-purple-600"></i> Student *
-                    </label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Student *</label>
                     
                     <!-- Filter Buttons -->
                     <div class="flex flex-wrap gap-2 mb-3">
                         <button type="button" onclick="filterStudents('all')" 
                                 class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
-                            <i class="bi bi-people"></i> All Students
+                            All Students
                         </button>
                         <button type="button" onclick="filterStudents('high')" 
                                 class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 transition">
-                            <i class="bi bi-exclamation-triangle-fill"></i> High Risk
+                            High Risk
                         </button>
                         <button type="button" onclick="filterStudents('medium')" 
                                 class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition">
-                            <i class="bi bi-exclamation-circle-fill"></i> Medium Risk
+                            Medium Risk
                         </button>
                         <select id="yearLevelFilter" onchange="filterByYearLevel()" 
                                 class="px-4 py-2 rounded-lg text-sm font-medium border-2 border-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
@@ -179,9 +136,7 @@
 
                 <!-- Intervention Type -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="bi bi-tag text-purple-600"></i> Intervention Type *
-                    </label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Intervention Type *</label>
                     <select name="intervention_type" required
                             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
                         <option value="">Select intervention type</option>
@@ -199,9 +154,7 @@
 
                 <!-- Description -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="bi bi-file-text text-purple-600"></i> Description *
-                    </label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Description *</label>
                     <textarea name="description" rows="4" required
                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition resize-none"
                               placeholder="Describe the purpose and goals of this intervention..."></textarea>
@@ -215,9 +168,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Scheduled Date & Time -->
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="bi bi-calendar-event text-purple-600"></i> Scheduled Date & Time *
-                        </label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Scheduled Date & Time *</label>
                         <input type="datetime-local" name="scheduled_date" required
                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
                         {% if form.scheduled_date.errors %}
@@ -227,9 +178,7 @@
 
                     <!-- Status -->
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="bi bi-check-circle text-purple-600"></i> Status *
-                        </label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
                         <select name="status" required
                                 class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
                             <option value="scheduled">Scheduled</option>
@@ -244,9 +193,7 @@
 
                 <!-- Notes -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="bi bi-sticky text-purple-600"></i> Notes
-                    </label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Notes</label>
                     <textarea name="notes" rows="3"
                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition resize-none"
                               placeholder="Additional notes or preparation details..."></textarea>
@@ -258,9 +205,7 @@
 
                 <!-- Outcome -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="bi bi-clipboard-check text-purple-600"></i> Outcome
-                    </label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Outcome</label>
                     <textarea name="outcome" rows="3"
                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition resize-none"
                               placeholder="Results and follow-up actions (fill after completion)..."></textarea>
@@ -274,11 +219,11 @@
                 <div class="flex flex-col sm:flex-row gap-3 pt-4">
                     <button type="submit" 
                             class="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transform hover:-translate-y-0.5 transition duration-200 shadow-lg hover:shadow-xl">
-                        <i class="bi bi-check-circle"></i> Create Intervention
+                        Create Intervention
                     </button>
                     <a href="{% url 'wellness:interventions_list' %}" 
                        class="flex-1 bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transform hover:-translate-y-0.5 transition duration-200 text-center">
-                        <i class="bi bi-x-circle"></i> Cancel
+                        Cancel
                     </a>
                 </div>
             </form>
@@ -296,6 +241,7 @@ const yearLevelFilter = document.getElementById('yearLevelFilter');
 let students = [];
 let currentFilter = 'all';
 let currentYearLevel = '';
+const scheduledIds = new Set({{ scheduled_student_ids|safe }});
 
 // Fetch all students on page load
 fetch('{% url "wellness:api_students" %}')
@@ -310,6 +256,12 @@ fetch('{% url "wellness:api_students" %}')
         });
     })
     .catch(error => console.error('Error loading students:', error));
+
+function getScheduledBadge(id) {
+    return scheduledIds.has(id)
+        ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-600"><i class="bi bi-lock-fill"></i> Has Intervention</span>'
+        : '';
+}
 
 function getRiskBadge(riskLevel) {
     if (riskLevel === 'high') {
@@ -371,10 +323,12 @@ function displayFilteredStudents() {
     
     if (filtered.length > 0) {
         searchResults.innerHTML = filtered.slice(0, 50).map(student => {
-            const bgClass = student.risk_level === 'high' ? 'bg-red-50 border-l-4 border-red-500' : 
+            const isScheduled = scheduledIds.has(student.id);
+            const bgClass = isScheduled ? 'bg-gray-50 opacity-60' :
+                           student.risk_level === 'high' ? 'bg-red-50 border-l-4 border-red-500' : 
                            student.risk_level === 'medium' ? 'bg-yellow-50 border-l-4 border-yellow-500' : '';
             return `
-                <div class="px-4 py-3 hover:bg-purple-50 cursor-pointer border-b border-gray-100 transition duration-150 ${bgClass}" data-id="${student.id}">
+                <div class="px-4 py-3 border-b border-gray-100 transition duration-150 ${bgClass} ${isScheduled ? 'cursor-not-allowed' : 'hover:bg-purple-50 cursor-pointer'}" ${isScheduled ? '' : `data-id="${student.id}"`}>
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
                             <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full flex items-center justify-center text-white font-semibold">
@@ -386,6 +340,7 @@ function displayFilteredStudents() {
                             </div>
                         </div>
                         <div class="flex flex-col items-end space-y-1">
+                            ${getScheduledBadge(student.id)}
                             ${getRiskBadge(student.risk_level)}
                             ${getYearLevelBadge(student.year_level)}
                         </div>
@@ -428,10 +383,12 @@ searchInput.addEventListener('input', function() {
     
     if (filtered.length > 0) {
         searchResults.innerHTML = filtered.map(student => {
-            const bgClass = student.risk_level === 'high' ? 'bg-red-50 border-l-4 border-red-500' : 
+            const isScheduled = scheduledIds.has(student.id);
+            const bgClass = isScheduled ? 'bg-gray-50 opacity-60' :
+                           student.risk_level === 'high' ? 'bg-red-50 border-l-4 border-red-500' : 
                            student.risk_level === 'medium' ? 'bg-yellow-50 border-l-4 border-yellow-500' : '';
             return `
-                <div class="px-4 py-3 hover:bg-purple-50 cursor-pointer border-b border-gray-100 transition duration-150 ${bgClass}" data-id="${student.id}">
+                <div class="px-4 py-3 border-b border-gray-100 transition duration-150 ${bgClass} ${isScheduled ? 'cursor-not-allowed' : 'hover:bg-purple-50 cursor-pointer'}" ${isScheduled ? '' : `data-id="${student.id}"`}>
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
                             <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full flex items-center justify-center text-white font-semibold">
@@ -443,6 +400,7 @@ searchInput.addEventListener('input', function() {
                             </div>
                         </div>
                         <div class="flex flex-col items-end space-y-1">
+                            ${getScheduledBadge(student.id)}
                             ${getRiskBadge(student.risk_level)}
                             ${getYearLevelBadge(student.year_level)}
                         </div>

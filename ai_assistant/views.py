@@ -56,6 +56,8 @@ def counselor_chat(request):
                 
                 # Auto-create intervention
                 from datetime import timedelta
+                if Intervention.objects.filter(student=student, status='scheduled').exists():
+                    return JsonResponse({'response': f'{student.get_full_name()} already has a scheduled intervention.', 'intervention_created': False})
                 intervention = Intervention.objects.create(
                     student=student,
                     counselor=request.user,

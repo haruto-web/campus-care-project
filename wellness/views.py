@@ -131,6 +131,9 @@ def create_intervention(request, student_id=None):
         if form.is_valid():
             intervention = form.save(commit=False)
             intervention.counselor = request.user
+            if Intervention.objects.filter(student=intervention.student, status='scheduled').exists():
+                messages.error(request, f'{intervention.student.get_full_name()} already has a scheduled intervention.')
+                return redirect('wellness:interventions_list')
             intervention.save()
             
             # Mark related alerts as resolved when intervention is created
@@ -150,6 +153,11 @@ def create_intervention(request, student_id=None):
         
         form.fields['student'].queryset = User.objects.filter(role='student')
     
+    # Students with existing scheduled interventions
+    scheduled_student_ids = set(
+        Intervention.objects.filter(status='scheduled').values_list('student_id', flat=True)
+    )
+
     # Statistics
     total_students = User.objects.filter(role='student').count()
     high_risk_count = RiskAssessment.objects.filter(risk_level='high').values('student').distinct().count()
@@ -164,6 +172,7 @@ def create_intervention(request, student_id=None):
         'pending_interventions': pending_interventions,
         'ai_recommendations': ai_recommendations,
         'selected_student': selected_student,
+        'scheduled_student_ids': list(scheduled_student_ids),
     }
     return render(request, 'wellness/create_intervention.html', context)
 
@@ -562,9 +571,12 @@ def api_students(request):
         'id', 'first_name', 'last_name', 'email', 'year_level', 'section', 'gender'
     )
     
+    scheduled_ids = set(
+        Intervention.objects.filter(status='scheduled').values_list('student_id', flat=True)
+    )
+    
     students_list = []
     for s in students:
-        # Get risk level for student
         try:
             risk_assessment = RiskAssessment.objects.filter(student_id=s['id']).latest('date')
             risk_level = risk_assessment.risk_level
@@ -578,7 +590,8 @@ def api_students(request):
             'year_level': s['year_level'],
             'section': s.get('section', ''),
             'gender': s.get('gender', ''),
-            'risk_level': risk_level
+            'risk_level': risk_level,
+            'has_intervention': s['id'] in scheduled_ids,
         })
     
     return JsonResponse(students_list, safe=False)
