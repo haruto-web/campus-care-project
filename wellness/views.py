@@ -135,7 +135,10 @@ def create_intervention(request, student_id=None):
                 messages.error(request, f'{intervention.student.get_full_name()} already has a scheduled intervention.')
                 return redirect('wellness:interventions_list')
             intervention.save()
-            
+
+            # Mark teacher concerns for this student as resolved
+            TeacherConcern.objects.filter(student=intervention.student, resolved=False).update(resolved=True)
+
             # Mark related alerts as resolved when intervention is created
             Alert.objects.filter(
                 student=intervention.student,
