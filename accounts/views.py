@@ -63,7 +63,14 @@ def notifications_poll(request):
     else:
         data['alerts'] = 0
 
-    data['total'] = data['messages'] + data['announcements'] + data['grades'] + data['alerts']
+    # Unread student notifications (intervention / concern)
+    if user.role == 'student':
+        from wellness.models import Notification as StudentNotif
+        data['notifications'] = StudentNotif.objects.filter(recipient=user, is_read=False).count()
+    else:
+        data['notifications'] = 0
+
+    data['total'] = data['messages'] + data['announcements'] + data['grades'] + data['alerts'] + data['notifications']
     return JsonResponse(data)
 
 

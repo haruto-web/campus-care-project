@@ -306,11 +306,12 @@ function selectStudent(studentId, studentName) {
         }
         response += '</ul>';
         
-        if (data.intervention_created) {
-            response += '<br><div class="mt-3 p-3 bg-green-100 border border-green-300 rounded-lg text-green-800 text-sm">✅ <strong>Intervention auto-created!</strong> Check the Alerts page to review details.</div>';
-        }
-        
         addMessage(response, false);
+
+        if (data.intervention_created && data.intervention_id) {
+            showInterventionCard(data.intervention_id);
+        }
+
         currentAction = null;
     })
     .catch(error => {
@@ -721,6 +722,44 @@ function sendMessage() {
     }
 }
 
+function showInterventionCard(interventionId) {
+    fetch('/ai/counselor/chat/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken},
+        body: JSON.stringify({action: 'get_intervention', intervention_id: interventionId})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.intervention) return;
+        const iv = data.intervention;
+        const uid = 'iv_' + interventionId;
+        const chatMessages = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = 'flex items-start';
+        div.innerHTML = `
+            <div class="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">BT</div>
+            <div class="ml-3 max-w-2xl w-full">
+                <div class="bg-green-50 border border-green-300 rounded-lg overflow-hidden">
+                    <button onclick="document.getElementById('${uid}').classList.toggle('hidden')" class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-green-100 transition">
+                        <span class="font-semibold text-green-800 text-sm">✅ Intervention Created — ${iv.student} <span class="font-normal text-green-600">(${iv.type})</span></span>
+                        <i class="bi bi-chevron-down text-green-600"></i>
+                    </button>
+                    <div id="${uid}" class="hidden px-4 pb-4 text-sm text-gray-700 space-y-2 border-t border-green-200 pt-3">
+                        <p><span class="font-medium">Student:</span> ${iv.student}</p>
+                        <p><span class="font-medium">Type:</span> ${iv.type}</p>
+                        <p><span class="font-medium">Scheduled:</span> ${iv.scheduled_date}</p>
+                        <p><span class="font-medium">Status:</span> ${iv.status}</p>
+                        <p><span class="font-medium">Description:</span> ${iv.description}</p>
+                        <a href="/wellness/intervention/${interventionId}/update/" class="inline-block mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">Edit Intervention</a>
+                    </div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+}
+
 document.getElementById('userInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         sendMessage();
@@ -747,30 +786,12 @@ function autoCreateInterventions() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            let html = `
-            <div class="bg-green-50 border-2 border-green-300 rounded-lg p-4">
-                <div class="flex items-center space-x-3 mb-2">
-                    <div class="bg-green-500 text-white rounded-full p-2">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                        </svg>
-                    </div>
-                    <h4 class="text-lg font-bold text-green-800">✅ Auto-Intervention Complete!</h4>
-                </div>
-                <p class="text-green-700 font-semibold text-lg">${data.message}</p>
-                <p class="text-green-600 text-sm mt-2">Check the <a href="/wellness/interventions/" class="underline font-semibold">Interventions page</a> and <a href="/wellness/alerts/" class="underline font-semibold">Alerts page</a> to review all created interventions.</p>
-            </div>
-            `;
-            
-            const chatMessages = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'flex items-start';
-            messageDiv.innerHTML = `
-                <div class="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">BT</div>
-                <div class="ml-3 max-w-2xl">${html}</div>
-            `;
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            addMessage(`✅ ${data.message} — expanding all created interventions below...`, false);
+            if (data.intervention_ids && data.intervention_ids.length) {
+                data.intervention_ids.forEach(id => showInterventionCard(id));
+            } else {
+                addMessage('View them on the <a href="/wellness/interventions/" class="underline text-blue-600">Interventions page</a>.', false);
+            }
         } else {
             addMessage('Error creating interventions. Please try again.', false);
         }

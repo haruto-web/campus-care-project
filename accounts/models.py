@@ -70,7 +70,7 @@ class OTPCode(models.Model):
         return cls.objects.create(contact_value=email, code=code)
 
     def is_valid(self):
-        return not self.is_used and timezone.now() < self.created_at + timedelta(minutes=10)
+        return not self.is_used and timezone.now() < self.created_at + timedelta(minutes=3)
 
     def __str__(self):
         return f"{self.contact_value} → {self.code}"

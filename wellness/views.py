@@ -527,6 +527,16 @@ def generate_report(request):
     return response
 
 @login_required
+def mark_notifications_read(request):
+    from django.http import JsonResponse
+    if request.user.role != 'student':
+        return JsonResponse({'ok': False}, status=403)
+    from .models import Notification
+    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'ok': True})
+
+
+@login_required
 def api_students(request):
     """API endpoint to get all students for search"""
     if request.user.role not in ['counselor', 'admin', 'teacher']:

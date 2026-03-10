@@ -254,13 +254,14 @@ Format: Subject line and email body"""
             )
             
             created_count = 0
+            created_ids = []
             for student in students_needing_intervention:
                 try:
                     profile = get_student_profile_for_intervention(student)
                     result = client.recommend_intervention(profile)
                     
                     # Create intervention
-                    Intervention.objects.create(
+                    iv = Intervention.objects.create(
                         student=student,
                         counselor=request.user,
                         intervention_type='counseling',
@@ -268,6 +269,7 @@ Format: Subject line and email body"""
                         scheduled_date=datetime.now() + timedelta(days=3),
                         status='scheduled'
                     )
+                    created_ids.append(iv.id)
                     
                     # Create alert
                     Alert.objects.create(
@@ -286,8 +288,23 @@ Format: Subject line and email body"""
             return JsonResponse({
                 'success': True,
                 'created_count': created_count,
+                'intervention_ids': created_ids,
                 'message': f'Successfully created {created_count} interventions for high-risk students'
             })
+        
+        elif action == 'get_intervention':
+            try:
+                iv = Intervention.objects.select_related('student', 'counselor').get(id=data.get('intervention_id'))
+                return JsonResponse({'intervention': {
+                    'id': iv.id,
+                    'student': iv.student.get_full_name(),
+                    'type': iv.get_intervention_type_display(),
+                    'scheduled_date': iv.scheduled_date.strftime('%b %d, %Y at %I:%M %p'),
+                    'status': iv.get_status_display(),
+                    'description': iv.description,
+                }})
+            except Intervention.DoesNotExist:
+                return JsonResponse({'error': 'Not found'}, status=404)
         
         elif action == 'ask_ai':
             response = client.generate_text(message)

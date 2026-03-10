@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import RiskAssessment, TeacherConcern, WellnessCheckIn, Alert
+from .models import RiskAssessment, TeacherConcern, WellnessCheckIn, Alert, Intervention, Notification
 
 @receiver(post_save, sender=RiskAssessment)
 def create_risk_alert(sender, instance, created, **kwargs):
@@ -65,7 +65,6 @@ def create_low_attendance_alert(sender, instance, created, **kwargs):
 def create_teacher_concern_alert(sender, instance, created, **kwargs):
     """Create alert when teacher submits a concern"""
     if created:
-        # Map teacher concern severity to alert severity
         severity_map = {'high': 'critical', 'medium': 'high', 'low': 'medium'}
         Alert.objects.create(
             student=instance.student,
@@ -73,6 +72,36 @@ def create_teacher_concern_alert(sender, instance, created, **kwargs):
             severity=severity_map.get(instance.severity, 'medium'),
             message=f'Teacher {instance.teacher.get_full_name()} reported a {instance.get_severity_display().lower()} severity {instance.get_concern_type_display().lower()} concern about {instance.student.get_full_name()}.'
         )
+        Notification.objects.create(
+            recipient=instance.student,
+            notif_type='teacher_concern',
+            message=f'Your teacher {instance.teacher.get_full_name()} has raised a {instance.get_concern_type_display().lower()} concern about you. Please speak with your counselor if you need support.',
+        )
+
+
+@receiver(post_save, sender=Intervention)
+def notify_student_intervention(sender, instance, created, **kwargs):
+    """Notify student when an intervention is scheduled for them"""
+    if created and instance.status == 'scheduled':
+        sched = instance.scheduled_date.strftime('%b %d, %Y at %I:%M %p')
+        msg = f'A {instance.get_intervention_type_display()} session has been scheduled for you on {sched} by {instance.counselor.get_full_name()}.'
+        Notification.objects.create(
+            recipient=instance.student,
+            notif_type='intervention_scheduled',
+            message=msg,
+        )
+        if instance.student.email:
+            from accounts.otp_utils import send_transactional_email
+            send_transactional_email(
+                to_email=instance.student.email,
+                subject='BrightTrack: Intervention Session Scheduled',
+                text_content=(
+                    f'Hi {instance.student.get_full_name()},\n\n'
+                    f'{msg}\n\n'
+                    f'Please log in to BrightTrack for more details.\n\n'
+                    f'— BrightTrack Support Team'
+                ),
+            )
 
 @receiver(post_save, sender=WellnessCheckIn)
 def create_wellness_concern_alert(sender, instance, created, **kwargs):

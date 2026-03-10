@@ -291,7 +291,7 @@
         /* === Notification Polling === */
         const NOTIF_KEY = 'notifItems_{{ user.id }}';
         let notifItems = JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]');
-        let prevCounts = { messages: {{ unread_messages_count }}, announcements: 0, grades: 0, alerts: 0};
+        let prevCounts = { messages: {{ unread_messages_count }}, announcements: 0, grades: 0, alerts: 0, notifications: 0};
         let isFirstLoad = true;
 
         updateNotifList();
@@ -325,8 +325,13 @@
                 showToast('New student alert', 'bg-red-600');
                 addNotifItem('<i class="bi bi-exclamation-triangle mr-2 text-red-500"></i> Student alert', '/wellness/alerts/');
             }
+            if (data.notifications > prevCounts.notifications) {
+                showToast('You have a new notification', 'bg-teal-600');
+                addNotifItem('<i class="bi bi-bell mr-2 text-teal-500"></i> New notification', '/wellness/checkin/');
+                fetch('/wellness/notifications/mark-read/', {method:'POST', headers:{'X-CSRFToken': '{{ csrf_token }}'}});
+            }
 
-            prevCounts = { messages: data.messages, announcements: data.announcements, grades: data.grades, alerts: data.alerts };
+            prevCounts = { messages: data.messages, announcements: data.announcements, grades: data.grades, alerts: data.alerts, notifications: data.notifications };
         }
 
         function addNotifItem(html, url) {
