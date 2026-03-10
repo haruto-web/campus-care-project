@@ -475,6 +475,38 @@ def admin_upload_students(request):
 
 
 @login_required
+def admin_all_classes(request):
+    if request.user.role.lower() != 'admin':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    classes = Class.objects.all().select_related('teacher').annotate(student_count=Count('students')).order_by('year_level', 'section', 'name')
+    return render(request, 'admin/all_classes.html', {'classes': classes})
+
+
+@login_required
+def admin_view_class(request, class_id):
+    if request.user.role.lower() != 'admin':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    cls = get_object_or_404(Class, id=class_id)
+    students = cls.students.all().order_by('last_name', 'first_name')
+    return render(request, 'admin/view_class.html', {'cls': cls, 'students': students})
+
+
+@login_required
+@require_POST
+def admin_delete_class(request, class_id):
+    if request.user.role.lower() != 'admin':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    cls = get_object_or_404(Class, id=class_id)
+    name = cls.name
+    cls.delete()
+    messages.success(request, f'Class "{name}" deleted successfully.')
+    return redirect('admin_all_classes')
+
+
+@login_required
 def admin_audit_log(request):
     if request.user.role.lower() != 'admin':
         messages.error(request, 'Permission denied. Admin access required.')
