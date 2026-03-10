@@ -231,6 +231,12 @@ def create_assignment(request, class_id):
         if form.is_valid():
             assignment = form.save(commit=False)
             assignment.class_obj = class_obj
+            if assignment.total_points < 1 or assignment.total_points > 100:
+                messages.error(request, 'Total points must be between 1 and 100.')
+                return render(request, 'academics/create_assignment.html', {'form': form, 'class': class_obj})
+            if assignment.due_date <= timezone.now():
+                messages.error(request, 'Due date must be in the future.')
+                return render(request, 'academics/create_assignment.html', {'form': form, 'class': class_obj})
             assignment.save()
             messages.success(request, f'Assignment "{assignment.title}" created successfully!')
             return redirect('academics:class_detail', class_id=class_id)
@@ -804,3 +810,29 @@ def edit_class(request, class_id):
         return redirect('academics:class_detail', class_id=class_id)
     
     return render(request, 'academics/edit_class.html', {'class': class_obj})
+
+@login_required
+@require_POST
+def update_attendance_ajax(request, class_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    if request.user.role != 'teacher' or class_obj.teacher != request.user:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    try:
+        data = json.loads(request.body)
+        student_id = int(data.get('student_id'))
+        status = data.get('status')
+    except (ValueError, TypeError, KeyError):
+        return JsonResponse({'error': 'Invalid data'}, status=400)
+    if status not in ('present', 'absent', 'late'):
+        return JsonResponse({'error': 'Invalid status'}, status=400)
+    from accounts.models import User
+    student = get_object_or_404(User, id=student_id, role='student')
+    if student not in class_obj.students.all():
+        return JsonResponse({'error': 'Student not in class'}, status=400)
+    Attendance.objects.update_or_create(
+        class_obj=class_obj,
+        student=student,
+        date=date.today(),
+        defaults={'status': status}
+    )
+    return JsonResponse({'success': True})
