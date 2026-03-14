@@ -17,6 +17,7 @@
     </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -27,7 +28,7 @@
     <aside id="sidebar" class="bt-sidebar">
         <!-- Logo -->
         <a href="{% url 'dashboard' %}" class="bt-sidebar-logo">
-            <i class="bi bi-heart-pulse"></i>
+            <img src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-8 h-8 object-contain">
             <span>BrightTrack</span>
         </a>
 

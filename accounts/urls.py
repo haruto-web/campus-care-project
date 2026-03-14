@@ -31,6 +31,7 @@ urlpatterns = [
     path('manage/upload-students/', admin_views.admin_upload_students, name='admin_upload_students'),
     path('manage/approved-student/<int:student_id>/edit/', admin_views.admin_edit_approved_student, name='admin_edit_approved_student'),
     path('manage/approved-student/<int:student_id>/suspend/', admin_views.admin_suspend_approved_student, name='admin_suspend_approved_student'),
+    path('manage/user/<int:user_id>/lift-suspension/', admin_views.admin_lift_messaging_suspension, name='admin_lift_messaging_suspension'),
     path('manage/all-classes/', admin_views.admin_all_classes, name='admin_all_classes'),
     path('manage/class/<int:class_id>/', admin_views.admin_view_class, name='admin_view_class'),
     path('manage/class/<int:class_id>/delete/', admin_views.admin_delete_class, name='admin_delete_class'),

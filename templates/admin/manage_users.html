@@ -85,6 +85,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Role</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Year Level</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Section</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Messaging</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
                         </tr>
                     </thead>
@@ -128,6 +129,24 @@
                                 {% endif %}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if user.is_messaging_suspended %}
+                                <div class="flex flex-col gap-1">
+                                    <span class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">
+                                        <i class="bi bi-slash-circle"></i> Suspended
+                                    </span>
+                                    <span class="text-xs text-gray-400">Until {{ user.messaging_suspended_until|date:"M d, Y" }}</span>
+                                    <form method="post" action="{% url 'admin_lift_messaging_suspension' user.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="mt-1 text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-lg">
+                                            <i class="bi bi-unlock"></i> Lift Ban
+                                        </button>
+                                    </form>
+                                </div>
+                                {% else %}
+                                <span class="text-xs text-green-600 font-medium"><i class="bi bi-check-circle"></i> Active</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 {% if user.role != 'admin' %}
                                 <button onclick="confirmDelete('{{ user.id }}', '{{ user.get_full_name }}', '{{ user.role }}')" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
                                     <i class="bi bi-trash"></i> Remove
@@ -139,7 +158,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No users found.</td>
+                            <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No users found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -524,6 +524,30 @@ def admin_edit_approved_student(request, student_id):
 
 
 @login_required
+@require_POST
+def admin_lift_messaging_suspension(request, user_id):
+    if request.user.role.lower() != 'admin':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    user = get_object_or_404(User, id=user_id)
+    user.messaging_suspended_until = None
+    user.save(update_fields=['messaging_suspended_until'])
+    from accounts.otp_utils import send_transactional_email
+    send_transactional_email(
+        to_email=user.email,
+        subject='BrightTrack — Your Messaging Suspension Has Been Lifted',
+        text_content=(
+            f'Dear {user.get_full_name()},\n\n'
+            f'Your messaging access on BrightTrack has been restored by the school administrator.\n\n'
+            f'You may now send and receive messages normally.\n\n'
+            f'— BrightTrack School System'
+        ),
+    )
+    messages.success(request, f'Messaging suspension lifted for {user.get_full_name()}. Email sent.')
+    return redirect('admin_manage_users')
+
+
+@login_required
 def admin_all_classes(request):
     if request.user.role.lower() != 'admin':
         messages.error(request, 'Permission denied.')
