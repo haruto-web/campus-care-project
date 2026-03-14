@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Take Action on Report{% endblock %}
+{% block page_title %}Take Action{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 space-y-5">
+        <div class="flex items-center gap-3">
+            <a href="{% url 'messaging:message_reports' %}" class="text-gray-400 hover:text-gray-600">
+                <i class="bi bi-arrow-left text-xl"></i>
+            </a>
+            <div>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white">Take Action on Report</h2>
+                <p class="text-sm text-gray-500">Report #{{ report.id }} — {{ report.get_reason_display }}</p>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="grid grid-cols-2 gap-3 text-sm">
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <p class="text-xs text-gray-400 mb-0.5">Reported By</p>
+                <p class="font-semibold text-gray-800 dark:text-white">{{ report.reporter.get_full_name }}</p>
+                <p class="text-xs text-gray-400 capitalize">{{ report.reporter.role }}</p>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <p class="text-xs text-gray-400 mb-0.5">Reported User</p>
+                <p class="font-semibold text-gray-800 dark:text-white">{{ report.reported_user.get_full_name }}</p>
+                <p class="text-xs text-gray-400 capitalize">{{ report.reported_user.role }}</p>
+            </div>
+        </div>
+
+        <!-- Message preview -->
+        <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border-l-4 border-red-400">
+            <p class="text-xs text-gray-400 mb-1">Reported message:</p>
+            {% if report.message.body %}
+            <p class="text-sm text-gray-700 dark:text-gray-200">{{ report.message.body }}</p>
+            {% endif %}
+            {% if report.message.attachment %}
+            <a href="{{ report.message.attachment.url }}" target="_blank" class="text-xs text-blue-500 mt-1 inline-flex items-center gap-1">
+                <i class="bi bi-paperclip"></i> View attachment
+            </a>
+            {% endif %}
+        </div>
+
+        {% if report.details %}
+        <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">Reporter's details:</span> {{ report.details }}</p>
+        {% endif %}
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Update Status <span class="text-red-500">*</span></label>
+                <select name="status" required class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    {% for val, label in status_choices %}
+                    <option value="{{ val }}" {% if report.status == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Consequence / Action</label>
+                <select name="consequence" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="">-- Select action --</option>
+                    {% for val, label in consequence_choices %}
+                    <option value="{{ val }}" {% if report.consequence == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Counselor Notes</label>
+                <textarea name="counselor_notes" rows="4" placeholder="Add notes about your decision..."
+                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400">{{ report.counselor_notes }}</textarea>
+            </div>
+            <div class="flex gap-3 pt-1">
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">
+                    <i class="bi bi-check-circle mr-1"></i> Save Action
+                </button>
+                <a href="{% url 'messaging:message_reports' %}"
+                    class="flex-1 text-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold py-2 rounded-lg text-sm transition">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

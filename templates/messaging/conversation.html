@@ -45,6 +45,12 @@
                 <p class="text-right text-xs text-gray-400 mt-0.5 read-receipt" data-for-msg="{{ msg.id }}">
                     {% if msg.is_read %}Read{% endif %}
                 </p>
+                {% else %}
+                <div class="mt-0.5">
+                    <a href="{% url 'messaging:report_message' msg.id %}" class="text-xs text-gray-300 hover:text-red-400 transition" title="Report message">
+                        <i class="bi bi-flag"></i>
+                    </a>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -108,6 +114,8 @@ function buildBubble(msg) {
     inner += `<p class="text-xs mt-1 ${msg.is_mine ? 'text-blue-200' : 'text-gray-400'}">${msg.created_at}</p></div>`;
     if (msg.is_mine) {
         inner += `<p class="text-right text-xs text-gray-400 mt-0.5 read-receipt" data-for-msg="${msg.id}">${msg.is_read ? 'Read' : ''}</p>`;
+    } else {
+        inner += `<div class="mt-0.5"><a href="/messages/report/${msg.id}/" class="text-xs text-gray-300 hover:text-red-400 transition" title="Report message"><i class="bi bi-flag"></i></a></div>`;
     }
     outer.innerHTML = inner;
     wrap.appendChild(outer);

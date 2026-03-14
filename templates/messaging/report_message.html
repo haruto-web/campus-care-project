@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Report Message{% endblock %}
+{% block page_title %}Report Message{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 space-y-5">
+        <div class="flex items-center gap-3">
+            <a href="{% url 'messaging:conversation' msg.conversation_id %}" class="text-gray-400 hover:text-gray-600">
+                <i class="bi bi-arrow-left text-xl"></i>
+            </a>
+            <div>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white">Report Message</h2>
+                <p class="text-sm text-gray-500">Reporting message from <strong>{{ msg.sender.get_full_name }}</strong></p>
+            </div>
+        </div>
+
+        <!-- Message preview -->
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border-l-4 border-red-400">
+            <p class="text-xs text-gray-400 mb-1">Message content:</p>
+            {% if msg.body %}
+            <p class="text-sm text-gray-700 dark:text-gray-200">{{ msg.body }}</p>
+            {% endif %}
+            {% if msg.attachment %}
+            <p class="text-xs text-gray-400 mt-1"><i class="bi bi-paperclip"></i> Attachment included</p>
+            {% endif %}
+            <p class="text-xs text-gray-400 mt-2">{{ msg.created_at|date:"M d, Y g:i A" }}</p>
+        </div>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason <span class="text-red-500">*</span></label>
+                <select name="reason" required class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400">
+                    <option value="">-- Select a reason --</option>
+                    {% for val, label in reason_choices %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Additional details <span class="text-gray-400 text-xs">(optional)</span></label>
+                <textarea name="details" rows="3" placeholder="Describe what happened..."
+                    class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-400"></textarea>
+            </div>
+            <div class="flex gap-3 pt-1">
+                <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg text-sm transition">
+                    <i class="bi bi-flag-fill mr-1"></i> Submit Report
+                </button>
+                <a href="{% url 'messaging:conversation' msg.conversation_id %}"
+                    class="flex-1 text-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold py-2 rounded-lg text-sm transition">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

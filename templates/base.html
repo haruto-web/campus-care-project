@@ -94,6 +94,10 @@
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
                 <i class="bi bi-file-earmark-bar-graph"></i><span>Reports</span>
             </a>
+            <a href="{% url 'messaging:message_reports' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'message_reports' %}active{% endif %}">
+                <i class="bi bi-flag"></i><span>Message Reports</span>
+            </a>
             <div class="bt-sidebar-section">AI Tools</div>
             <a href="{% url 'ai_assistant:counselor_chat_view' %}"
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'counselor_chat_view' %}active{% endif %}">
@@ -144,6 +148,10 @@
             <a href="{% url 'ai_assistant:admin_chat_view' %}"
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_chat_view' %}active{% endif %}">
                 <i class="bi bi-robot"></i><span>AI Assistant</span>
+            </a>
+            <a href="{% url 'messaging:admin_message_reports' %}"
+                class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_message_reports' %}active{% endif %}">
+                <i class="bi bi-flag"></i><span>Message Reports</span>
             </a>
             {% endif %}
 

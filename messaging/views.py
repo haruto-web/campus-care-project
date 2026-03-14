@@ -6,10 +6,11 @@ from django.http import JsonResponse
 from django.db.models import Q
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
-from .models import Conversation, Message
+from .models import Conversation, Message, MessageReport
 from accounts.models import User
 from .content_filter import contains_inappropriate_content, filter_message_content
 from campus_care.validators import validate_document_upload
+from accounts.decorators import role_required
 
 # Role-based allowed recipients
 ALLOWED_RECIPIENTS = {
@@ -212,4 +213,93 @@ def new_message(request, recipient_id=None):
         'sections': sections,
         'year_levels': year_levels,
         'available_roles': sorted(set(allowed_roles)),
+    })
+
+
+@login_required
+def report_message(request, msg_id):
+    msg = get_object_or_404(Message, id=msg_id)
+    # Can't report your own message
+    if msg.sender == request.user:
+        messages.error(request, 'You cannot report your own message.')
+        return redirect('messaging:inbox')
+    # Must be a participant of the conversation
+    if request.user not in msg.conversation.participants.all():
+        messages.error(request, 'Access denied.')
+        return redirect('messaging:inbox')
+    # Prevent duplicate report from same user on same message
+    if MessageReport.objects.filter(reporter=request.user, message=msg).exists():
+        messages.warning(request, 'You have already reported this message.')
+        return redirect('messaging:conversation', conv_id=msg.conversation_id)
+
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '').strip()
+        details = request.POST.get('details', '').strip()
+        if reason not in dict(MessageReport.REASON_CHOICES):
+            messages.error(request, 'Invalid reason.')
+            return redirect('messaging:report_message', msg_id=msg_id)
+        MessageReport.objects.create(reporter=request.user, message=msg, reason=reason, details=details)
+        messages.success(request, 'Report submitted. A counselor will review it.')
+        return redirect('messaging:conversation', conv_id=msg.conversation_id)
+
+    return render(request, 'messaging/report_message.html', {
+        'msg': msg,
+        'reason_choices': MessageReport.REASON_CHOICES,
+    })
+
+
+@login_required
+@role_required('counselor')
+def message_reports(request):
+    status_filter = request.GET.get('status', '')
+    qs = MessageReport.objects.select_related('reporter', 'message__sender', 'resolved_by')
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    pending_count = MessageReport.objects.filter(status='pending').count()
+    return render(request, 'messaging/message_reports.html', {
+        'reports': qs,
+        'status_filter': status_filter,
+        'status_choices': MessageReport.STATUS_CHOICES,
+        'pending_count': pending_count,
+    })
+
+
+@login_required
+@role_required('counselor')
+def resolve_report(request, report_id):
+    report = get_object_or_404(MessageReport, id=report_id)
+    if request.method == 'POST':
+        status = request.POST.get('status', '').strip()
+        consequence = request.POST.get('consequence', '').strip()
+        notes = request.POST.get('counselor_notes', '').strip()
+        if status not in dict(MessageReport.STATUS_CHOICES):
+            messages.error(request, 'Invalid status.')
+            return redirect('messaging:message_reports')
+        report.status = status
+        report.consequence = consequence
+        report.counselor_notes = notes
+        report.resolved_by = request.user
+        report.save()
+        messages.success(request, 'Report updated.')
+        return redirect('messaging:message_reports')
+    return render(request, 'messaging/resolve_report.html', {
+        'report': report,
+        'status_choices': MessageReport.STATUS_CHOICES,
+        'consequence_choices': MessageReport.CONSEQUENCE_CHOICES,
+    })
+
+
+@login_required
+@role_required('admin')
+def admin_message_reports(request):
+    status_filter = request.GET.get('status', '')
+    qs = MessageReport.objects.select_related('reporter', 'message__sender', 'resolved_by')
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    pending_count = MessageReport.objects.filter(status='pending').count()
+    return render(request, 'messaging/admin_message_reports.html', {
+        'reports': qs,
+        'status_filter': status_filter,
+        'status_choices': MessageReport.STATUS_CHOICES,
+        'pending_count': pending_count,
     })
