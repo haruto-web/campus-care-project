@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -29,7 +30,7 @@
     <!-- Loading Screen -->
     <div id="loadingScreen" class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center">
         <div class="flex items-center gap-3 mb-6">
-            <i class="bi bi-heart-pulse text-5xl text-indigo-600 animate-pulse"></i>
+            <img src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-12 h-12 object-contain">
             <span class="text-4xl font-bold text-gray-900">BrightTrack</span>
         </div>
         <div class="w-48 h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -54,7 +55,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center gap-2">
-                    <i class="bi bi-heart-pulse text-3xl text-indigo-600"></i>
+                    <img src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-8 h-8 object-contain">
                     <span class="text-2xl font-bold text-gray-900">BrightTrack</span>
                 </div>
                 <!-- Desktop -->
@@ -242,7 +243,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="flex items-center gap-2 mb-4 md:mb-0">
-                    <i class="bi bi-heart-pulse text-3xl text-indigo-400"></i>
+                    <img src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-8 h-8 object-contain">
                     <span class="text-2xl font-bold">BrightTrack</span>
                 </div>
                 <p class="text-gray-400">© 2026 BrightTrack. Learning Management System.</p>
