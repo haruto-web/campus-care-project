@@ -45,7 +45,14 @@ class User(AbstractUser):
     guardian_relation = models.CharField(max_length=50, blank=True)
     guardian_occupation = models.CharField(max_length=100, blank=True)
     profile_skipped_at = models.DateTimeField(blank=True, null=True)
-    
+    messaging_suspended_until = models.DateTimeField(blank=True, null=True)
+
+    def is_messaging_suspended(self):
+        if self.messaging_suspended_until:
+            from django.utils import timezone
+            return timezone.now() < self.messaging_suspended_until
+        return False
+
     def __str__(self):
         return f"{self.get_full_name()} ({self.role})"
     
