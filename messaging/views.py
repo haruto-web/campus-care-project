@@ -85,12 +85,13 @@ def conversation(request, conv_id):
                 messages.warning(request, 'File attachment failed to upload. Message sent without attachment.')
             conv.save()
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                local_dt = timezone.localtime(msg.created_at)
                 return JsonResponse({
                     'id': msg.id,
                     'body': msg.body,
                     'attachment_url': msg.attachment.url if msg.attachment else None,
                     'is_image': msg.is_image() if msg.attachment else False,
-                    'created_at': msg.created_at.strftime('%b %d, %I:%M %p'),
+                    'created_at': local_dt.strftime('%b %d, %I:%M %p'),
                     'is_mine': True,
                     'is_read': False,
                 })
@@ -119,12 +120,13 @@ def poll_messages(request, conv_id):
 
     data = []
     for msg in new_msgs:
+        local_dt = timezone.localtime(msg.created_at)
         data.append({
             'id': msg.id,
             'body': msg.body,
             'attachment_url': msg.attachment.url if msg.attachment else None,
             'is_image': msg.is_image() if msg.attachment else False,
-            'created_at': msg.created_at.strftime('%b %d, %I:%M %p'),
+            'created_at': local_dt.strftime('%b %d, %I:%M %p'),
             'is_mine': msg.sender == request.user,
             'is_read': msg.is_read,
         })
