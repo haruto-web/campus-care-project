@@ -45,7 +45,7 @@
         <p class="text-sm text-gray-600 dark:text-gray-300"><span class="font-medium">Reporter's details:</span> {{ report.details }}</p>
         {% endif %}
 
-        <form method="post" class="space-y-4">
+        <form method="post" class="space-y-4" id="resolveForm">
             {% csrf_token %}
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Update Status <span class="text-red-500">*</span></label>
@@ -70,7 +70,8 @@
                     class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400">{{ report.counselor_notes }}</textarea>
             </div>
             <div class="flex gap-3 pt-1">
-                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">
+                <button type="button" onclick="confirmSaveAction()"
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">
                     <i class="bi bi-check-circle mr-1"></i> Save Action
                 </button>
                 <a href="{% url 'messaging:message_reports' %}"
@@ -81,4 +82,25 @@
         </form>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+function confirmSaveAction() {
+    const consequence = document.querySelector('[name=consequence]').value;
+    const msgs = {
+        suspend: { title: 'Suspend Messaging', body: 'This will <strong>ban the user from messaging for 7 days</strong> and send them an email notification.', type: 'danger', label: 'Yes, Suspend' },
+        warning: { title: 'Issue Warning', body: 'This will send an <strong>official warning email</strong> to the reported user.', type: 'warning', label: 'Yes, Issue Warning' },
+        refer:   { title: 'Refer to Admin', body: 'This will send an email requiring the user to <strong>attend a one-on-one session</strong> in the guidance office.', type: 'info', label: 'Yes, Refer' },
+        no_action: { title: 'No Action', body: 'The report will be updated with no notification sent to the user.', type: 'info', label: 'Confirm' },
+    };
+    const m = msgs[consequence] || { title: 'Save Action', body: 'Are you sure you want to save this action?', type: 'info', label: 'Save' };
+    showConfirmModal({
+        title: m.title,
+        body: m.body,
+        okLabel: m.label,
+        type: m.type,
+        onConfirm() { document.getElementById('resolveForm').submit(); }
+    });
+}
+</script>
 {% endblock %}

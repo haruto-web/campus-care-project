@@ -212,9 +212,10 @@
                 </div>
             </div>
             <!-- Logout -->
-            <form method="POST" action="{% url 'logout' %}" class="inline">
+            <form id="logoutForm" method="POST" action="{% url 'logout' %}" class="inline">
                 {% csrf_token %}
-                <button type="submit" class="bt-topbar-btn" title="Logout">
+                <button type="button" class="bt-topbar-btn" title="Logout"
+                    onclick="showConfirmModal({title:'Log Out',body:'Are you sure you want to log out?',okLabel:'Log Out',type:'warning',onConfirm:()=>document.getElementById('logoutForm').submit()})">
                     <i class="bi bi-box-arrow-right"></i>
                 </button>
             </form>
@@ -242,6 +243,61 @@
         </div>
     </div>
     {% endif %}
+
+<!-- ===== GLOBAL CONFIRM MODAL ===== -->
+<div id="confirmModal" class="fixed inset-0 z-[99999] hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+        <div id="confirmModalHeader" class="px-6 py-4 flex items-center gap-3">
+            <div id="confirmModalIcon" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0">
+                <i id="confirmModalIconI" class="text-xl"></i>
+            </div>
+            <h3 id="confirmModalTitle" class="text-lg font-bold text-gray-800 dark:text-white"></h3>
+        </div>
+        <div class="px-6 pb-2">
+            <p id="confirmModalBody" class="text-sm text-gray-600 dark:text-gray-300"></p>
+        </div>
+        <div class="px-6 py-4 flex gap-3 justify-end">
+            <button onclick="closeConfirmModal()" class="px-5 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold text-sm transition">
+                Cancel
+            </button>
+            <button id="confirmModalOk" class="px-5 py-2 rounded-lg font-semibold text-sm text-white transition">
+                Confirm
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showConfirmModal({ title, body, okLabel = 'Confirm', type = 'danger', onConfirm }) {
+    const colors = {
+        danger:  { header: 'bg-red-50 dark:bg-red-900/20',   icon: 'bg-red-100 text-red-600',    btn: 'bg-red-600 hover:bg-red-700',    i: 'bi bi-exclamation-triangle-fill' },
+        warning: { header: 'bg-yellow-50 dark:bg-yellow-900/20', icon: 'bg-yellow-100 text-yellow-600', btn: 'bg-yellow-500 hover:bg-yellow-600', i: 'bi bi-exclamation-circle-fill' },
+        info:    { header: 'bg-blue-50 dark:bg-blue-900/20',  icon: 'bg-blue-100 text-blue-600',  btn: 'bg-blue-600 hover:bg-blue-700',   i: 'bi bi-info-circle-fill' },
+        success: { header: 'bg-green-50 dark:bg-green-900/20',icon: 'bg-green-100 text-green-600',btn: 'bg-green-600 hover:bg-green-700', i: 'bi bi-check-circle-fill' },
+    };
+    const c = colors[type] || colors.danger;
+    document.getElementById('confirmModalHeader').className = `px-6 py-4 flex items-center gap-3 ${c.header}`;
+    document.getElementById('confirmModalIcon').className = `w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${c.icon}`;
+    document.getElementById('confirmModalIconI').className = `text-xl ${c.i}`;
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalBody').innerHTML = body;
+    const okBtn = document.getElementById('confirmModalOk');
+    okBtn.textContent = okLabel;
+    okBtn.className = `px-5 py-2 rounded-lg font-semibold text-sm text-white transition ${c.btn}`;
+    okBtn.onclick = () => { closeConfirmModal(); onConfirm(); };
+    const modal = document.getElementById('confirmModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeConfirmModal();
+});
+</script>
 
     {% block extra_js %}{% endblock %}
 

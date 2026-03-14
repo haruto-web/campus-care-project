@@ -135,9 +135,9 @@
                                         <i class="bi bi-slash-circle"></i> Suspended
                                     </span>
                                     <span class="text-xs text-gray-400">Until {{ user.messaging_suspended_until|date:"M d, Y" }}</span>
-                                    <form method="post" action="{% url 'admin_lift_messaging_suspension' user.id %}">
+                                    <form method="post" action="{% url 'admin_lift_messaging_suspension' user.id %}" id="liftForm-{{ user.id }}">
                                         {% csrf_token %}
-                                        <button type="submit" class="mt-1 text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-lg">
+                                        <button type="button" onclick="confirmLiftBan('{{ user.id }}', '{{ user.get_full_name }}')" class="mt-1 text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-lg">
                                             <i class="bi bi-unlock"></i> Lift Ban
                                         </button>
                                     </form>
@@ -170,18 +170,33 @@
 
 <script>
 function confirmDelete(userId, userName, userRole) {
-    if (confirm(`Are you sure you want to remove ${userName} (${userRole})? This will delete their account and all associated data.`)) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/manage/user/${userId}/delete/`;
-        const csrf = document.createElement('input');
-        csrf.type = 'hidden';
-        csrf.name = 'csrfmiddlewaretoken';
-        csrf.value = '{{ csrf_token }}';
-        form.appendChild(csrf);
-        document.body.appendChild(form);
-        form.submit();
-    }
+    showConfirmModal({
+        title: 'Remove User Account',
+        body: `You are about to permanently delete <strong>${userName}</strong> (${userRole}).<br><br>This will remove their account and <strong>all associated data</strong> including submissions, grades, and messages. This cannot be undone.`,
+        okLabel: 'Yes, Remove',
+        type: 'danger',
+        onConfirm() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/manage/user/${userId}/delete/`;
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = 'csrfmiddlewaretoken';
+            csrf.value = '{{ csrf_token }}';
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+function confirmLiftBan(userId, userName) {
+    showConfirmModal({
+        title: 'Lift Messaging Suspension',
+        body: `This will restore full messaging access for <strong>${userName}</strong> immediately and send them an email notification.`,
+        okLabel: 'Yes, Lift Ban',
+        type: 'success',
+        onConfirm() { document.getElementById('liftForm-' + userId).submit(); }
+    });
 }
 </script>
 {% endblock %}

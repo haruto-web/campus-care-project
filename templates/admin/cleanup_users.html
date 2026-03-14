@@ -36,17 +36,30 @@
             </div>
         </div>
 
-        <form method="post" onsubmit="return confirm('Are you sure? This will delete {{ student_count }} students, {{ teacher_count }} teachers, and {{ counselor_count }} counselors. Only {{ admin_count }} admin accounts will remain.')">
+        <form method="post" id="cleanupForm">
             {% csrf_token %}
             <div class="flex justify-between items-center">
                 <a href="{% url 'dashboard' %}" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
                     Cancel
                 </a>
-                <button type="submit" class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                <button type="button" onclick="confirmCleanup()" class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700">
                     🗑️ Delete All Non-Admin Users
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+function confirmCleanup() {
+    showConfirmModal({
+        title: 'Delete All Non-Admin Users',
+        body: 'This will permanently delete <strong>{{ student_count }} students</strong>, <strong>{{ teacher_count }} teachers</strong>, and <strong>{{ counselor_count }} counselors</strong>.<br><br>Only <strong>{{ admin_count }} admin account(s)</strong> will remain. <strong>This cannot be undone.</strong>',
+        okLabel: 'Yes, Delete All',
+        type: 'danger',
+        onConfirm() { document.getElementById('cleanupForm').submit(); }
+    });
+}
+</script>
 {% endblock %}

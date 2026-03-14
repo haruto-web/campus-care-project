@@ -43,8 +43,9 @@
                         <i class="bi bi-chat-dots mr-1"></i> Ask AI for Help
                     </a>
                     <a href="{% url 'wellness:bulk_create_interventions' %}" 
-                       class="bg-purple-800 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-purple-900 transition"
-                       onclick="return confirm('Auto-create interventions for all critical/high risk students who don\'t have one yet?')">
+                       data-url="{% url 'wellness:bulk_create_interventions' %}"
+                       onclick="event.preventDefault(); var el=this; showConfirmModal({title:'Auto-Create All Interventions',body:'This will automatically create scheduled interventions for <strong>all {{ students_needing_intervention }} high-risk student(s)</strong> without one. Continue?',okLabel:'Yes, Create All',type:'warning',onConfirm(){window.location.href=el.dataset.url}})"
+                       class="bg-purple-800 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-purple-900 transition">
                         <i class="bi bi-plus-circle mr-1"></i> Create Intervention Now
                     </a>
                     <a href="?severity=critical" 
@@ -183,7 +184,10 @@
                                         Mark Read
                                     </a>
                                     {% endif %}
-                                    <a href="{% url 'wellness:resolve_alert' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}" 
+                                    <a href="{% url 'wellness:resolve_alert' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}"
+                                       data-url="{% url 'wellness:resolve_alert' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}"
+                                       data-name="{{ alert.student.get_full_name }}"
+                                       onclick="event.preventDefault(); var el=this; showConfirmModal({title:'Resolve Alert',body:'Mark this alert as resolved for <strong>'+el.dataset.name+'</strong>? This action will be recorded.',okLabel:'Yes, Resolve',type:'success',onConfirm(){window.location.href=el.dataset.url}})"
                                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition text-center">
                                         Resolve
                                     </a>
