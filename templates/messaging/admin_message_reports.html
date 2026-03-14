@@ -103,6 +103,25 @@
                 <i class="bi bi-clock"></i> Awaiting counselor review
             </div>
             {% endif %}
+
+            {% if report.consequence == 'suspend' and report.reported_user.is_messaging_suspended %}
+            <div class="mt-3 flex items-center justify-between gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3">
+                <div class="flex items-center gap-2 text-sm text-red-700 dark:text-red-400">
+                    <i class="bi bi-slash-circle"></i>
+                    <span><strong>{{ report.reported_user.get_full_name }}</strong> is currently suspended until {{ report.reported_user.messaging_suspended_until|date:"M d, Y g:i A" }}</span>
+                </div>
+                <form method="post" action="{% url 'admin_lift_messaging_suspension' report.reported_user.id %}" id="liftForm{{ report.id }}">
+                    {% csrf_token %}
+                    <button type="button"
+                        data-form="liftForm{{ report.id }}"
+                        data-name="{{ report.reported_user.get_full_name }}"
+                        onclick="confirmLiftBanReport(this)"
+                        class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition">
+                        <i class="bi bi-unlock mr-1"></i> Lift Ban
+                    </button>
+                </form>
+            </div>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
@@ -113,4 +132,20 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmLiftBanReport(btn) {
+    const name = btn.dataset.name;
+    const formId = btn.dataset.form;
+    showConfirmModal({
+        title: 'Lift Messaging Ban',
+        body: `This will immediately restore messaging access for <strong>${name}</strong>.`,
+        okLabel: 'Yes, Lift Ban',
+        type: 'warning',
+        onConfirm() { document.getElementById(formId).submit(); }
+    });
+}
+</script>
 {% endblock %}
