@@ -20,6 +20,7 @@ class RiskAssessment(models.Model):
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High'),
+        ('critical', 'Critical'),
     ]
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='risk_assessments')
     date = models.DateField(auto_now_add=True)
@@ -28,6 +29,7 @@ class RiskAssessment(models.Model):
     gpa = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)
     attendance_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     missing_assignments = models.IntegerField(default=0)
+    failing_classes = models.IntegerField(default=0)
     notes = models.TextField(blank=True)
     
     class Meta:
@@ -114,6 +116,7 @@ class Alert(models.Model):
         ('teacher_concern', 'Teacher Concern'),
         ('emotional_distress', 'Emotional Distress'),
         ('ai_intervention', 'AI Intervention Created'),
+        ('failing_subjects', 'Failing in Specific Subjects'),
     ]
     SEVERITY_LEVELS = [
         ('critical', 'Critical'),

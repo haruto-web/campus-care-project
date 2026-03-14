@@ -131,7 +131,13 @@ def poll_messages(request, conv_id):
     last_read_sent = conv.messages.filter(
         sender=request.user, is_read=True
     ).order_by('-id').values_list('id', flat=True).first()
-    return JsonResponse({'messages': data, 'last_read_sent_id': last_read_sent or 0})
+    user = request.user
+    suspended = user.is_messaging_suspended()
+    return JsonResponse({
+        'messages': data,
+        'last_read_sent_id': last_read_sent or 0,
+        'is_suspended': suspended,
+    })
 
 
 @login_required

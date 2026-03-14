@@ -4,21 +4,27 @@ from .models import RiskAssessment, TeacherConcern, WellnessCheckIn, Alert, Inte
 
 @receiver(post_save, sender=RiskAssessment)
 def create_risk_alert(sender, instance, created, **kwargs):
-    """Create alert when student moves to high risk"""
-    if instance.risk_level == 'high':
-        # Check if alert already exists for this student
+    """Create alert when student moves to high or critical risk"""
+    if instance.risk_level in ['high', 'critical']:
         existing_alert = Alert.objects.filter(
             student=instance.student,
             alert_type='high_risk',
             resolved=False
         ).exists()
-        
         if not existing_alert:
+            severity = 'critical' if instance.risk_level == 'critical' else 'high'
             Alert.objects.create(
                 student=instance.student,
                 alert_type='high_risk',
-                severity='critical',
-                message=f'{instance.student.get_full_name()} has been identified as high risk. Risk score: {instance.risk_score}. GPA: {instance.gpa}, Attendance: {instance.attendance_rate}%, Missing assignments: {instance.missing_assignments}.'
+                severity=severity,
+                message=(
+                    f'{instance.student.get_full_name()} has been identified as {instance.risk_level} risk. '
+                    f'Risk score: {instance.risk_score}. '
+                    f'GPA: {instance.gpa}, '
+                    f'Attendance: {instance.attendance_rate}%, '
+                    f'Missing assignments: {instance.missing_assignments}, '
+                    f'Failing classes: {instance.failing_classes}.'
+                )
             )
 
 @receiver(post_save, sender=RiskAssessment)
@@ -115,4 +121,27 @@ def create_wellness_concern_alert(sender, instance, created, **kwargs):
                 alert_type='wellness_concern',
                 severity=severity,
                 message=f'{instance.student.get_full_name()} wellness check-in shows concerning indicators. Stress: {instance.stress_level}/5, Motivation: {instance.motivation_level}/5, Needs help: {"Yes" if instance.need_help else "No"}.'
+            )
+
+
+@receiver(post_save, sender=RiskAssessment)
+def create_failing_subjects_alert(sender, instance, created, **kwargs):
+    """Create alert when student is failing 3 or more classes"""
+    if instance.failing_classes >= 3:
+        existing = Alert.objects.filter(
+            student=instance.student,
+            alert_type='failing_subjects',
+            resolved=False
+        ).exists()
+        if not existing:
+            severity = 'critical' if instance.failing_classes >= 5 else 'high'
+            Alert.objects.create(
+                student=instance.student,
+                alert_type='failing_subjects',
+                severity=severity,
+                message=(
+                    f'{instance.student.get_full_name()} is failing {instance.failing_classes} classes. '
+                    f'Overall average maps to GPA {instance.gpa}. '
+                    f'Consider subject-specific tutoring.'
+                )
             )

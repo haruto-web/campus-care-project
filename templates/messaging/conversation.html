@@ -60,15 +60,13 @@
     </div>
 
     <!-- Suspension warning -->
-    {% if request.user.is_messaging_suspended %}
-    <div class="flex items-center gap-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-xl px-4 py-3">
+    <div id="suspensionBanner" class="flex items-center gap-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-xl px-4 py-3 {% if not request.user.is_messaging_suspended %}hidden{% endif %}">
         <i class="bi bi-slash-circle text-red-500 text-xl flex-shrink-0"></i>
         <div>
             <p class="text-sm font-semibold text-red-700 dark:text-red-400">Your messaging access is suspended</p>
             <p class="text-xs text-red-500">Suspended until {{ request.user.messaging_suspended_until|date:"F d, Y \a\t g:i A" }}. Contact your counselor for assistance.</p>
         </div>
     </div>
-    {% endif %}
 
     <!-- Reply box -->
     <form id="msgForm" enctype="multipart/form-data" class="space-y-2">
@@ -156,6 +154,23 @@ function appendMessages(msgs) {
     scrollBottom(false);
 }
 
+function setSuspended(suspended) {
+    const banner = document.getElementById('suspensionBanner');
+    const textarea = document.getElementById('msgBody');
+    const sendBtn = document.querySelector('#msgForm button[type="button"]');
+    if (suspended) {
+        if (banner) banner.classList.remove('hidden');
+        textarea.disabled = true;
+        textarea.placeholder = 'Messaging suspended...';
+        sendBtn.disabled = true;
+    } else {
+        if (banner) banner.classList.add('hidden');
+        textarea.disabled = false;
+        textarea.placeholder = 'Type a message...';
+        sendBtn.disabled = false;
+    }
+}
+
 // Poll every 3 seconds for new messages
 setInterval(() => {
     fetch(`/messages/${convId}/poll/?after=${lastMsgId}`)
@@ -163,6 +178,7 @@ setInterval(() => {
         .then(data => {
             if (data.messages && data.messages.length) appendMessages(data.messages);
             if (data.last_read_sent_id) updateReadReceipts(data.last_read_sent_id);
+            if (typeof data.is_suspended === 'boolean') setSuspended(data.is_suspended);
         })
         .catch(() => {});
 }, 3000);
