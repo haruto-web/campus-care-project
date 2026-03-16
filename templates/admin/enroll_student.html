@@ -20,83 +20,80 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main Form -->
         <div class="lg:col-span-2">
-            <div class="bg-white rounded-lg shadow-lg border">
-                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b">
-                    <h3 class="text-xl font-semibold text-gray-800 flex items-center">
-                        <div class="bg-blue-100 p-2 rounded-full mr-3">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 px-6 py-4 border-b dark:border-gray-700">
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-white flex items-center">
+                        <div class="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-full mr-3">
                             <i class="bi bi-1-circle-fill text-blue-600"></i>
                         </div>
                         Choose Student and Class
                     </h3>
-                    <p class="text-sm text-gray-600 mt-1 ml-12">Select which student you want to add to which class</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 ml-12">Select which student you want to add to which class</p>
                 </div>
                 <div class="p-6">
                     <form method="post" class="space-y-6">
                         {% csrf_token %}
                         
                         <!-- Step 1: Select Students -->
-                        <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-400">
+                        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border-l-4 border-blue-400">
                             <div class="flex items-center mb-3">
                                 <i class="bi bi-person-circle text-blue-600 text-xl mr-2"></i>
-                                <h4 class="font-semibold text-gray-800">Step 1: Pick Students</h4>
+                                <h4 class="font-semibold text-gray-800 dark:text-white">Step 1: Pick Students</h4>
                             </div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Select one or more students *</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select one or more students *</label>
                             <div class="flex gap-2 mb-2">
-                                <select id="sectionFilter" onchange="applyFilters()" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <select id="sectionFilter" onchange="applyFilters()" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm">
                                     <option value="">All Sections</option>
                                     {% for section in sections %}
                                     <option value="{{ section|lower }}" {% if section_filter == section|lower %}selected{% endif %}>{{ section }}</option>
                                     {% endfor %}
                                 </select>
-                                <select id="gradeFilter" onchange="applyFilters()" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <select id="gradeFilter" onchange="applyFilters()" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm">
                                     <option value="">All Grades</option>
                                     {% for grade in grade_levels %}
                                     <option value="{{ grade }}" {% if grade_filter == grade %}selected{% endif %}>Grade {{ grade }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
-                            <input type="text" id="studentSearch" placeholder="Search students..." oninput="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 text-sm">
-                            <div class="border border-gray-300 rounded-lg bg-white max-h-48 overflow-y-auto" id="studentList">
+                            <input type="text" id="studentSearch" placeholder="Search students..." oninput="applyFilters()" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg mb-2 text-sm">
+                            <div class="border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 max-h-48 overflow-y-auto" id="studentList">
                                 {% for student in students %}
-                                <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer student-option" data-name="{{ student.get_full_name|lower }}" data-section="{{ student.section|lower }}" data-grade="{{ student.year_level }}">
+                                <label class="flex items-center px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer student-option" data-name="{{ student.get_full_name|lower }}" data-section="{{ student.section|lower }}" data-grade="{{ student.year_level }}">
                                     <input type="checkbox" name="student" value="{{ student.id }}" class="mr-2">
-                                    <span class="text-sm text-gray-800">{{ student.get_full_name }}{% if student.year_level %} (Grade {{ student.year_level }}){% endif %}{% if student.section %} - {{ student.section }}{% endif %}</span>
+                                    <span class="text-sm text-gray-800 dark:text-gray-200">{{ student.get_full_name }}{% if student.year_level %} (Grade {{ student.year_level }}){% endif %}{% if student.section %} - {{ student.section }}{% endif %}</span>
                                 </label>
                                 {% endfor %}
                             </div>
-                            <p class="text-xs text-gray-500 mt-1"><span id="selectedCount">0</span> student(s) selected</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1"><span id="selectedCount">0</span> student(s) selected</p>
                         </div>
 
                         <!-- Step 2: Select Class -->
-                        <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-400">
+                        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border-l-4 border-green-400">
                             <div class="flex items-center mb-3">
                                 <i class="bi bi-book text-green-600 text-xl mr-2"></i>
-                                <h4 class="font-semibold text-gray-800">Step 2: Pick a Class</h4>
+                                <h4 class="font-semibold text-gray-800 dark:text-white">Step 2: Pick a Class</h4>
                             </div>
-                            <label for="class" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="class" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Which class should they join? *
                             </label>
-                            <select name="class" id="class" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900" required>
+                            <select name="class" id="class" class="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" required>
                                 <option value="">📚 Choose a class...</option>
                                 {% for class in classes %}
-                                <option value="{{ class.id }}">
-                                    📖 {{ class.code }} - {{ class.name }} 
-                                    <span class="text-gray-600">(Teacher: {{ class.teacher.get_full_name }})</span>
-                                </option>
+                                <option value="{{ class.id }}">📖 {{ class.code }} - {{ class.name }} (Teacher: {{ class.teacher.get_full_name }})</option>
                                 {% endfor %}
                             </select>
-                            <p class="text-xs text-gray-500 mt-2">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                 <i class="bi bi-info-circle mr-1"></i>
                                 Each class shows the subject name, class code, and assigned teacher
                             </p>
                         </div>
 
                         <!-- Action Button -->
-                        <div class="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-4 border">
+                        <div class="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 rounded-lg p-4 border dark:border-gray-700">
                             <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white px-6 py-4 rounded-lg hover:from-blue-700 hover:to-green-700 transition font-semibold text-lg shadow-lg">
                                 <i class="bi bi-check-circle-fill mr-2"></i> Enroll Selected Students
                             </button>
-                            <p class="text-xs text-center text-gray-500 mt-2">
+                            <p class="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
                                 <i class="bi bi-shield-check mr-1"></i>
                                 Students will be immediately enrolled and can access class materials
                             </p>
@@ -108,30 +105,30 @@
 
         <!-- Recent Activity Sidebar -->
         <div class="lg:col-span-1">
-            <div class="bg-white rounded-lg shadow-lg border">
-                <div class="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b">
-                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700">
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 px-6 py-4 border-b dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
                         <i class="bi bi-clock-history text-green-600 mr-2"></i>
                         Recent Enrollments
                     </h3>
-                    <p class="text-xs text-gray-600 mt-1">Latest student additions</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Latest student additions</p>
                 </div>
                 <div class="p-4">
                     {% if recent_enrollments %}
                         <div class="space-y-3 max-h-96 overflow-y-auto">
                         {% for enrollment in recent_enrollments %}
-                            <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200">
+                            <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                         <div class="flex items-center mb-1">
                                             <i class="bi bi-person-check-fill text-green-600 mr-2"></i>
-                                            <h6 class="font-semibold text-gray-800 text-sm">{{ enrollment.student.get_full_name }}</h6>
+                                            <h6 class="font-semibold text-gray-800 dark:text-white text-sm">{{ enrollment.student.get_full_name }}</h6>
                                         </div>
-                                        <div class="flex items-center text-xs text-gray-600">
+                                        <div class="flex items-center text-xs text-gray-600 dark:text-gray-400">
                                             <i class="bi bi-book mr-1"></i>
                                             <span>{{ enrollment.class.code }} - {{ enrollment.class.name }}</span>
                                         </div>
-                                        <div class="flex items-center text-xs text-gray-500 mt-1">
+                                        <div class="flex items-center text-xs text-gray-500 dark:text-gray-500 mt-1">
                                             <i class="bi bi-person mr-1"></i>
                                             <span>{{ enrollment.class.teacher.get_full_name }}</span>
                                         </div>
@@ -154,12 +151,12 @@
             </div>
 
             <!-- Help Card -->
-            <div class="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 mt-6 border border-blue-200">
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 mt-6 border border-blue-200 dark:border-blue-800">
                 <div class="flex items-center mb-2">
                     <i class="bi bi-lightbulb-fill text-blue-600 mr-2"></i>
-                    <h4 class="font-semibold text-blue-800">Quick Tips</h4>
+                    <h4 class="font-semibold text-blue-800 dark:text-blue-300">Quick Tips</h4>
                 </div>
-                <ul class="text-xs text-blue-700 space-y-1">
+                <ul class="text-xs text-blue-700 dark:text-blue-300 space-y-1">
                     <li class="flex items-start">
                         <i class="bi bi-check2 mr-2 mt-0.5 text-blue-600"></i>
                         <span>Students can only be enrolled in classes that match their grade level</span>

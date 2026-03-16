@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
         <!-- Header -->
         <div class="bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-4">
             <h1 class="text-2xl font-bold text-white flex items-center">
@@ -20,7 +20,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
             <!-- Quick Actions -->
             <div class="lg:col-span-1 space-y-4">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Quick Actions</h2>
                 
                 <button onclick="generateReport()" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg flex items-center justify-start transition">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
@@ -40,7 +40,7 @@
 
             <!-- Chat Area -->
             <div class="lg:col-span-2">
-                <div class="bg-gray-50 rounded-lg h-[600px] flex flex-col">
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg h-[600px] flex flex-col">
                     <!-- Chat Messages -->
                     <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
                         <!-- Welcome Message -->
@@ -48,16 +48,16 @@
                             <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold">
                                 BT
                             </div>
-                            <div class="ml-3 bg-white rounded-lg px-4 py-3 shadow-sm max-w-md">
-                                <p class="text-gray-800">Hi! I'm <strong>BT</strong>, your AI assistant admin. I'm here to help you with system reports, analytics, and administrative insights. How can I assist you today?</p>
+                            <div class="ml-3 bg-white dark:bg-gray-700 rounded-lg px-4 py-3 shadow-sm max-w-md">
+                                <p class="text-gray-800 dark:text-gray-100">Hi! I'm <strong>BT</strong>, your AI assistant admin. I'm here to help you with system reports, analytics, and administrative insights. How can I assist you today?</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Input Area -->
-                    <div id="inputArea" class="p-4 bg-white border-t hidden">
+                    <div id="inputArea" class="p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700 hidden">
                         <div class="flex space-x-2">
-                            <input type="text" id="userInput" placeholder="Type your message..." class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="userInput" placeholder="Type your message..." class="flex-1 px-4 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
                                 Send
                             </button>
@@ -96,11 +96,15 @@ function addMessage(text, isUser = false) {
             </div>
         `;
     } else {
+        const isDark = document.documentElement.classList.contains('dark');
+        const bubbleBg = isDark ? 'bg-gray-700' : 'bg-white';
+        const bubbleText = isDark ? 'text-gray-100' : 'text-gray-700';
+        const bubbleBorder = isDark ? 'border-gray-600' : 'border-gray-100';
         messageDiv.innerHTML = `
             <div class="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xs">
                 BT
             </div>
-            <div class="ml-3 bg-white rounded-xl px-4 py-3 shadow-sm border border-gray-100 max-w-2xl text-sm text-gray-700 leading-relaxed">
+            <div class="ml-3 ${bubbleBg} rounded-xl px-4 py-3 shadow-sm border ${bubbleBorder} max-w-2xl text-sm ${bubbleText} leading-relaxed">
                 ${formatAIResponse(text)}
             </div>
         `;
@@ -127,8 +131,13 @@ function generateReport() {
     .then(data => {
         const d = data.data;
         
+        const isDark = document.documentElement.classList.contains('dark');
+        const cardBg = isDark ? 'bg-gray-700' : 'bg-white';
+        const cardText = isDark ? 'text-gray-100' : 'text-gray-600';
+        const titleText = isDark ? 'text-gray-100' : 'text-gray-800';
+        const wrapBg = isDark ? 'bg-gray-800 border-gray-600' : 'bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200';
         let html = `
-        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-5 space-y-4 max-w-2xl">
+        <div class="${wrapBg} border-2 rounded-xl p-5 space-y-4 max-w-2xl">
             <div class="flex items-center space-x-3 mb-4">
                 <div class="bg-blue-500 text-white rounded-full p-3">
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -136,29 +145,27 @@ function generateReport() {
                         <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
                     </svg>
                 </div>
-                <h4 class="text-xl font-bold text-gray-800">System Executive Report</h4>
+                <h4 class="text-xl font-bold ${titleText}">System Executive Report</h4>
             </div>
-            
             <div class="grid grid-cols-2 gap-3">
-                <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
-                    <div class="text-3xl font-bold text-blue-600">${d.total_students}</div>
-                    <div class="text-sm text-gray-600 mt-1">Total Students</div>
+                <div class="${cardBg} rounded-lg p-4 shadow-sm border border-blue-100 dark:border-gray-600">
+                    <div class="text-3xl font-bold text-blue-400">${d.total_students}</div>
+                    <div class="text-sm ${cardText} mt-1">Total Students</div>
                 </div>
-                <div class="bg-white rounded-lg p-4 shadow-sm border border-green-100">
-                    <div class="text-3xl font-bold text-green-600">${d.total_teachers}</div>
-                    <div class="text-sm text-gray-600 mt-1">Total Teachers</div>
+                <div class="${cardBg} rounded-lg p-4 shadow-sm border border-green-100 dark:border-gray-600">
+                    <div class="text-3xl font-bold text-green-400">${d.total_teachers}</div>
+                    <div class="text-sm ${cardText} mt-1">Total Teachers</div>
                 </div>
-                <div class="bg-white rounded-lg p-4 shadow-sm border border-purple-100">
-                    <div class="text-3xl font-bold text-purple-600">${d.total_counselors}</div>
-                    <div class="text-sm text-gray-600 mt-1">Total Counselors</div>
+                <div class="${cardBg} rounded-lg p-4 shadow-sm border border-purple-100 dark:border-gray-600">
+                    <div class="text-3xl font-bold text-purple-400">${d.total_counselors}</div>
+                    <div class="text-sm ${cardText} mt-1">Total Counselors</div>
                 </div>
-                <div class="bg-white rounded-lg p-4 shadow-sm border border-red-100">
-                    <div class="text-3xl font-bold text-red-600">${d.high_risk_students}</div>
-                    <div class="text-sm text-gray-600 mt-1">High-Risk Students</div>
+                <div class="${cardBg} rounded-lg p-4 shadow-sm border border-red-100 dark:border-gray-600">
+                    <div class="text-3xl font-bold text-red-400">${d.high_risk_students}</div>
+                    <div class="text-sm ${cardText} mt-1">High-Risk Students</div>
                 </div>
             </div>
-            
-            <div class="bg-white rounded-lg p-4 mt-4 border border-blue-100 text-sm text-gray-700 leading-relaxed">
+            <div class="${cardBg} rounded-lg p-4 mt-4 border border-blue-100 dark:border-gray-600 text-sm ${isDark ? 'text-gray-200' : 'text-gray-700'} leading-relaxed">
                 ${formatAIResponse(data.response)}
             </div>
         </div>

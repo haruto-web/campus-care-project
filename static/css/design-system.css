@@ -832,3 +832,210 @@ body {
 .bg-yellow-500 { background-color: #d97706 !important; }
 .bg-orange-500 { background-color: #c2410c !important; }
 
+/* ======================================
+   Global Dark Mode Overrides
+   Covers all templates that use Tailwind
+   classes without dark: variants
+   ====================================== */
+
+/* --- Core surfaces --- */
+.dark body { background-color: #0f172a; color: #e2e8f0; }
+
+.dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-gray-50 { background-color: #0f172a !important; }
+.dark .bg-gray-100 { background-color: #1e293b !important; }
+.dark .bg-gray-200 { background-color: #273549 !important; }
+
+/* --- Text --- */
+.dark .text-gray-900 { color: #f1f5f9 !important; }
+.dark .text-gray-800 { color: #e2e8f0 !important; }
+.dark .text-gray-700 { color: #cbd5e1 !important; }
+.dark .text-gray-600 { color: #94a3b8 !important; }
+.dark .text-gray-500 { color: #64748b !important; }
+.dark .text-gray-400 { color: #475569 !important; }
+
+/* --- Borders --- */
+.dark .border-gray-100 { border-color: #1e293b !important; }
+.dark .border-gray-200 { border-color: #2d3f55 !important; }
+.dark .border-gray-300 { border-color: #334155 !important; }
+.dark .divide-gray-100 > * + * { border-color: #1e293b !important; }
+.dark .divide-gray-200 > * + * { border-color: #2d3f55 !important; }
+
+/* --- Hover states --- */
+.dark .hover\:bg-gray-50:hover { background-color: #273549 !important; }
+.dark .hover\:bg-gray-100:hover { background-color: #273549 !important; }
+.dark .hover\:bg-gray-200:hover { background-color: #334155 !important; }
+
+/* --- Tinted section backgrounds in dark mode --- */
+.dark .bg-red-50 { background-color: rgba(220,38,38,0.1) !important; }
+.dark .bg-green-50 { background-color: rgba(5,150,105,0.1) !important; }
+.dark .bg-blue-50 { background-color: rgba(37,99,235,0.1) !important; }
+.dark .bg-purple-50 { background-color: rgba(124,58,237,0.1) !important; }
+.dark .bg-indigo-50 { background-color: rgba(79,70,229,0.1) !important; }
+.dark .bg-yellow-50 { background-color: rgba(217,119,6,0.1) !important; }
+.dark .bg-amber-50 { background-color: rgba(217,119,6,0.1) !important; }
+.dark .bg-teal-50 { background-color: rgba(13,148,136,0.1) !important; }
+.dark .bg-emerald-50 { background-color: rgba(5,150,105,0.1) !important; }
+
+/* --- Light tint backgrounds (stat icons) --- */
+.dark .bg-blue-100 { background-color: rgba(37,99,235,0.15) !important; }
+.dark .bg-green-100 { background-color: rgba(5,150,105,0.15) !important; }
+.dark .bg-red-100 { background-color: rgba(220,38,38,0.15) !important; }
+.dark .bg-purple-100 { background-color: rgba(124,58,237,0.15) !important; }
+.dark .bg-yellow-100 { background-color: rgba(217,119,6,0.15) !important; }
+.dark .bg-indigo-100 { background-color: rgba(79,70,229,0.15) !important; }
+.dark .bg-teal-100 { background-color: rgba(13,148,136,0.15) !important; }
+.dark .bg-amber-100 { background-color: rgba(217,119,6,0.15) !important; }
+.dark .bg-emerald-100 { background-color: rgba(5,150,105,0.15) !important; }
+
+/* --- Colored text on tinted backgrounds --- */
+.dark .text-blue-800 { color: #93c5fd !important; }
+.dark .text-red-800 { color: #fca5a5 !important; }
+.dark .text-green-800 { color: #6ee7b7 !important; }
+.dark .text-purple-800 { color: #c4b5fd !important; }
+.dark .text-yellow-800 { color: #fcd34d !important; }
+.dark .text-indigo-800 { color: #a5b4fc !important; }
+.dark .text-teal-800 { color: #5eead4 !important; }
+
+/* --- Badge backgrounds in dark mode --- */
+.dark .bg-red-100.text-red-800 { background-color: rgba(220,38,38,0.15) !important; color: #fca5a5 !important; }
+.dark .bg-green-100.text-green-800 { background-color: rgba(5,150,105,0.15) !important; color: #6ee7b7 !important; }
+.dark .bg-yellow-100.text-yellow-800 { background-color: rgba(217,119,6,0.15) !important; color: #fcd34d !important; }
+.dark .bg-blue-100.text-blue-800 { background-color: rgba(37,99,235,0.15) !important; color: #93c5fd !important; }
+.dark .bg-purple-100.text-purple-800 { background-color: rgba(124,58,237,0.15) !important; color: #c4b5fd !important; }
+.dark .bg-indigo-100.text-indigo-800 { background-color: rgba(79,70,229,0.15) !important; color: #a5b4fc !important; }
+.dark .bg-gray-100.text-gray-700 { background-color: #273549 !important; color: #cbd5e1 !important; }
+
+/* --- Card/panel borders with color --- */
+.dark .border-red-200 { border-color: rgba(220,38,38,0.3) !important; }
+.dark .border-green-200 { border-color: rgba(5,150,105,0.3) !important; }
+.dark .border-blue-200 { border-color: rgba(37,99,235,0.3) !important; }
+.dark .border-purple-200 { border-color: rgba(124,58,237,0.3) !important; }
+.dark .border-yellow-200 { border-color: rgba(217,119,6,0.3) !important; }
+.dark .border-indigo-200 { border-color: rgba(79,70,229,0.3) !important; }
+.dark .border-blue-100 { border-color: rgba(37,99,235,0.2) !important; }
+.dark .border-purple-100 { border-color: rgba(124,58,237,0.2) !important; }
+
+/* --- Colored tinted cards (at-risk, interventions) --- */
+.dark .bg-red-50.border-red-200 { background-color: rgba(220,38,38,0.08) !important; }
+.dark .bg-yellow-50.border-yellow-200 { background-color: rgba(217,119,6,0.08) !important; }
+.dark .bg-green-50.border-green-200 { background-color: rgba(5,150,105,0.08) !important; }
+.dark .bg-purple-50.border-purple-200 { background-color: rgba(124,58,237,0.08) !important; }
+.dark .bg-blue-50.border-blue-200 { background-color: rgba(37,99,235,0.08) !important; }
+
+/* --- Hover on colored tinted cards --- */
+.dark .hover\:bg-red-100:hover { background-color: rgba(220,38,38,0.15) !important; }
+.dark .hover\:bg-green-100:hover { background-color: rgba(5,150,105,0.15) !important; }
+.dark .hover\:bg-blue-100:hover { background-color: rgba(37,99,235,0.15) !important; }
+.dark .hover\:bg-purple-100:hover { background-color: rgba(124,58,237,0.15) !important; }
+.dark .hover\:bg-indigo-100:hover { background-color: rgba(79,70,229,0.15) !important; }
+.dark .hover\:bg-blue-50:hover { background-color: rgba(37,99,235,0.1) !important; }
+.dark .hover\:bg-red-50:hover { background-color: rgba(220,38,38,0.1) !important; }
+.dark .hover\:bg-purple-50:hover { background-color: rgba(124,58,237,0.1) !important; }
+.dark .hover\:bg-indigo-50:hover { background-color: rgba(79,70,229,0.1) !important; }
+.dark .hover\:bg-green-50:hover { background-color: rgba(5,150,105,0.1) !important; }
+
+/* --- Gradient section backgrounds --- */
+.dark .bg-gradient-to-r.from-blue-50.to-indigo-50 {
+  background: linear-gradient(to right, rgba(37,99,235,0.1), rgba(79,70,229,0.1)) !important;
+}
+.dark .bg-gradient-to-r.from-blue-50.to-indigo-50 .bg-white {
+  background-color: rgba(30,41,59,0.8) !important;
+}
+
+/* --- Inline stats inner white boxes --- */
+.dark .bg-white.p-2.rounded.border,
+.dark .bg-white.p-3.rounded-lg.border,
+.dark .bg-white.p-4.rounded-lg.border {
+  background-color: #273549 !important;
+  border-color: #2d3f55 !important;
+}
+
+/* --- Table rows --- */
+.dark .hover\:bg-gray-50:hover td { background-color: #273549 !important; }
+
+/* --- Section header backgrounds --- */
+.dark .bg-gray-50.px-4.py-3,
+.dark .bg-gray-50.px-6.py-4 { background-color: #273549 !important; }
+
+/* --- Form inputs --- */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark input[type="date"],
+.dark input[type="search"],
+.dark textarea,
+.dark select {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #2d3f55;
+}
+.dark input::placeholder,
+.dark textarea::placeholder { color: #64748b; }
+
+/* --- Topbar surface --- */
+.dark .bt-topbar { background: #1e293b; border-color: #2d3f55; }
+
+/* --- Notification dropdown items --- */
+.dark #notifList a:hover { background-color: #273549 !important; }
+
+/* --- Messaging inbox unread highlight --- */
+.dark .bg-blue-50 { background-color: rgba(37,99,235,0.1) !important; }
+
+/* --- Mobile tab buttons (counselor dashboard) --- */
+.dark .bg-gray-100.text-gray-700 { background-color: #273549 !important; color: #cbd5e1 !important; }
+
+/* --- Counselor base (legacy) --- */
+.dark .top-header { background-color: #1e293b !important; }
+.dark .top-header h5 { color: #e2e8f0 !important; }
+
+/* --- Warning/alert banners --- */
+.dark .bg-red-50.border-l-4.border-red-500 { background-color: rgba(220,38,38,0.1) !important; }
+.dark .bg-red-50.border-l-4.border-red-500 .text-red-800 { color: #fca5a5 !important; }
+.dark .bg-red-50.border-l-4.border-red-500 .text-red-700 { color: #fca5a5 !important; }
+
+/* --- Confirm modal --- */
+.dark .bg-yellow-50 { background-color: rgba(217,119,6,0.1) !important; }
+.dark .bg-green-50 { background-color: rgba(5,150,105,0.1) !important; }
+
+/* --- Submission/class list inner rows --- */
+.dark .divide-y.divide-gray-100 > div:hover { background-color: #273549 !important; }
+.dark .hover\:bg-gray-50.transition-colors:hover { background-color: #273549 !important; }
+
+/* --- Announcement items --- */
+.dark .announcement-item { background-color: #1e293b !important; border-color: #2d3f55 !important; }
+.dark .announcement-item .text-gray-600 { color: #94a3b8 !important; }
+
+/* --- Class detail / assignment cards --- */
+.dark .bg-gray-50.dark\:bg-gray-700\/50 { background-color: rgba(39,53,73,0.5) !important; }
+
+/* --- Outlined action buttons (counselor quick actions) --- */
+.dark .border-2.border-blue-200.text-blue-700 {
+  border-color: rgba(37,99,235,0.4) !important;
+  color: #93c5fd !important;
+}
+.dark .border-2.border-red-200.text-red-700 {
+  border-color: rgba(220,38,38,0.4) !important;
+  color: #fca5a5 !important;
+}
+.dark .border-2.border-indigo-200.text-indigo-700 {
+  border-color: rgba(79,70,229,0.4) !important;
+  color: #a5b4fc !important;
+}
+
+/* --- Stat card label text (no dark: variant) --- */
+.dark .bt-stat-card p,
+.dark .rounded-xl.shadow-md.p-6 > p,
+.dark .rounded-xl.shadow-md.p-6 .text-gray-600 { color: #94a3b8 !important; }
+
+/* --- Empty state text --- */
+.dark .text-center .text-gray-600 { color: #94a3b8 !important; }
+.dark .text-center .text-gray-500 { color: #64748b !important; }
+
+/* --- Scrollbar in dark mode --- */
+.dark ::-webkit-scrollbar { width: 6px; height: 6px; }
+.dark ::-webkit-scrollbar-track { background: #1e293b; }
+.dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
