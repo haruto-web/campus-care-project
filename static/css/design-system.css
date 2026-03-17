@@ -91,7 +91,16 @@ body {
   background: var(--bt-bg);
   color: var(--bt-text);
   margin: 0;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
 }
 
 /* --- Sidebar --- */
@@ -578,6 +587,7 @@ body {
 /* --- Responsive --- */
 @media (max-width: 1024px) {
   .bt-sidebar { transform: translateX(-100%); }
+  .bt-sidebar { width: min(86vw, 320px); }
   .bt-sidebar.open { transform: translateX(0); }
   .bt-sidebar-overlay.open { display: block; }
   .bt-topbar { left: 0; }
@@ -588,9 +598,48 @@ body {
 }
 
 @media (max-width: 640px) {
+  .bt-topbar {
+    height: 56px;
+    padding: 0 12px;
+  }
+  .bt-topbar-left { gap: 10px; min-width: 0; }
+  .bt-topbar-right { gap: 4px; }
+  .bt-topbar-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1.05rem;
+  }
+  .bt-page-title {
+    font-size: 1rem;
+    max-width: calc(100vw - 170px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bt-main { padding-top: 56px; }
   .bt-content { padding: 16px; }
+  .bt-card-header,
+  .bt-card-body { padding: 14px; }
+  .bt-alert {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+  .bt-dropdown {
+    position: fixed;
+    top: 64px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    max-height: calc(100vh - 76px);
+    overflow-y: auto;
+  }
+  .bt-content .overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
   .bt-grid-2, .bt-grid-3, .bt-grid-4 { grid-template-columns: 1fr; }
-  .bt-topbar { padding: 0 16px; }
   .bt-stat-card { padding: 16px; }
 }
 
