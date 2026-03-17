@@ -187,7 +187,7 @@
             <button class="bt-hamburger" onclick="toggleSidebar()">
                 <i class="bi bi-list"></i>
             </button>
-            <h1 class="bt-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+            <h1 class="bt-page-title">{% block page_title %}{% endblock %}</h1>
         </div>
         <div class="bt-topbar-right">
             <!-- Theme Toggle -->
@@ -215,7 +215,7 @@
             <form id="logoutForm" method="POST" action="{% url 'logout' %}" class="inline">
                 {% csrf_token %}
                 <button type="button" class="bt-topbar-btn" title="Logout"
-                    onclick="showConfirmModal({title:'Log Out',body:'Are you sure you want to log out?',okLabel:'Log Out',type:'warning',onConfirm:()=>document.getElementById('logoutForm').submit()})">
+                    onclick="showConfirmModal({title:'Log Out',body:'Are you sure you want to log out?',okLabel:'Log Out',type:'danger',onConfirm:()=>document.getElementById('logoutForm').submit()})">
                     <i class="bi bi-box-arrow-right"></i>
                 </button>
             </form>
