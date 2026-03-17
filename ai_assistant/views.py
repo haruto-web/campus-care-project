@@ -13,6 +13,38 @@ import logging
 
 logger = logging.getLogger('brighttrack')
 
+
+AI_SCOPE_REFUSAL = (
+    "I can only help with BrightTrack/Campus Care topics such as students, classes, "
+    "attendance, grades, alerts, interventions, wellness, reports, messaging, and user management."
+)
+
+AI_SCOPE_KEYWORDS = [
+    'brighttrack', 'campus care', 'system', 'dashboard', 'student', 'students', 'teacher',
+    'counselor', 'admin', 'class', 'classes', 'attendance', 'grade', 'grades', 'assignment',
+    'assignments', 'wellness', 'risk', 'alert', 'alerts', 'intervention', 'interventions',
+    'concern', 'concerns', 'report', 'reports', 'message', 'messages', 'enroll', 'enrollment',
+    'profile', 'users', 'school', 'academic', 'academics'
+]
+
+
+def _is_system_related_prompt(message):
+    text = (message or '').strip().lower()
+    if not text:
+        return False
+    return any(keyword in text for keyword in AI_SCOPE_KEYWORDS)
+
+
+def _build_scoped_prompt(message, role_label):
+    return (
+        f"You are the BrightTrack {role_label} assistant.\n"
+        "Scope rules:\n"
+        "1) Answer only BrightTrack/Campus Care school-system topics.\n"
+        "2) If the request is unrelated, refuse briefly and ask a system-related follow-up.\n"
+        "3) Do not provide off-topic answers.\n\n"
+        f"User request:\n{message}"
+    )
+
 @login_required
 def counselor_chat_view(request):
     """Render counselor chatbox page"""
@@ -309,7 +341,9 @@ Format: Subject line and email body"""
                 return JsonResponse({'error': 'Not found'}, status=404)
         
         elif action == 'ask_ai':
-            response = client.generate_text(message)
+            if not _is_system_related_prompt(message):
+                return JsonResponse({'response': AI_SCOPE_REFUSAL})
+            response = client.generate_text(_build_scoped_prompt(message, 'counselor'))
             return JsonResponse({'response': response})
         
         else:
@@ -363,7 +397,9 @@ Write in a conversational, easy-to-read style:
             return JsonResponse({'response': summary, 'data': summary_data})
         
         elif action == 'ask_ai':
-            response = client.generate_text(message)
+            if not _is_system_related_prompt(message):
+                return JsonResponse({'response': AI_SCOPE_REFUSAL})
+            response = client.generate_text(_build_scoped_prompt(message, 'admin'))
             return JsonResponse({'response': response})
         
         else:

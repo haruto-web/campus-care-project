@@ -55,6 +55,10 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.get_full_name()} ({self.role})"
+
+    def get_full_name(self):
+        full_name = super().get_full_name().strip()
+        return full_name.title()
     
     def get_age(self):
         if self.date_of_birth:
