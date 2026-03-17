@@ -23,9 +23,8 @@
                         placeholder="Enter your email">
                 </div>
                 <div>
-                    <div class="flex justify-between items-center mb-2">
+                    <div class="mb-2">
                         <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                        <a href="{% url 'otp_forgot_password' %}" class="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700">Forgot password?</a>
                     </div>
                     <div class="relative">
                         <input type="password" id="password" name="password" required
@@ -35,6 +34,9 @@
                             class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                             <i class="bi bi-eye" id="eyeIcon"></i>
                         </button>
+                    </div>
+                    <div class="mt-2 text-right">
+                        <a href="{% url 'otp_forgot_password' %}" class="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700">Forgot password?</a>
                     </div>
                 </div>
                 <button type="submit"
