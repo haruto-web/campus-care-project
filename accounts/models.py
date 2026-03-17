@@ -105,6 +105,39 @@ class ApprovedStudent(models.Model):
         return f"{self.student_number} — {self.last_name}, {self.first_name}"
 
 
+class RegistrationRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+
+    student_number = models.CharField(max_length=20)
+    email = models.EmailField()
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    year_level = models.CharField(max_length=2, choices=User.YEAR_LEVEL_CHOICES)
+    section = models.CharField(max_length=50, blank=True)
+    password_hash = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    approved_by = models.ForeignKey(
+        'User', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='processed_registration_requests'
+    )
+    decided_at = models.DateTimeField(blank=True, null=True)
+    rejection_reason = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['student_number', 'email'], name='uniq_registration_request_student_email')
+        ]
+
+    def __str__(self):
+        return f"{self.student_number} - {self.last_name}, {self.first_name} ({self.status})"
+
+
 class AuditLog(models.Model):
     ACTION_CHOICES = [
         ('LOGIN', 'Login'),
