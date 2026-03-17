@@ -3,8 +3,6 @@
 ## System Overview
 BrightTrack (formerly Campus Care) is an LMS with integrated student support monitoring that tracks academic performance, attendance, and wellness to identify at-risk students early.
 
-**Last Updated:** June 2026
-**Overall Progress:** 100% Complete
 **Live URL:** https://bright-track-project.onrender.com
 
 ---
