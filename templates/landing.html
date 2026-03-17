@@ -23,6 +23,12 @@
         .fade-up-delay { animation-delay: 0.2s; }
         .fade-up-delay-2 { animation-delay: 0.4s; }
         @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+        .mobile-nav-overlay { background: rgba(15,23,42,0.45); }
+        .mobile-nav-panel {
+            width: min(92vw, 340px);
+            max-height: 100vh;
+            overflow-y: auto;
+        }
     </style>
 </head>
 
@@ -70,9 +76,22 @@
             </div>
         </div>
         <!-- Mobile menu -->
-        <div id="landingMobileMenu" class="hidden sm:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-2">
-            <a href="{% url 'login' %}" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 font-medium">Log In</a>
-            <a href="{% url 'register' %}" class="block px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 font-medium text-center">Register</a>
+        <div id="landingMobileMenu" class="hidden sm:hidden fixed inset-0 z-[70] mobile-nav-overlay">
+            <div class="mobile-nav-panel bg-white shadow-xl border-r border-gray-200 h-full">
+                <div class="h-16 px-5 flex items-center justify-between border-b border-gray-200">
+                    <div class="flex items-center gap-2">
+                        <img src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-8 h-8 object-contain">
+                        <span class="text-2xl font-bold text-gray-900">BrightTrack</span>
+                    </div>
+                    <button onclick="toggleLandingMenu()" class="p-2 rounded text-gray-600 hover:bg-gray-100">
+                        <i class="bi bi-x text-2xl"></i>
+                    </button>
+                </div>
+                <div class="px-4 py-6 space-y-3">
+                    <a href="{% url 'login' %}" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 font-semibold">Log In</a>
+                    <a href="{% url 'register' %}" class="block px-3 py-2.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 font-semibold text-center">Register</a>
+                </div>
+            </div>
         </div>
     </nav>
     <script>
@@ -81,6 +100,7 @@
             const icon = document.getElementById('landingHamburger');
             menu.classList.toggle('hidden');
             icon.className = menu.classList.contains('hidden') ? 'bi bi-list text-2xl' : 'bi bi-x text-2xl';
+            document.body.style.overflow = menu.classList.contains('hidden') ? '' : 'hidden';
         }
     </script>
 
