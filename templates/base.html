@@ -322,6 +322,14 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
         document.addEventListener('DOMContentLoaded', function () {
             const icon = document.getElementById('themeIcon');
             if (icon && localStorage.getItem('theme') === 'dark') icon.className = 'bi bi-sun';
+
+            // Remove duplicate page heading when topbar title matches the first content heading.
+            const normalize = (text) => (text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            const topbarTitle = document.querySelector('.bt-page-title');
+            const contentHeading = document.querySelector('.bt-content h1, .bt-content h2');
+            if (topbarTitle && contentHeading && normalize(topbarTitle.textContent) && normalize(topbarTitle.textContent) === normalize(contentHeading.textContent)) {
+                contentHeading.remove();
+            }
         });
     </script>
 
