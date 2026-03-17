@@ -330,14 +330,18 @@ canvas {
 /* --- Main Content Area --- */
 .bt-main {
   margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
   padding-top: var(--topbar-height);
   min-height: 100vh;
+  overflow-x: hidden;
   transition: margin-left var(--transition-base);
 }
 
 .bt-content {
   padding: 24px;
+  width: 100%;
   max-width: 1400px;
+  margin: 0 auto;
 }
 
 /* --- Hamburger for mobile --- */
@@ -587,17 +591,21 @@ canvas {
 /* --- Responsive --- */
 @media (max-width: 1024px) {
   .bt-sidebar { transform: translateX(-100%); }
-  .bt-sidebar { width: min(86vw, 320px); }
+  .bt-sidebar { width: 100vw; max-width: 100vw; }
   .bt-sidebar.open { transform: translateX(0); }
   .bt-sidebar-overlay.open { display: block; }
   .bt-topbar { left: 0; }
-  .bt-main { margin-left: 0; }
+  .bt-main { margin-left: 0; width: 100%; }
   .bt-hamburger { display: flex; }
   .bt-grid-4 { grid-template-columns: repeat(2, 1fr); }
   .bt-grid-3 { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 640px) {
+  .bt-sidebar {
+    width: 100vw;
+    max-width: 100vw;
+  }
   .bt-topbar {
     height: 56px;
     padding: 0 12px;
@@ -638,9 +646,55 @@ canvas {
   .bt-content .overflow-x-auto {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    max-width: 100%;
   }
   .bt-grid-2, .bt-grid-3, .bt-grid-4 { grid-template-columns: 1fr; }
   .bt-stat-card { padding: 16px; }
+}
+
+/* ======================================
+   Global Responsive Safeguards
+   Prevents leftover horizontal overflow
+   on small and medium screens.
+   ====================================== */
+.bt-content,
+.bt-content > * {
+  max-width: 100%;
+}
+
+.bt-content * {
+  min-width: 0;
+}
+
+.bt-content img,
+.bt-content video,
+.bt-content iframe,
+.bt-content canvas,
+.bt-content svg {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .bt-content .flex.justify-between,
+  .bt-content .flex.items-center.justify-between,
+  .bt-content .flex.justify-between.items-center {
+    flex-wrap: wrap;
+    row-gap: 0.75rem;
+  }
+
+  .bt-content h1,
+  .bt-content h2,
+  .bt-content h3,
+  .bt-content p,
+  .bt-content span,
+  .bt-content a,
+  .bt-content button,
+  .bt-content label,
+  .bt-content td,
+  .bt-content th {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 }
 
 /* --- Dropdown Panel --- */
