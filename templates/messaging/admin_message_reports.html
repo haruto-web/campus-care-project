@@ -105,18 +105,18 @@
             {% endif %}
 
             {% if report.consequence == 'suspend' and report.reported_user.is_messaging_suspended %}
-            <div class="mt-3 flex items-center justify-between gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3">
-                <div class="flex items-center gap-2 text-sm text-red-700 dark:text-red-400">
+            <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg px-4 py-3">
+                <div class="flex items-start sm:items-center gap-2 text-sm text-red-700 dark:text-red-400 min-w-0">
                     <i class="bi bi-slash-circle"></i>
-                    <span><strong>{{ report.reported_user.get_full_name }}</strong> is currently suspended until {{ report.reported_user.messaging_suspended_until|date:"M d, Y g:i A" }}</span>
+                    <span class="break-words"><strong>{{ report.reported_user.get_full_name }}</strong> is currently suspended until {{ report.reported_user.messaging_suspended_until|date:"M d, Y g:i A" }}</span>
                 </div>
-                <form method="post" action="{% url 'admin_lift_messaging_suspension' report.reported_user.id %}" id="liftForm{{ report.id }}">
+                <form method="post" action="{% url 'admin_lift_messaging_suspension' report.reported_user.id %}" id="liftForm{{ report.id }}" class="w-full sm:w-auto">
                     {% csrf_token %}
                     <button type="button"
                         data-form="liftForm{{ report.id }}"
                         data-name="{{ report.reported_user.get_full_name }}"
                         onclick="confirmLiftBanReport(this)"
-                        class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition">
+                        class="w-full sm:w-auto px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition whitespace-nowrap">
                         <i class="bi bi-unlock mr-1"></i> Lift Ban
                     </button>
                 </form>

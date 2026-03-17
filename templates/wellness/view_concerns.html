@@ -3,21 +3,22 @@
 {% block content %}
 <div class="max-w-5xl mx-auto">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 leading-tight">
                 <i class="bi bi-flag-fill text-yellow-500"></i> My Submitted Concerns
             </h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Track concerns you've reported about students</p>
         </div>
-        <a href="{% url 'wellness:create_concern' %}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition">
+        <a href="{% url 'wellness:create_concern' %}" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition">
             <i class="bi bi-plus-circle"></i> Report New Concern
         </a>
     </div>
 
     {% if concerns %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <table class="w-full text-sm">
+        <div class="overflow-x-auto">
+        <table class="w-full min-w-[700px] text-sm">
             <thead class="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
                 <tr>
                     <th class="px-4 py-3 text-left">Student</th>
@@ -68,6 +69,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
     {% else %}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 text-center py-16">
