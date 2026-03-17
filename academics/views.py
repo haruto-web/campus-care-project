@@ -4,8 +4,11 @@ from django.contrib import messages
 from django.db.models import Q, Avg
 from django.http import JsonResponse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django.core.exceptions import ValidationError
 from .models import Class, Announcement, Material, Assignment, Attendance, Submission, Grade
 from .forms import ClassForm, AssignmentForm, MaterialForm
+from campus_care.validators import validate_submission_upload, validate_document_upload
 from datetime import date, datetime, timedelta
 import json
 
@@ -228,6 +231,12 @@ def create_assignment(request, class_id):
         if form.is_valid():
             assignment = form.save(commit=False)
             assignment.class_obj = class_obj
+            if assignment.total_points < 1 or assignment.total_points > 100:
+                messages.error(request, 'Total points must be between 1 and 100.')
+                return render(request, 'academics/create_assignment.html', {'form': form, 'class': class_obj})
+            if assignment.due_date <= timezone.now():
+                messages.error(request, 'Due date must be in the future.')
+                return render(request, 'academics/create_assignment.html', {'form': form, 'class': class_obj})
             assignment.save()
             messages.success(request, f'Assignment "{assignment.title}" created successfully!')
             return redirect('academics:class_detail', class_id=class_id)
@@ -322,7 +331,18 @@ def grade_submission(request, submission_id):
         score = request.POST.get('score')
         feedback = request.POST.get('feedback', '')
         
-        submission.score = int(score) if score else None
+        if score:
+            try:
+                score_val = int(score)
+            except (ValueError, TypeError):
+                messages.error(request, 'Invalid score value.')
+                return redirect('academics:grade_submission', submission_id=submission_id)
+            if score_val < 0 or score_val > submission.assignment.total_points:
+                messages.error(request, f'Score must be between 0 and {submission.assignment.total_points}.')
+                return redirect('academics:grade_submission', submission_id=submission_id)
+            submission.score = score_val
+        else:
+            submission.score = None
         submission.feedback = feedback
         from django.utils import timezone
         submission.graded_at = timezone.now()
@@ -357,6 +377,14 @@ def upload_material(request, class_id):
     if request.method == 'POST':
         form = MaterialForm(request.POST, request.FILES)
         if form.is_valid():
+            # Validate file upload
+            uploaded_file = request.FILES.get('file')
+            if uploaded_file:
+                try:
+                    validate_document_upload(uploaded_file)
+                except ValidationError as e:
+                    messages.error(request, str(e.message))
+                    return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
             material = form.save(commit=False)
             material.class_obj = class_obj
             material.uploaded_by = request.user
@@ -369,6 +397,7 @@ def upload_material(request, class_id):
     return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
 
 @login_required
+@require_POST
 def delete_material(request, material_id):
     material = get_object_or_404(Material, id=material_id)
     
@@ -572,6 +601,13 @@ def submit_assignment(request, assignment_id):
         elif sub_type == 'both' and not file and not text_content:
             messages.error(request, 'Please upload a file or enter your answer.')
         else:
+            # Validate file if provided
+            if file:
+                try:
+                    validate_submission_upload(file)
+                except ValidationError as e:
+                    messages.error(request, str(e.message))
+                    return render(request, 'academics/submit_assignment.html', context)
             if existing_submission:
                 try:
                     if file:
@@ -731,6 +767,7 @@ def student_attendance(request):
     return render(request, 'academics/student_attendance.html', context)
 
 @login_required
+@require_POST
 def delete_assignment(request, assignment_id):
     assignment = get_object_or_404(Assignment, id=assignment_id)
     
@@ -773,3 +810,29 @@ def edit_class(request, class_id):
         return redirect('academics:class_detail', class_id=class_id)
     
     return render(request, 'academics/edit_class.html', {'class': class_obj})
+
+@login_required
+@require_POST
+def update_attendance_ajax(request, class_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    if request.user.role != 'teacher' or class_obj.teacher != request.user:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    try:
+        data = json.loads(request.body)
+        student_id = int(data.get('student_id'))
+        status = data.get('status')
+    except (ValueError, TypeError, KeyError):
+        return JsonResponse({'error': 'Invalid data'}, status=400)
+    if status not in ('present', 'absent', 'late'):
+        return JsonResponse({'error': 'Invalid status'}, status=400)
+    from accounts.models import User
+    student = get_object_or_404(User, id=student_id, role='student')
+    if student not in class_obj.students.all():
+        return JsonResponse({'error': 'Student not in class'}, status=400)
+    Attendance.objects.update_or_create(
+        class_obj=class_obj,
+        student=student,
+        date=date.today(),
+        defaults={'status': status}
+    )
+    return JsonResponse({'success': True})

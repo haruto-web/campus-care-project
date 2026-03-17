@@ -84,12 +84,10 @@
                                 </span>
                                 <span>
                                     <i class="bi bi-person mr-1"></i>
-                                    {{ announcement.posted_by.get_full_name }}
-                                </span>
+                                    {{ announcement.posted_by.get_full_name }}</span>
                                 <span>
                                     <i class="bi bi-calendar mr-1"></i>
-                                    {{ announcement.created_at|date:"M d, Y - g:i A" }}
-                                </span>
+                                    {{ announcement.created_at|date:"M d, Y - g:i A" }}</span>
                             </div>
                         </div>
                     </div>
@@ -99,8 +97,7 @@
 
             <!-- Pagination info -->
             <div class="mt-6 text-center text-gray-600">
-                Showing {{ announcements|length }} announcement{{ announcements|length|pluralize }}
-            </div>
+                Showing {{ announcements|length }} announcement{{ announcements|length|pluralize }}</div>
         {% else %}
             <div class="text-center py-12">
                 <i class="bi bi-megaphone text-6xl text-gray-300 mb-4"></i>

@@ -2,28 +2,22 @@ from django.urls import path
 from . import views
 from . import admin_views
 from . import report_views
-from allauth.socialaccount.providers.google.views import oauth2_login
 
 urlpatterns = [
     path('', views.landing_view, name='landing'),
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
-    path('student/verify/', views.otp_request_view, name='otp_request'),
-    path('student/verify/code/', views.otp_verify_view, name='otp_verify'),
-    path('student/login/', views.otp_login_password_view, name='otp_login_password'),
-    path('student/register/', views.otp_register_view, name='otp_register'),
-    path('student/forgot-password/', views.otp_forgot_password_view, name='otp_forgot_password'),
-    path('student/reset-password/', views.otp_reset_password_view, name='otp_reset_password'),
+    path('verify-otp/', views.verify_otp_view, name='verify_otp'),
+    path('forgot-password/', views.otp_forgot_password_view, name='otp_forgot_password'),
+    path('reset-password/', views.otp_reset_password_view, name='otp_reset_password'),
     path('student/<int:student_id>/', views.student_profile_view, name='student_profile'),
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('profile/', views.profile_view, name='profile'),
     path('complete-profile/', views.complete_profile_view, name='complete_profile'),
     path('students/', views.students_list_view, name='students_list'),
-    path('google/login/', oauth2_login, name='google_login'),
-    path('fix-site/', views.fix_site_domain, name='fix_site_domain'),
     path('notifications/poll/', views.notifications_poll, name='notifications_poll'),
-    
+
     # Admin URLs
     path('manage/users/', admin_views.admin_manage_users, name='admin_manage_users'),
     path('manage/create-user/', admin_views.admin_create_user, name='admin_create_user'),
@@ -34,5 +28,14 @@ urlpatterns = [
     path('manage/enroll-student/', admin_views.admin_enroll_student, name='admin_enroll_student'),
     path('manage/cleanup-users/', admin_views.admin_cleanup_users, name='admin_cleanup_users'),
     path('manage/create-superuser/', admin_views.admin_create_superuser, name='admin_create_superuser'),
+    path('manage/upload-students/', admin_views.admin_upload_students, name='admin_upload_students'),
+    path('manage/approved-student/<int:student_id>/edit/', admin_views.admin_edit_approved_student, name='admin_edit_approved_student'),
+    path('manage/approved-student/<int:student_id>/suspend/', admin_views.admin_suspend_approved_student, name='admin_suspend_approved_student'),
+    path('manage/user/<int:user_id>/lift-suspension/', admin_views.admin_lift_messaging_suspension, name='admin_lift_messaging_suspension'),
+    path('manage/all-classes/', admin_views.admin_all_classes, name='admin_all_classes'),
+    path('manage/class/<int:class_id>/', admin_views.admin_view_class, name='admin_view_class'),
+    path('manage/class/<int:class_id>/delete/', admin_views.admin_delete_class, name='admin_delete_class'),
+    path('manage/audit-log/', admin_views.admin_audit_log, name='admin_audit_log'),
+    path('manage/admins/', admin_views.admin_manage_admins, name='admin_manage_admins'),
     path('report/download/', report_views.download_report, name='download_report'),
 ]

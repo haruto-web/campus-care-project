@@ -20,6 +20,7 @@ class RiskAssessment(models.Model):
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High'),
+        ('critical', 'Critical'),
     ]
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='risk_assessments')
     date = models.DateField(auto_now_add=True)
@@ -28,6 +29,7 @@ class RiskAssessment(models.Model):
     gpa = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)
     attendance_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     missing_assignments = models.IntegerField(default=0)
+    failing_classes = models.IntegerField(default=0)
     notes = models.TextField(blank=True)
     
     class Meta:
@@ -87,6 +89,24 @@ class Intervention(models.Model):
     def __str__(self):
         return f"{self.intervention_type} for {self.student.username} - {self.status}"
 
+class Notification(models.Model):
+    NOTIF_TYPES = [
+        ('intervention_scheduled', 'Intervention Scheduled'),
+        ('teacher_concern', 'Teacher Concern Raised'),
+    ]
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='student_notifications')
+    notif_type = models.CharField(max_length=30, choices=NOTIF_TYPES)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.notif_type} → {self.recipient.username}"
+
+
 class Alert(models.Model):
     ALERT_TYPES = [
         ('high_risk', 'High Risk Student'),
@@ -96,6 +116,7 @@ class Alert(models.Model):
         ('teacher_concern', 'Teacher Concern'),
         ('emotional_distress', 'Emotional Distress'),
         ('ai_intervention', 'AI Intervention Created'),
+        ('failing_subjects', 'Failing in Specific Subjects'),
     ]
     SEVERITY_LEVELS = [
         ('critical', 'Critical'),

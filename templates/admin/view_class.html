@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}{{ cls.name }}{% endblock %}
+{% block content %}
+<div class="space-y-6 max-w-4xl mx-auto">
+
+    <div class="flex items-center gap-3">
+        <a href="{% url 'admin_all_classes' %}" class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+            <i class="bi bi-arrow-left"></i> All Classes
+        </a>
+    </div>
+
+    <!-- Details card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+        <div class="flex items-start justify-between gap-4 mb-5">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ cls.name }}</h2>
+                {% if cls.code %}<span class="text-xs font-mono text-gray-500 dark:text-gray-400">{{ cls.code }}</span>{% endif %}
+            </div>
+            <form method="post" action="{% url 'admin_delete_class' cls.id %}" onsubmit="return confirm('Delete this class? This cannot be undone.')">
+                {% csrf_token %}
+                <button type="submit" class="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition font-medium">Delete Class</button>
+            </form>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <p class="text-xs text-gray-500 uppercase font-medium mb-1">Teacher</p>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ cls.teacher.get_full_name }}</p>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <p class="text-xs text-gray-500 uppercase font-medium mb-1">Grade Level</p>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white">{% if cls.year_level %}Grade {{ cls.year_level }}{% else %}—{% endif %}</p>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <p class="text-xs text-gray-500 uppercase font-medium mb-1">Section</p>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ cls.section|default:"—" }}</p>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <p class="text-xs text-gray-500 uppercase font-medium mb-1">Students</p>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ students.count }}</p>
+            </div>
+        </div>
+
+        {% if cls.semester or cls.schedule or cls.room %}
+        <div class="flex flex-wrap gap-4 mt-4 text-sm text-gray-500 dark:text-gray-400">
+            {% if cls.semester %}<span>Semester: {{ cls.semester }}</span>{% endif %}
+            {% if cls.schedule %}<span>Schedule: {{ cls.schedule }}</span>{% endif %}
+            {% if cls.room %}<span>Room: {{ cls.room }}</span>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Students card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+            <h3 class="font-semibold text-gray-800 dark:text-white">Enrolled Students <span class="text-gray-400 font-normal text-sm">({{ students.count }})</span></h3>
+        </div>
+        {% if students %}
+        <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student No.</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Section</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                {% for student in students %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ forloop.counter }}</td>
+                    <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{{ student.get_full_name }}</td>
+                    <td class="px-4 py-3 text-sm font-mono text-gray-600 dark:text-gray-400">{{ student.student_number|default:"—" }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{% if student.year_level %}Grade {{ student.year_level }}{% else %}—{% endif %}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ student.section|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="px-6 py-8 text-center text-sm text-gray-500">No students enrolled in this class.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

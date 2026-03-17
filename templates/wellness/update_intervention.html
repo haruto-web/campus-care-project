@@ -17,15 +17,13 @@
     <!-- Student Info Card -->
     <div class="bg-white rounded-xl shadow p-5 flex items-center gap-4 border-l-4 border-blue-500">
         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-            {{ intervention.student.first_name|first|upper }}{{ intervention.student.last_name|first|upper }}
-        </div>
+            {{ intervention.student.first_name|first|upper }}{{ intervention.student.last_name|first|upper }}</div>
         <div>
             <p class="font-bold text-gray-800 text-lg">{{ intervention.student.get_full_name }}</p>
             <p class="text-sm text-gray-500">
                 Grade {{ intervention.student.year_level }} 
                 {% if intervention.student.section %}· Section {{ intervention.student.section }}{% endif %}
-                · Created {{ intervention.created_at|date:"M d, Y g:i A" }}
-            </p>
+                · Created {{ intervention.created_at|date:"M d, Y g:i A" }}</p>
         </div>
         <div class="ml-auto">
             {% if intervention.status == 'scheduled' %}

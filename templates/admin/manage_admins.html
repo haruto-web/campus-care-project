@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Manage Admins{% endblock %}
+{% block page_title %}Manage Admins{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Manage Admins</h2>
+        <span class="text-sm text-gray-500">{{ admins.count }} admin account{{ admins.count|pluralize }}</span>
+    </div>
+
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+        <i class="bi bi-shield-exclamation mr-2"></i>
+        Only <strong>Superadmins</strong> can access this page. Changes to admin roles are logged.
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Admin</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current Tier</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Change Tier</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                {% for admin in admins %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                {{ admin.get_full_name|slice:":1"|upper }}
+                            </div>
+                            <span>{{ admin.get_full_name }}</span>
+                            {% if admin == request.user %}
+                            <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">You</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono">{{ admin.username }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold
+                            {% if admin.admin_role == 'superadmin' %}bg-purple-100 text-purple-800
+                            {% elif admin.admin_role == 'admin' %}bg-blue-100 text-blue-800
+                            {% elif admin.admin_role == 'registrar' %}bg-green-100 text-green-800
+                            {% elif admin.admin_role == 'data_viewer' %}bg-gray-100 text-gray-700
+                            {% else %}bg-gray-100 text-gray-500{% endif %}">
+                            {{ admin.admin_role|default:"(none)" }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if admin != request.user %}
+                        <form method="post" class="flex items-center gap-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="user_id" value="{{ admin.id }}">
+                            <select name="admin_role" class="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-sm dark:bg-gray-700 dark:text-white">
+                                {% for val, label in role_choices %}
+                                <option value="{{ val }}" {% if admin.admin_role == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">Save</button>
+                        </form>
+                        {% else %}
+                        <span class="text-gray-400 text-sm">Cannot change own role</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-12 text-center text-gray-400">No admin accounts found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

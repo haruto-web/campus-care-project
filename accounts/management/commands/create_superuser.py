@@ -5,17 +5,25 @@ class Command(BaseCommand):
     help = 'Create a superuser for testing'
 
     def handle(self, *args, **kwargs):
-        if not User.objects.filter(username='admin').exists():
-            User.objects.create_superuser(
-                username='admin',
-                email='admin@campuscare.com',
-                password='admin123',
-                role='admin',
-                first_name='Admin',
-                last_name='User'
+        # Force-ensure superadmin accounts exist and have correct passwords
+        accounts = [
+            ('admin', 'admin@campuscare.com', 'admin123', 'Admin', 'User', ''),
+            ('venandrew', 'venandrewmirasol@gmail.com', '@Admin1234', 'Ven Andrew', 'Mirasol', 'superadmin'),
+            ('mslmandapat', 'mslmandapat@tip.edu.ph', '@Admin1234', 'Msl', 'Mandapat', 'superadmin'),
+        ]
+        for username, email, password, fn, ln, admin_role in accounts:
+            u, created = User.objects.get_or_create(
+                email=email,
+                defaults=dict(username=username, first_name=fn, last_name=ln,
+                              role='admin', is_staff=True, is_superuser=True,
+                              profile_completed=True)
             )
-            self.stdout.write(self.style.SUCCESS('Superuser created successfully!'))
-            self.stdout.write('Username: admin')
-            self.stdout.write('Password: admin123')
-        else:
-            self.stdout.write(self.style.WARNING('Superuser already exists'))
+            u.set_password(password)
+            u.is_staff = True
+            u.is_superuser = True
+            u.role = 'admin'
+            u.profile_completed = True
+            if admin_role:
+                u.admin_role = admin_role
+            u.save()
+            self.stdout.write(self.style.SUCCESS(f'{'Created' if created else 'Updated'}: {email}'))

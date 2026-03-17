@@ -60,7 +60,7 @@ def at_risk_students_list(request):
         return redirect('dashboard')
     
     # Get all students with risk assessments
-    risk_assessments = RiskAssessment.objects.select_related('student').order_by('-risk_score')
+    risk_assessments = RiskAssessment.objects.select_related('student').filter(student__role='student').order_by('-risk_score')
     
     # Apply filters
     risk_filter = request.GET.get('risk_level', '')
@@ -122,16 +122,23 @@ def create_intervention(request, student_id=None):
                 profile = get_student_profile_for_intervention(selected_student)
                 result = client.recommend_intervention(profile)
                 ai_recommendations = result.get('recommendations', [])
-            except:
-                pass
+            except Exception as e:
+                import logging
+                logging.getLogger('brighttrack').warning(f'AI recommendation failed for student {selected_student.id}: {e}')
     
     if request.method == 'POST':
         form = InterventionForm(request.POST)
         if form.is_valid():
             intervention = form.save(commit=False)
             intervention.counselor = request.user
+            if Intervention.objects.filter(student=intervention.student, status='scheduled').exists():
+                messages.error(request, f'{intervention.student.get_full_name()} already has a scheduled intervention.')
+                return redirect('wellness:interventions_list')
             intervention.save()
-            
+
+            # Mark teacher concerns for this student as resolved
+            TeacherConcern.objects.filter(student=intervention.student, resolved=False).update(resolved=True)
+
             # Mark related alerts as resolved when intervention is created
             Alert.objects.filter(
                 student=intervention.student,
@@ -149,6 +156,11 @@ def create_intervention(request, student_id=None):
         
         form.fields['student'].queryset = User.objects.filter(role='student')
     
+    # Students with existing scheduled interventions
+    scheduled_student_ids = set(
+        Intervention.objects.filter(status='scheduled').values_list('student_id', flat=True)
+    )
+
     # Statistics
     total_students = User.objects.filter(role='student').count()
     high_risk_count = RiskAssessment.objects.filter(risk_level='high').values('student').distinct().count()
@@ -163,6 +175,7 @@ def create_intervention(request, student_id=None):
         'pending_interventions': pending_interventions,
         'ai_recommendations': ai_recommendations,
         'selected_student': selected_student,
+        'scheduled_student_ids': list(scheduled_student_ids),
     }
     return render(request, 'wellness/create_intervention.html', context)
 
@@ -238,6 +251,20 @@ def alerts_list(request):
     
     if severity_filter:
         alerts = alerts.filter(severity=severity_filter)
+    
+    # Attach concern description for teacher_concern alerts
+    from wellness.models import TeacherConcern
+    alerts = list(alerts)
+    for alert in alerts:
+        if alert.alert_type == 'teacher_concern':
+            concern = TeacherConcern.objects.filter(
+                student=alert.student
+            ).order_by('-created_at').first()
+            alert.concern_description = concern.description if concern else None
+            alert.concern_teacher = concern.teacher.get_full_name() if concern else None
+            alert.concern_type = concern.get_concern_type_display() if concern else None
+        else:
+            alert.concern_description = None
     
     # Count unread critical/high severity alerts for warning
     critical_unread = Alert.objects.filter(severity='critical', is_read=False, resolved=False).count()
@@ -526,6 +553,16 @@ def generate_report(request):
     return response
 
 @login_required
+def mark_notifications_read(request):
+    from django.http import JsonResponse
+    if request.user.role != 'student':
+        return JsonResponse({'ok': False}, status=403)
+    from .models import Notification
+    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'ok': True})
+
+
+@login_required
 def api_students(request):
     """API endpoint to get all students for search"""
     if request.user.role not in ['counselor', 'admin', 'teacher']:
@@ -537,9 +574,12 @@ def api_students(request):
         'id', 'first_name', 'last_name', 'email', 'year_level', 'section', 'gender'
     )
     
+    scheduled_ids = set(
+        Intervention.objects.filter(status='scheduled').values_list('student_id', flat=True)
+    )
+    
     students_list = []
     for s in students:
-        # Get risk level for student
         try:
             risk_assessment = RiskAssessment.objects.filter(student_id=s['id']).latest('date')
             risk_level = risk_assessment.risk_level
@@ -553,7 +593,8 @@ def api_students(request):
             'year_level': s['year_level'],
             'section': s.get('section', ''),
             'gender': s.get('gender', ''),
-            'risk_level': risk_level
+            'risk_level': risk_level,
+            'has_intervention': s['id'] in scheduled_ids,
         })
     
     return JsonResponse(students_list, safe=False)

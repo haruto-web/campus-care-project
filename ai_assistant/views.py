@@ -2,12 +2,16 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.utils import timezone
 from ml_models.gemini_client import GeminiClient
 from ml_models.utils import get_student_profile_for_intervention
 from accounts.models import User
 from wellness.models import RiskAssessment, Alert, Intervention, WellnessCheckIn, TeacherConcern
 from django.db.models import Q
 import json
+import logging
+
+logger = logging.getLogger('brighttrack')
 
 @login_required
 def counselor_chat_view(request):
@@ -51,13 +55,15 @@ def counselor_chat(request):
                 result = client.recommend_intervention(profile)
                 
                 # Auto-create intervention
-                from datetime import datetime, timedelta
+                from datetime import timedelta
+                if Intervention.objects.filter(student=student, status='scheduled').exists():
+                    return JsonResponse({'response': f'{student.get_full_name()} already has a scheduled intervention.', 'intervention_created': False})
                 intervention = Intervention.objects.create(
                     student=student,
                     counselor=request.user,
                     intervention_type='counseling',
                     description=f"AI-Generated Intervention: {result.get('summary', '')}",
-                    scheduled_date=datetime.now() + timedelta(days=3),
+                    scheduled_date=timezone.now() + timedelta(days=3),
                     status='scheduled'
                 )
                 
@@ -79,10 +85,8 @@ def counselor_chat(request):
             except User.DoesNotExist:
                 return JsonResponse({'error': 'Student not found'}, status=404)
             except Exception as e:
-                import traceback
-                print(f"Error in create_intervention: {str(e)}")
-                print(traceback.format_exc())
-                return JsonResponse({'error': f'Error: {str(e)}'}, status=500)
+                logger.error(f'Error in create_intervention: {e}', exc_info=True)
+                return JsonResponse({'error': 'An error occurred while creating the intervention. Please try again.'}, status=500)
         
         elif action == 'generate_report':
             high_risk = RiskAssessment.objects.filter(risk_level='high').count()
@@ -147,8 +151,8 @@ Provide:
             return JsonResponse({'response': analysis})
         
         elif action == 'weekly_summary':
-            from datetime import datetime, timedelta
-            week_ago = datetime.now() - timedelta(days=7)
+            from datetime import timedelta
+            week_ago = timezone.now() - timedelta(days=7)
             
             new_alerts = Alert.objects.filter(created_at__gte=week_ago).count()
             new_interventions = Intervention.objects.filter(scheduled_date__gte=week_ago).count()
@@ -252,13 +256,14 @@ Format: Subject line and email body"""
             )
             
             created_count = 0
+            created_ids = []
             for student in students_needing_intervention:
                 try:
                     profile = get_student_profile_for_intervention(student)
                     result = client.recommend_intervention(profile)
                     
                     # Create intervention
-                    Intervention.objects.create(
+                    iv = Intervention.objects.create(
                         student=student,
                         counselor=request.user,
                         intervention_type='counseling',
@@ -266,6 +271,7 @@ Format: Subject line and email body"""
                         scheduled_date=datetime.now() + timedelta(days=3),
                         status='scheduled'
                     )
+                    created_ids.append(iv.id)
                     
                     # Create alert
                     Alert.objects.create(
@@ -284,8 +290,23 @@ Format: Subject line and email body"""
             return JsonResponse({
                 'success': True,
                 'created_count': created_count,
+                'intervention_ids': created_ids,
                 'message': f'Successfully created {created_count} interventions for high-risk students'
             })
+        
+        elif action == 'get_intervention':
+            try:
+                iv = Intervention.objects.select_related('student', 'counselor').get(id=data.get('intervention_id'))
+                return JsonResponse({'intervention': {
+                    'id': iv.id,
+                    'student': iv.student.get_full_name(),
+                    'type': iv.get_intervention_type_display(),
+                    'scheduled_date': iv.scheduled_date.strftime('%b %d, %Y at %I:%M %p'),
+                    'status': iv.get_status_display(),
+                    'description': iv.description,
+                }})
+            except Intervention.DoesNotExist:
+                return JsonResponse({'error': 'Not found'}, status=404)
         
         elif action == 'ask_ai':
             response = client.generate_text(message)
@@ -295,7 +316,8 @@ Format: Subject line and email body"""
             return JsonResponse({'error': 'Invalid action'}, status=400)
     
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        logger.error(f'Counselor chat error: {e}', exc_info=True)
+        return JsonResponse({'error': 'An internal error occurred. Please try again.'}, status=500)
 
 @login_required
 @require_http_methods(["POST"])
@@ -348,4 +370,5 @@ Write in a conversational, easy-to-read style:
             return JsonResponse({'error': 'Invalid action'}, status=400)
     
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        logger.error(f'Admin chat error: {e}', exc_info=True)
+        return JsonResponse({'error': 'An internal error occurred. Please try again.'}, status=500)

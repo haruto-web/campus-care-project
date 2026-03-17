@@ -33,4 +33,5 @@ urlpatterns = [
     
     # API
     path('api/students/', views.api_students, name='api_students'),
+    path('notifications/mark-read/', views.mark_notifications_read, name='mark_notifications_read'),
 ]

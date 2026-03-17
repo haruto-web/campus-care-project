@@ -6,8 +6,8 @@
 <div class="max-w-7xl mx-auto px-4 py-6">
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h2 class="text-3xl font-bold text-gray-800"><i class="bi bi-people-fill"></i> Manage All Users</h2>
-            <p class="text-gray-600">View and manage all user accounts</p>
+            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100"><i class="bi bi-people-fill"></i> Manage All Users</h2>
+            <p class="text-gray-600 dark:text-gray-400">View and manage all user accounts</p>
         </div>
         <a href="{% url 'dashboard' %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
             <i class="bi bi-arrow-left"></i> Back to Dashboard
@@ -16,31 +16,31 @@
 
     <!-- Filter Tabs -->
     <div class="mb-6 flex gap-2">
-        <a href="?role=all" class="px-4 py-2 rounded-lg {% if role_filter == 'all' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+        <a href="?role=all" class="px-4 py-2 rounded-lg {% if role_filter == 'all' %}bg-blue-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %}">
             All Users ({{ total_count }})
         </a>
-        <a href="?role=student" class="px-4 py-2 rounded-lg {% if role_filter == 'student' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+        <a href="?role=student" class="px-4 py-2 rounded-lg {% if role_filter == 'student' %}bg-blue-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %}">
             Students ({{ student_count }})
         </a>
-        <a href="?role=teacher" class="px-4 py-2 rounded-lg {% if role_filter == 'teacher' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+        <a href="?role=teacher" class="px-4 py-2 rounded-lg {% if role_filter == 'teacher' %}bg-blue-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %}">
             Teachers ({{ teacher_count }})
         </a>
-        <a href="?role=counselor" class="px-4 py-2 rounded-lg {% if role_filter == 'counselor' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+        <a href="?role=counselor" class="px-4 py-2 rounded-lg {% if role_filter == 'counselor' %}bg-blue-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %}">
             Counselors ({{ counselor_count }})
         </a>
     </div>
 
     <!-- Search and Filters -->
-    <div class="bg-white rounded-lg shadow p-4 mb-6">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
         <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search</label>
                 <input type="text" name="search" value="{{ search_query }}" placeholder="Name, email, username..."
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                       class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                <select name="role" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Role</label>
+                <select name="role" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="all" {% if role_filter == 'all' %}selected{% endif %}>All Roles</option>
                     <option value="student" {% if role_filter == 'student' %}selected{% endif %}>Student</option>
                     <option value="teacher" {% if role_filter == 'teacher' %}selected{% endif %}>Teacher</option>
@@ -48,8 +48,8 @@
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Year Level</label>
-                <select name="year_level" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Year Level</label>
+                <select name="year_level" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">All Levels</option>
                     <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
                     <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
@@ -58,74 +58,92 @@
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Section</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Section</label>
                 <input type="text" name="section" value="{{ section_filter }}" placeholder="e.g., A, B, Apple"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                       class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
             <div class="md:col-span-4 flex gap-2">
                 <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
                     <i class="bi bi-search"></i> Apply Filters
                 </button>
-                <a href="{% url 'admin_manage_users' %}" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300">
+                <a href="{% url 'admin_manage_users' %}" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
                     <i class="bi bi-x-circle"></i> Clear
                 </a>
             </div>
         </form>
     </div>
 
-    <div class="bg-white rounded-lg shadow">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
         <div class="p-6">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year Level</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Section</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Username</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Role</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Year Level</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Section</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Messaging</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {% for user in users %}
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     {% if user.profile_picture %}
                                     <img src="{{ user.profile_picture.url }}" class="rounded-full mr-3" width="40" height="40" style="object-fit: cover;">
                                     {% else %}
-                                    <div class="rounded-full bg-gray-300 mr-3 flex items-center justify-center" style="width: 40px; height: 40px;">
-                                        <i class="bi bi-person-fill text-gray-600"></i>
+                                    <div class="rounded-full bg-gray-300 dark:bg-gray-600 mr-3 flex items-center justify-center" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-person-fill text-gray-600 dark:text-gray-300"></i>
                                     </div>
                                     {% endif %}
-                                    <span class="font-medium text-gray-900">{{ user.get_full_name }}</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100">{{ user.get_full_name }}</span>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ user.email }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ user.username }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{{ user.email }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{{ user.username }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full 
                                     {% if user.role == 'student' %}bg-blue-100 text-blue-800
                                     {% elif user.role == 'teacher' %}bg-green-100 text-green-800
                                     {% elif user.role == 'counselor' %}bg-purple-100 text-purple-800
                                     {% else %}bg-red-100 text-red-800{% endif %}">
-                                    {{ user.role|title }}
-                                </span>
+                                    {{ user.role|title }}</span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                                 {% if user.year_level %}
                                     Grade {{ user.year_level }}
                                 {% else %}
                                     <span class="text-gray-400">-</span>
                                 {% endif %}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                                 {% if user.section %}
                                     {{ user.section }}
                                 {% else %}
                                     <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if user.is_messaging_suspended %}
+                                <div class="flex flex-col gap-1">
+                                    <span class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">
+                                        <i class="bi bi-slash-circle"></i> Suspended
+                                    </span>
+                                    <span class="text-xs text-gray-400">Until {{ user.messaging_suspended_until|date:"M d, Y" }}</span>
+                                    <form method="post" action="{% url 'admin_lift_messaging_suspension' user.id %}" id="liftForm-{{ user.id }}">
+                                        {% csrf_token %}
+                                        <button type="button" onclick="confirmLiftBan('{{ user.id }}', '{{ user.get_full_name }}')" class="mt-1 text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-lg">
+                                            <i class="bi bi-unlock"></i> Lift Ban
+                                        </button>
+                                    </form>
+                                </div>
+                                {% else %}
+                                <span class="text-xs text-green-600 font-medium"><i class="bi bi-check-circle"></i> Active</span>
                                 {% endif %}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -140,7 +158,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found.</td>
+                            <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No users found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -152,9 +170,33 @@
 
 <script>
 function confirmDelete(userId, userName, userRole) {
-    if (confirm(`Are you sure you want to remove ${userName} (${userRole})? This will delete their account and all associated data.`)) {
-        window.location.href = `/manage/user/${userId}/delete/`;
-    }
+    showConfirmModal({
+        title: 'Remove User Account',
+        body: `You are about to permanently delete <strong>${userName}</strong> (${userRole}).<br><br>This will remove their account and <strong>all associated data</strong> including submissions, grades, and messages. This cannot be undone.`,
+        okLabel: 'Yes, Remove',
+        type: 'danger',
+        onConfirm() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/manage/user/${userId}/delete/`;
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = 'csrfmiddlewaretoken';
+            csrf.value = '{{ csrf_token }}';
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+function confirmLiftBan(userId, userName) {
+    showConfirmModal({
+        title: 'Lift Messaging Suspension',
+        body: `This will restore full messaging access for <strong>${userName}</strong> immediately and send them an email notification.`,
+        okLabel: 'Yes, Lift Ban',
+        type: 'success',
+        onConfirm() { document.getElementById('liftForm-' + userId).submit(); }
+    });
 }
 </script>
 {% endblock %}
