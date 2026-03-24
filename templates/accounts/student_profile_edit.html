@@ -18,9 +18,9 @@
                 <div class="inline-block relative">
                     <div class="w-32 h-32 rounded-full bg-white flex items-center justify-center border-4 border-blue-600 overflow-hidden">
                         {% if user.profile_picture %}
-                        <img src="{{ user.profile_picture.url }}?v={{ user.profile_picture.name|urlencode }}" alt="Profile" class="w-full h-full object-cover">
+                        <img id="profilePreview" src="{{ user.profile_picture.url }}?v={{ user.profile_picture.name|urlencode }}" alt="Profile" class="w-full h-full object-cover">
                         {% else %}
-                        <img src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-20 h-20 object-contain">
+                        <img id="profilePreview" src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-20 h-20 object-contain" data-is-default="true">
                         {% endif %}
                     </div>
                     <label for="profile_picture" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition">
@@ -30,6 +30,26 @@
                 </div>
                 <p class="text-sm text-gray-500 mt-2">Click the camera icon to change your profile picture</p>
             </div>
+
+            <script>
+            (function() {
+                var input = document.getElementById('profile_picture');
+                var preview = document.getElementById('profilePreview');
+                var defaultSrc = "{% static 'images/logo.png' %}";
+                input.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        var reader = new FileReader();
+                        reader.onload = function(e) {
+                            preview.src = e.target.result;
+                            preview.classList.remove('w-20', 'h-20', 'object-contain');
+                            preview.classList.add('w-full', 'h-full', 'object-cover');
+                            preview.removeAttribute('data-is-default');
+                        };
+                        reader.readAsDataURL(this.files[0]);
+                    }
+                });
+            })();
+            </script>
 
             <!-- Personal Information -->
             <div class="mb-6">

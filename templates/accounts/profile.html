@@ -14,10 +14,10 @@
                         <div
                             class="w-32 h-32 bg-white rounded-full mx-auto flex items-center justify-center shadow-lg border-4 border-white overflow-hidden">
                             {% if user.profile_picture %}
-                            <img src="{{ user.profile_picture.url }}?v={{ user.profile_picture.name|urlencode }}" alt="Profile"
+                            <img id="profileAvatarTop" src="{{ user.profile_picture.url }}?v={{ user.profile_picture.name|urlencode }}" alt="Profile"
                                 class="w-full h-full object-cover">
                             {% else %}
-                            <img src="{% static 'images/logo.png' %}" alt="BrightTrack"
+                            <img id="profileAvatarTop" src="{% static 'images/logo.png' %}" alt="BrightTrack"
                                 class="w-20 h-20 object-contain">
                             {% endif %}
                         </div>
@@ -83,7 +83,10 @@
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Profile Picture</label>
                             <div class="flex items-center space-x-4">
-                                <input type="file"
+                                <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 flex-shrink-0">
+                                    <img id="profilePreview" src="{% if user.profile_picture %}{{ user.profile_picture.url }}?v={{ user.profile_picture.name|urlencode }}{% else %}{% static 'images/logo.png' %}{% endif %}" alt="Preview" class="w-full h-full object-cover">
+                                </div>
+                                <input type="file" id="profilePictureInput"
                                     class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                                     name="profile_picture" accept="image/*">
                                 <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor"
@@ -93,8 +96,30 @@
                                     </path>
                                 </svg>
                             </div>
-                            <p class="mt-1 text-xs text-gray-500">Accepted formats: JPG, PNG, GIF (Max 5MB)</p>
+                            <p class="mt-1 text-xs text-gray-500">Select any image file to update your profile picture</p>
                         </div>
+
+                        <script>
+                        (function() {
+                            var input = document.getElementById('profilePictureInput');
+                            var preview = document.getElementById('profilePreview');
+                            var topAvatar = document.getElementById('profileAvatarTop');
+                            input.addEventListener('change', function() {
+                                if (this.files && this.files[0]) {
+                                    var reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        preview.src = e.target.result;
+                                        preview.style.objectFit = 'cover';
+                                        if (topAvatar) {
+                                            topAvatar.src = e.target.result;
+                                            topAvatar.style.objectFit = 'cover';
+                                        }
+                                    };
+                                    reader.readAsDataURL(this.files[0]);
+                                }
+                            });
+                        })();
+                        </script>
 
                         <div class="pt-4">
                             <button type="submit"

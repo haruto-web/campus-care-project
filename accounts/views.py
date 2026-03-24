@@ -981,10 +981,22 @@ def profile_view(request):
         
         if uploaded_profile_picture:
             user.profile_picture = uploaded_profile_picture
-        
+
         try:
             user.save()
-        except Exception:
+        except Exception as e:
+            # If saving with the picture fails, try saving text fields only
+            if uploaded_profile_picture:
+                try:
+                    user_text_only = User.objects.get(pk=request.user.pk)
+                    user_text_only.first_name = user.first_name
+                    user_text_only.last_name = user.last_name
+                    user_text_only.phone = user.phone
+                    user_text_only.save(update_fields=['first_name', 'last_name', 'phone'])
+                    messages.warning(request, 'Profile info saved, but the picture upload failed. Try a smaller image or different format.')
+                except Exception:
+                    messages.error(request, 'Profile update failed. Please try again.')
+                return redirect('profile')
             messages.error(request, 'Profile update failed. Please try again.')
             return redirect('profile')
 
@@ -1227,10 +1239,21 @@ def complete_profile_view(request):
         try:
             user.save()
         except Exception:
-            user.profile_picture = None
-            user.id_picture = None
-            user.save()
-            messages.warning(request, 'File uploads failed, but profile was saved.')
+            # Save without the uploaded files so profile text data is not lost
+            try:
+                save_fields = ['phone', 'date_of_birth', 'profile_completed', 'profile_skipped_at']
+                if user.role == 'student':
+                    save_fields += ['section', 'address', 'guardian_name', 'guardian_relation', 'guardian_occupation', 'year_level']
+                user_obj = User.objects.get(pk=user.pk)
+                for f in save_fields:
+                    setattr(user_obj, f, getattr(user, f))
+                user_obj.profile_completed = True
+                user_obj.profile_skipped_at = None
+                user_obj.save()
+                user = user_obj
+            except Exception:
+                pass
+            messages.warning(request, 'File uploads failed, but profile info was saved.')
 
         if user.role == 'student' and user.section and user.year_level:
             section_classes = Class.objects.filter(
