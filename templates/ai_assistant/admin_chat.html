@@ -58,10 +58,11 @@
                     <div id="inputArea" class="p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700 hidden">
                         <div class="flex space-x-2">
                             <input type="text" id="userInput" placeholder="Type your message..." class="flex-1 px-4 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+                            <button id="sendButton" onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
                                 Send
                             </button>
                         </div>
+                        <p id="inputNotice" class="mt-2 hidden text-sm"></p>
                     </div>
                 </div>
             </div>
@@ -72,6 +73,47 @@
 <script>
 const csrftoken = '{{ csrf_token }}';
 let currentAction = null;
+let aiRequestInFlight = false;
+
+function showInputNotice(message, type = 'info') {
+    const notice = document.getElementById('inputNotice');
+    if (!notice) return;
+
+    notice.textContent = message;
+    notice.className = 'mt-2 text-sm';
+
+    if (type === 'error') {
+        notice.classList.add('text-red-500');
+    } else {
+        notice.classList.add('text-blue-500');
+    }
+
+    notice.classList.remove('hidden');
+}
+
+function clearInputNotice() {
+    const notice = document.getElementById('inputNotice');
+    if (notice) {
+        notice.textContent = '';
+        notice.className = 'mt-2 hidden text-sm';
+    }
+}
+
+function setAskAIState(isLoading) {
+    aiRequestInFlight = isLoading;
+    const input = document.getElementById('userInput');
+    const button = document.getElementById('sendButton');
+
+    if (input) {
+        input.disabled = isLoading;
+    }
+
+    if (button) {
+        button.disabled = isLoading;
+        button.classList.toggle('opacity-60', isLoading);
+        button.classList.toggle('cursor-not-allowed', isLoading);
+    }
+}
 
 function formatAIResponse(text) {
     return text
@@ -199,21 +241,39 @@ function generateReport() {
 }
 
 function showAskAI() {
-    addMessage('Ask me anything about system administration, analytics, or management!', false);
     document.getElementById('inputArea').classList.remove('hidden');
+    document.getElementById('userInput').focus();
+
+    if (currentAction === 'ask_ai') {
+        showInputNotice('Ask AI is already open. Type your message below.', 'info');
+        return;
+    }
+
+    clearInputNotice();
+    addMessage('Ask me anything about system administration, analytics, or management!', false);
     currentAction = 'ask_ai';
 }
 
 function sendMessage() {
     const input = document.getElementById('userInput');
     const message = input.value.trim();
-    
-    if (!message) return;
+
+    if (aiRequestInFlight) {
+        showInputNotice('Please wait for the current AI reply before sending another message.', 'error');
+        return;
+    }
+
+    if (!message) {
+        showInputNotice('Please type a message before sending.', 'error');
+        return;
+    }
     
     addMessage(message, true);
     input.value = '';
+    clearInputNotice();
     
     if (currentAction === 'ask_ai') {
+        setAskAIState(true);
         fetch('/ai/admin/chat/', {
             method: 'POST',
             headers: {
@@ -228,9 +288,17 @@ function sendMessage() {
         .then(response => response.json())
         .then(data => {
             addMessage(data.response, false);
+            if (data.error) {
+                showInputNotice(data.error, 'error');
+            }
         })
         .catch(error => {
             addMessage('Error processing your request.', false);
+            showInputNotice('Unable to process your request right now. Please try again.', 'error');
+        })
+        .finally(() => {
+            setAskAIState(false);
+            input.focus();
         });
     }
 }

@@ -110,10 +110,11 @@
                 <div id="inputArea" class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 hidden">
                     <div class="flex space-x-2">
                         <input type="text" id="userInput" placeholder="Type your message..." class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                        <button onclick="sendMessage()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition font-medium">
+                        <button id="sendButton" onclick="sendMessage()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition font-medium">
                             Send
                         </button>
                     </div>
+                    <p id="inputNotice" class="mt-2 hidden text-sm"></p>
                 </div>
             </div>
         </div>
@@ -124,6 +125,47 @@
 const csrftoken = '{{ csrf_token }}';
 let currentAction = null;
 let selectedStudentId = null;
+let aiRequestInFlight = false;
+
+function showInputNotice(message, type = 'info') {
+    const notice = document.getElementById('inputNotice');
+    if (!notice) return;
+
+    notice.textContent = message;
+    notice.className = 'mt-2 text-sm';
+
+    if (type === 'error') {
+        notice.classList.add('text-red-500');
+    } else {
+        notice.classList.add('text-purple-500');
+    }
+
+    notice.classList.remove('hidden');
+}
+
+function clearInputNotice() {
+    const notice = document.getElementById('inputNotice');
+    if (notice) {
+        notice.textContent = '';
+        notice.className = 'mt-2 hidden text-sm';
+    }
+}
+
+function setAskAIState(isLoading) {
+    aiRequestInFlight = isLoading;
+    const input = document.getElementById('userInput');
+    const button = document.getElementById('sendButton');
+
+    if (input) {
+        input.disabled = isLoading;
+    }
+
+    if (button) {
+        button.disabled = isLoading;
+        button.classList.toggle('opacity-60', isLoading);
+        button.classList.toggle('cursor-not-allowed', isLoading);
+    }
+}
 
 function formatAIResponse(text) {
     return text
@@ -675,19 +717,36 @@ function showSearchForm() {
 }
 
 function showAskAI() {
-    addMessage('Ask me anything about counseling, student support, or interventions!', false);
     document.getElementById('inputArea').classList.remove('hidden');
+    document.getElementById('userInput').focus();
+
+    if (currentAction === 'ask_ai') {
+        showInputNotice('Ask AI is already open. Type your message below.', 'info');
+        return;
+    }
+
+    clearInputNotice();
+    addMessage('Ask me anything about counseling, student support, or interventions!', false);
     currentAction = 'ask_ai';
 }
 
 function sendMessage() {
     const input = document.getElementById('userInput');
     const message = input.value.trim();
-    
-    if (!message) return;
+
+    if (aiRequestInFlight) {
+        showInputNotice('Please wait for the current AI reply before sending another message.', 'error');
+        return;
+    }
+
+    if (!message) {
+        showInputNotice('Please type a message before sending.', 'error');
+        return;
+    }
     
     addMessage(message, true);
     input.value = '';
+    clearInputNotice();
     
     if (currentAction === 'create_intervention') {
         // Handled by selectStudent function
@@ -733,6 +792,7 @@ function sendMessage() {
             currentAction = null;
         });
     } else if (currentAction === 'ask_ai') {
+        setAskAIState(true);
         fetch('/ai/counselor/chat/', {
             method: 'POST',
             headers: {
@@ -747,9 +807,17 @@ function sendMessage() {
         .then(response => response.json())
         .then(data => {
             addMessage(data.response, false);
+            if (data.error) {
+                showInputNotice(data.error, 'error');
+            }
         })
         .catch(error => {
             addMessage('Error processing your request.', false);
+            showInputNotice('Unable to process your request right now. Please try again.', 'error');
+        })
+        .finally(() => {
+            setAskAIState(false);
+            input.focus();
         });
     }
 }
