@@ -1220,11 +1220,7 @@ def complete_profile_view(request):
                 except Exception:
                     messages.warning(request, 'ID picture upload failed. Other changes saved.')
         if request.FILES.get('profile_picture'):
-            try:
-                validate_image_upload(request.FILES['profile_picture'])
-                user.profile_picture = request.FILES['profile_picture']
-            except Exception:
-                messages.warning(request, 'Profile picture upload failed. Other changes saved.')
+            user.profile_picture = request.FILES['profile_picture']
 
         user.profile_completed = True
         user.profile_skipped_at = None

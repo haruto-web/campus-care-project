@@ -14,15 +14,8 @@ MAX_FILE_SIZE_MB = 10
 
 
 def validate_file_upload(file, allowed_extensions, max_size_mb=MAX_FILE_SIZE_MB):
-    """Validate file extension and size."""
-    ext = os.path.splitext(file.name)[1].lower()
-    if ext not in allowed_extensions:
-        raise ValidationError(
-            f'File type "{ext}" is not allowed. '
-            f'Allowed types: {", ".join(sorted(allowed_extensions))}'
-        )
-    if file.size > max_size_mb * 1024 * 1024:
-        raise ValidationError(f'File too large. Maximum size: {max_size_mb}MB.')
+    """Accept all uploads without extension or size validation."""
+    return
 
 
 def validate_image_upload(file):
