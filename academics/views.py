@@ -15,6 +15,7 @@ from accounts.decorators import deny_access, teacher_owns_class, teacher_owns_su
 from accounts.utils import log_action, hit_rate_limit
 from datetime import date, datetime, timedelta
 import json
+import os
 
 
 def _teacher_class_or_redirect(request, class_obj, redirect_to='dashboard', message='Permission denied.'):
@@ -399,6 +400,14 @@ def upload_material(request, class_id):
             # Validate file upload
             uploaded_file = request.FILES.get('file')
             if uploaded_file:
+                allowed_material_extensions = {
+                    '.pdf', '.doc', '.docx', '.ppt', '.pptx',
+                    '.xls', '.xlsx', '.txt', '.zip', '.csv',
+                }
+                ext = os.path.splitext(uploaded_file.name)[1].lower()
+                if ext not in allowed_material_extensions:
+                    messages.error(request, 'Unsupported file type for class materials. Use PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, ZIP, or CSV.')
+                    return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
                 try:
                     validate_document_upload(uploaded_file)
                 except ValidationError as e:
@@ -411,12 +420,17 @@ def upload_material(request, class_id):
                 material.save()
             except Exception:
                 if uploaded_file:
-                    fallback_storage = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
-                    fallback_name = fallback_storage.save(f"materials/{uploaded_file.name}", uploaded_file)
-                    material.file = fallback_name
-                    material.save()
+                    try:
+                        fallback_storage = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
+                        fallback_name = fallback_storage.save(f"materials/{uploaded_file.name}", uploaded_file)
+                        material.file = fallback_name
+                        material.save()
+                    except Exception:
+                        messages.error(request, 'Material upload failed. Please upload a supported document file and try again.')
+                        return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
                 else:
-                    raise
+                    messages.error(request, 'Material upload failed. Please try again.')
+                    return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
             log_action(request, 'MATERIAL_UPLOADED', 'Material', material.id, material.title, extra_data={'class_id': class_obj.id})
             messages.success(request, f'Material "{material.title}" uploaded successfully!')
             return redirect('academics:class_detail', class_id=class_id)
