@@ -8,7 +8,7 @@ class Command(BaseCommand):
         # Force-ensure superadmin accounts exist and have correct passwords
         accounts = [
             ('admin', 'admin@campuscare.com', 'admin123', 'Admin', 'User', ''),
-            ('venandrew', 'venandrewmirasol@gmail.com', '@Admin1234', 'Ven Andrew', 'Mirasol', 'superadmin'),
+            ('johnaldrich', 'mjapayawal@tip.edu.ph', '@Admin1234', 'John Aldrich', 'Payawal', 'superadmin'),
             ('mslmandapat', 'mslmandapat@tip.edu.ph', '@Admin1234', 'Msl', 'Mandapat', 'superadmin'),
         ]
         for username, email, password, fn, ln, admin_role in accounts:

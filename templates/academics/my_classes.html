@@ -99,9 +99,10 @@
     <!-- Classes Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for class in classes %}
+        {% cycle 'from-blue-600 to-indigo-600' 'from-emerald-600 to-teal-600' 'from-violet-600 to-purple-600' 'from-amber-600 to-orange-600' 'from-rose-600 to-pink-600' as class_gradient silent %}
         <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden group">
             <!-- Class Header -->
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4">
+            <div class="bg-gradient-to-r {{ class_gradient }} text-white px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
                         <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-3">
@@ -109,12 +110,12 @@
                         </div>
                         <div>
                             <h5 class="text-lg font-bold">{{ class.name }}</h5>
-                            <p class="text-blue-100 text-sm">{{ class.code }}</p>
+                            <p class="text-white/80 text-sm">{{ class.code }}</p>
                         </div>
                     </div>
                     {% if user.role == 'student' %}
                     <div class="text-right">
-                        <div class="text-xs text-blue-100">Grade</div>
+                        <div class="text-xs text-white/80">Grade</div>
                         <div class="text-lg font-bold">{{ class.year_level }}</div>
                     </div>
                     {% endif %}
@@ -180,7 +181,7 @@
                 </div>
                 
                 <!-- Action Button -->
-                <a href="{% url 'academics:class_detail' class.id %}" class="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center px-4 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition font-semibold group-hover:shadow-md">
+                <a href="{% url 'academics:class_detail' class.id %}" class="block w-full bg-gradient-to-r {{ class_gradient }} text-white text-center px-4 py-3 rounded-lg hover:opacity-95 transition font-semibold group-hover:shadow-md">
                     <i class="bi bi-arrow-right-circle mr-2"></i>
                     {% if user.role == 'teacher' %}
                         Manage Class

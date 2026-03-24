@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from academics.models import Class, Assignment, Submission, Attendance, Grade
 from wellness.models import WellnessCheckIn, RiskAssessment, Alert, Intervention
 from campus_care.validators import validate_image_upload
-from .models import User, OTPCode
+from .models import User, OTPCode, RegistrationRequest
 from .otp_utils import send_otp_email
 from .utils import log_action
 
@@ -93,9 +93,8 @@ def register_view(request):
         return redirect('dashboard')
 
     if request.method == 'POST':
-        from .models import ApprovedStudent
         from django.contrib.auth.password_validation import validate_password
-        import uuid
+        from django.contrib.auth.hashers import make_password
 
         # Rate limit: 5 attempts per IP per 10 minutes
         ip = request.META.get('REMOTE_ADDR')
@@ -108,6 +107,10 @@ def register_view(request):
 
         student_number = request.POST.get('student_number', '').strip()
         email = request.POST.get('email', '').strip().lower()
+        first_name = request.POST.get('first_name', '').strip().title()
+        last_name = request.POST.get('last_name', '').strip().title()
+        year_level = request.POST.get('year_level', '').strip()
+        section = request.POST.get('section', '').strip().title()
         password = request.POST.get('password', '')
         password2 = request.POST.get('password2', '')
 
@@ -116,6 +119,14 @@ def register_view(request):
                 'sn_error': 'Student number must be exactly 12 digits.',
                 'student_number_val': student_number,
             })
+
+        if not all([first_name, last_name, year_level]):
+            messages.error(request, 'First name, last name, and year level are required.')
+            return render(request, 'accounts/register.html')
+
+        if year_level not in ('7', '8', '9', '10'):
+            messages.error(request, 'Year level must be 7, 8, 9, or 10.')
+            return render(request, 'accounts/register.html')
 
         if password != password2:
             messages.error(request, 'Passwords do not match.')
@@ -130,14 +141,13 @@ def register_view(request):
             messages.error(request, 'Registration failed. Please check your details or contact your administrator.')
             return render(request, 'accounts/register.html')
 
-        approved = ApprovedStudent.objects.filter(
+        existing_request = RegistrationRequest.objects.filter(
             student_number=student_number,
             email__iexact=email,
-            is_registered=False
+            status=RegistrationRequest.Status.PENDING
         ).first()
-
-        if not approved:
-            messages.error(request, 'Registration failed. Please check your details or contact your administrator.')
+        if existing_request:
+            messages.error(request, 'A registration request for this student is already pending admin approval.')
             return render(request, 'accounts/register.html')
 
         # Send OTP — don't create account yet
@@ -150,17 +160,15 @@ def register_view(request):
             messages.error(request, 'Failed to send verification code. Please try again.')
             return render(request, 'accounts/register.html')
 
-        base = f"{approved.first_name.lower()}{approved.last_name.lower()}"
-        username = f"{base}{str(uuid.uuid4())[:4]}"
-        while User.objects.filter(username=username).exists():
-            username = f"{base}{str(uuid.uuid4())[:4]}"
-
         request.session['otp_email'] = email
         request.session['otp_purpose'] = 'register'
         request.session['reg_data'] = {
             'student_number': student_number,
-            'username': username,
-            'password': password,
+            'first_name': first_name,
+            'last_name': last_name,
+            'year_level': year_level,
+            'section': section,
+            'password_hash': make_password(password),
         }
         return redirect('verify_otp')
 
@@ -464,40 +472,34 @@ def verify_otp_view(request):
             return redirect('dashboard')
 
         elif purpose == 'register':
-            from .models import ApprovedStudent
             from django.db import transaction
             reg = request.session.get('reg_data', {})
             if not reg:
                 messages.error(request, 'Registration session expired. Please try again.')
                 return redirect('register')
             with transaction.atomic():
-                approved = ApprovedStudent.objects.select_for_update().filter(
-                    student_number=reg['student_number'],
-                    email__iexact=email,
-                    is_registered=False
-                ).first()
-                if not approved:
-                    messages.error(request, 'Registration failed. Please try again.')
+                if User.objects.filter(email=email).exists():
+                    messages.error(request, 'An account with this email already exists.')
                     return redirect('register')
-                user = User(
-                    username=reg['username'],
-                    email=email,
-                    first_name=approved.first_name,
-                    last_name=approved.last_name,
-                    role='student',
+                RegistrationRequest.objects.update_or_create(
                     student_number=reg['student_number'],
-                    year_level=approved.year_level,
-                    section=approved.section,
+                    email=email,
+                    defaults={
+                        'first_name': reg['first_name'],
+                        'last_name': reg['last_name'],
+                        'year_level': reg['year_level'],
+                        'section': reg.get('section', ''),
+                        'password_hash': reg['password_hash'],
+                        'status': RegistrationRequest.Status.PENDING,
+                        'approved_by': None,
+                        'decided_at': None,
+                        'rejection_reason': '',
+                    }
                 )
-                user.set_password(reg['password'])
-                user.save()
-                approved.is_registered = True
-                approved.save()
             for key in ['otp_email', 'otp_purpose', 'reg_data']:
                 request.session.pop(key, None)
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            messages.success(request, 'Account created! Please complete your profile.')
-            return redirect('complete_profile')
+            messages.success(request, 'Registration submitted. Please wait for admin approval. We will email you once approved or rejected.')
+            return redirect('login')
 
         elif purpose == 'reset':
             request.session['otp_verified'] = True

@@ -6,12 +6,64 @@
     <title>{% block title %}Campus Care{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            overflow-x: hidden;
+        }
+        img, svg, video, canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        @media (max-width: 640px) {
+            .container, .container-fluid {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+            .table-responsive, .overflow-x-auto {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body style="margin: 0; padding: 0;">
     {% block content %}{% endblock %}
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function enforceCurrentDateTimeInputs() {
+            const now = new Date();
+            const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
+            const currentDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+
+            document.querySelectorAll('input[type="date"]').forEach(input => {
+                if (!input.min || input.min < today) input.min = today;
+                if (input.value && input.value < input.min) input.value = input.min;
+            });
+
+            document.querySelectorAll('input[type="datetime-local"]').forEach(input => {
+                if (!input.min || input.min < currentDateTime) input.min = currentDateTime;
+                if (input.value && input.value < input.min) input.value = input.min;
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', enforceCurrentDateTimeInputs);
+        document.addEventListener('focusin', function (event) {
+            if (event.target.matches('input[type="date"], input[type="datetime-local"]')) {
+                enforceCurrentDateTimeInputs();
+            }
+        });
+        document.addEventListener('change', function (event) {
+            const input = event.target;
+            if (input.matches('input[type="date"]') && input.value && input.min && input.value < input.min) {
+                input.value = input.min;
+            }
+            if (input.matches('input[type="datetime-local"]') && input.value && input.min && input.value < input.min) {
+                input.value = input.min;
+            }
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -113,26 +113,26 @@
                         {% elif alert.severity == 'medium' %}border-yellow-200 bg-yellow-50
                         {% else %}border-blue-200 bg-blue-50{% endif %}">
                         <div class="p-6">
-                            <div class="flex justify-between items-start">
-                                <div class="flex-1">
+                            <div class="flex flex-col gap-3 lg:flex-row lg:justify-between lg:items-start">
+                                <div class="flex-1 min-w-0">
                                     <!-- Student Header -->
-                                    <div class="flex items-center mb-3">
-                                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg
+                                    <div class="flex items-start sm:items-center gap-3 mb-3 min-w-0">
+                                        <div class="w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center text-white font-bold text-lg
                                             {% if alert.severity == 'critical' %}bg-red-500
                                             {% elif alert.severity == 'high' %}bg-orange-500
                                             {% elif alert.severity == 'medium' %}bg-yellow-500
                                             {% else %}bg-blue-500{% endif %}">
                                             {{ alert.student.get_full_name|slice:":1"|upper }}</div>
-                                        <div class="ml-3">
-                                            <a href="{% url 'student_profile' alert.student.id %}" class="text-lg font-bold text-blue-600 hover:text-blue-900">{{ alert.student.get_full_name }}</a>
+                                        <div class="min-w-0 flex-1">
+                                            <a href="{% url 'student_profile' alert.student.id %}" class="block text-lg font-bold text-blue-600 hover:text-blue-900 truncate">{{ alert.student.get_full_name }}</a>
                                             <p class="text-sm text-gray-600">Grade {{ alert.student.year_level|default:"?" }} - {{ alert.student.section|default:"No Section" }}</p>
                                         </div>
                                     </div>
                                     
                                     <!-- Notification Details -->
                                     <div class="mb-3">
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <h5 class="text-lg font-semibold text-gray-800">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <h5 class="text-lg font-semibold text-gray-800 break-words">
                                                 {% if alert.alert_type == 'high_risk' %}Student Needs Help
                                                 {% elif alert.alert_type == 'missing_assignments' %}Missing Homework
                                                 {% elif alert.alert_type == 'low_attendance' %}Attendance Issues
@@ -177,10 +177,10 @@
                                 
                                 <!-- Action Buttons -->
                                 {% if not alert.resolved %}
-                                <div class="flex flex-col space-y-2 ml-4">
+                                <div class="flex flex-col gap-2 w-full lg:w-auto lg:ml-4 order-last lg:order-none pt-1 lg:pt-0">
                                     {% if not alert.is_read %}
                                     <a href="{% url 'wellness:mark_alert_read' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}" 
-                                       class="px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-semibold transition text-center">
+                                       class="w-full lg:w-auto px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-semibold transition text-center whitespace-nowrap">
                                         Mark Read
                                     </a>
                                     {% endif %}
@@ -188,7 +188,7 @@
                                        data-url="{% url 'wellness:resolve_alert' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}"
                                        data-name="{{ alert.student.get_full_name }}"
                                        onclick="event.preventDefault(); var el=this; showConfirmModal({title:'Resolve Alert',body:'Mark this alert as resolved for <strong>'+el.dataset.name+'</strong>? This action will be recorded.',okLabel:'Yes, Resolve',type:'success',onConfirm(){window.location.href=el.dataset.url}})"
-                                       class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition text-center">
+                                       class="w-full lg:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition text-center whitespace-nowrap">
                                         Resolve
                                     </a>
                                 </div>

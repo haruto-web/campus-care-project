@@ -22,7 +22,7 @@
             <div class="lg:col-span-1 space-y-4">
                 <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Quick Actions</h2>
                 
-                <button onclick="generateReport()" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg flex items-center justify-start transition">
+                <button onclick="confirmGenerateReport()" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg flex items-center justify-start transition">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/>
                         <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
@@ -112,6 +112,18 @@ function addMessage(text, isUser = false) {
     
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function confirmGenerateReport() {
+    showConfirmModal({
+        title: 'Generate System Report',
+        body: 'Generate the latest system summary report now?',
+        okLabel: 'Generate Report',
+        type: 'info',
+        onConfirm() {
+            generateReport();
+        }
+    });
 }
 
 function generateReport() {

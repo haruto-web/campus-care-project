@@ -3,8 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
+from django.urls import reverse
+from django.utils import timezone
+from django.db import transaction
 from django.db.models import Count, Q
-from accounts.models import User, AuditLog, ApprovedStudent
+from accounts.models import User, AuditLog, ApprovedStudent, RegistrationRequest
 from academics.models import Class
 from academics.forms import ClassForm
 import csv
@@ -12,6 +15,10 @@ import io
 import logging
 
 logger = logging.getLogger('brighttrack.audit')
+
+
+def _registration_tab_redirect():
+    return redirect(f"{reverse('admin_upload_students')}?tab=registrations")
 
 @login_required
 def admin_create_user(request):
@@ -469,9 +476,14 @@ def admin_upload_students(request):
         return redirect('admin_upload_students')
 
     approved_students = ApprovedStudent.objects.all()
+    pending_registrations = RegistrationRequest.objects.filter(status=RegistrationRequest.Status.PENDING).order_by('-created_at')
     paginator = Paginator(approved_students, 50)
     page = paginator.get_page(request.GET.get('page'))
-    return render(request, 'admin/upload_students.html', {'page_obj': page})
+    return render(request, 'admin/upload_students.html', {
+        'page_obj': page,
+        'pending_registrations': pending_registrations,
+        'active_tab': request.GET.get('tab', 'csv'),
+    })
 
 
 @login_required
@@ -521,6 +533,122 @@ def admin_edit_approved_student(request, student_id):
             messages.success(request, f'Student {fn} {ln} updated successfully.')
         return redirect('admin_upload_students')
     return redirect('admin_upload_students')
+
+
+@login_required
+@require_POST
+def admin_approve_registration(request, request_id):
+    if request.user.role != 'admin':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    with transaction.atomic():
+        registration = get_object_or_404(
+            RegistrationRequest.objects.select_for_update(), id=request_id
+        )
+        if registration.status != RegistrationRequest.Status.PENDING:
+            messages.error(request, 'This registration request was already processed.')
+            return _registration_tab_redirect()
+
+        if User.objects.filter(email__iexact=registration.email).exists():
+            registration.status = RegistrationRequest.Status.REJECTED
+            registration.approved_by = request.user
+            registration.decided_at = timezone.now()
+            registration.rejection_reason = 'Email already exists'
+            registration.save(update_fields=['status', 'approved_by', 'decided_at', 'rejection_reason', 'updated_at'])
+            messages.error(request, 'Approval blocked: email already exists in active users.')
+            return _registration_tab_redirect()
+
+        import uuid
+        base = f"{registration.first_name.lower()}{registration.last_name.lower()}".replace(' ', '')
+        username = f"{base}{str(uuid.uuid4())[:4]}"
+        while User.objects.filter(username=username).exists():
+            username = f"{base}{str(uuid.uuid4())[:4]}"
+
+        user = User(
+            username=username,
+            email=registration.email,
+            first_name=registration.first_name,
+            last_name=registration.last_name,
+            role='student',
+            student_number=registration.student_number,
+            year_level=registration.year_level,
+            section=registration.section,
+            profile_completed=False,
+        )
+        user.password = registration.password_hash
+        user.save()
+
+        ApprovedStudent.objects.update_or_create(
+            student_number=registration.student_number,
+            defaults={
+                'email': registration.email,
+                'first_name': registration.first_name,
+                'last_name': registration.last_name,
+                'year_level': registration.year_level,
+                'section': registration.section,
+                'is_registered': True,
+                'is_suspended': False,
+            }
+        )
+
+        registration.status = RegistrationRequest.Status.APPROVED
+        registration.approved_by = request.user
+        registration.decided_at = timezone.now()
+        registration.rejection_reason = ''
+        registration.save(update_fields=['status', 'approved_by', 'decided_at', 'rejection_reason', 'updated_at'])
+
+    from accounts.otp_utils import send_transactional_email
+    send_transactional_email(
+        to_email=registration.email,
+        subject='BrightTrack Registration Approved',
+        text_content=(
+            f"Dear {registration.first_name.title()} {registration.last_name.title()},\n\n"
+            "Your account registration request has been approved by the administrator.\n"
+            "You can now log in to BrightTrack using your registered email and password.\n\n"
+            "BrightTrack School System"
+        ),
+    )
+    messages.success(request, f'Registration approved for {registration.first_name} {registration.last_name}.')
+    return _registration_tab_redirect()
+
+
+@login_required
+@require_POST
+def admin_reject_registration(request, request_id):
+    if request.user.role != 'admin':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    registration = get_object_or_404(RegistrationRequest, id=request_id)
+    if registration.status != RegistrationRequest.Status.PENDING:
+        messages.error(request, 'This registration request was already processed.')
+        return _registration_tab_redirect()
+
+    reason = (request.POST.get('reason') or '').strip()
+    if not reason:
+        reason = 'Registration details did not pass school approval.'
+
+    registration.status = RegistrationRequest.Status.REJECTED
+    registration.approved_by = request.user
+    registration.decided_at = timezone.now()
+    registration.rejection_reason = reason[:255]
+    registration.save(update_fields=['status', 'approved_by', 'decided_at', 'rejection_reason', 'updated_at'])
+
+    from accounts.otp_utils import send_transactional_email
+    send_transactional_email(
+        to_email=registration.email,
+        subject='BrightTrack Registration Rejected',
+        text_content=(
+            f"Dear {registration.first_name.title()} {registration.last_name.title()},\n\n"
+            "Your account registration request was not approved by the administrator.\n"
+            f"Reason: {registration.rejection_reason}\n\n"
+            "No account was created. You may contact your school administrator for assistance.\n\n"
+            "BrightTrack School System"
+        ),
+    )
+    messages.success(request, f'Registration rejected for {registration.first_name} {registration.last_name}.')
+    return _registration_tab_redirect()
 
 
 @login_required

@@ -90,14 +90,14 @@
                     {% for class in classes %}
                     <a href="{% url 'academics:class_detail' class.id %}"
                         class="block p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group">
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center space-x-3">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="flex items-start sm:items-center space-x-3 min-w-0">
                                 <div
                                     class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
                                     {{ class.code|slice:":2"|upper }}</div>
-                                <div>
-                                    <h6 class="font-bold text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400">{{ class.name }}</h6>
-                                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                <div class="min-w-0">
+                                    <h6 class="font-bold text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400 truncate">{{ class.name }}</h6>
+                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
                                         <i class="bi bi-people mr-1"></i>
                                         <span>{{ class.students.count }} students</span>
                                         <span class="mx-2">•</span>
@@ -107,7 +107,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-center space-x-2 self-start sm:self-auto">
                                 <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 rounded-full text-sm font-medium">{{ class.semester }}</span>
                                 <i
                                     class="bi bi-arrow-right text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all"></i>
@@ -141,14 +141,14 @@
                 <div class="space-y-3">
                     {% for student in at_risk_students|slice:":5" %}
                     <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 hover:bg-red-100 dark:hover:bg-red-900/30 transition">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="flex items-start sm:items-center space-x-3 min-w-0">
                                 <div
                                     class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                                     {{ student.get_full_name|slice:":1"|upper }}</div>
-                                <div>
-                                    <h6 class="font-bold text-gray-900 dark:text-white">{{ student.get_full_name }}</h6>
-                                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                <div class="min-w-0">
+                                    <h6 class="font-bold text-gray-900 dark:text-white truncate">{{ student.get_full_name }}</h6>
+                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
                                         <i class="bi bi-mortarboard mr-1"></i>
                                         <span>Grade {{ student.year_level|default:"?" }}</span>
                                         <span class="mx-2">•</span>
@@ -156,7 +156,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
                                 <span class="px-2 py-1 bg-red-600 text-white rounded-full text-xs font-bold">HIGH
                                     RISK</span>
                                 <a href="{% url 'student_profile' student.id %}"

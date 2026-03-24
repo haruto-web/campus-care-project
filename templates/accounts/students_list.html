@@ -79,19 +79,19 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for student_data in students %}
             <div class="bg-white border-2 border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200">
-                <div class="p-6">
-                    <div class="flex items-center mb-4">
-                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4">
+                <div class="p-4 sm:p-6">
+                    <div class="flex items-start sm:items-center mb-4 gap-3 sm:gap-4">
+                        <div class="w-12 h-12 flex-shrink-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
                             {{ student_data.student.get_full_name|slice:":1"|upper }}</div>
-                        <div class="flex-1">
-                            <h3 class="font-bold text-gray-900 text-lg">{{ student_data.student.get_full_name }}</h3>
-                            <p class="text-sm text-gray-600">{{ student_data.student.email }}</p>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-bold text-gray-900 text-base sm:text-lg leading-tight truncate">{{ student_data.student.get_full_name }}</h3>
+                            <p class="text-sm text-gray-600 truncate">{{ student_data.student.email }}</p>
                         </div>
                     </div>
                     
                     <div class="space-y-3 mb-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600 flex items-center">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-sm text-gray-600 flex items-center min-w-0">
                                 <i class="bi bi-mortarboard-fill text-green-600 mr-2"></i>Grade Level
                             </span>
                             <span class="font-semibold text-gray-900">
@@ -103,40 +103,40 @@
                             </span>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600 flex items-center">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-sm text-gray-600 flex items-center min-w-0">
                                 <i class="bi bi-book-fill text-blue-600 mr-2"></i>Subjects
                             </span>
                             <span class="font-semibold text-gray-900">{{ student_data.classes_count }}</span>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600 flex items-center">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-sm text-gray-600 flex items-center min-w-0">
                                 <i class="bi bi-graph-up-arrow text-purple-600 mr-2"></i>GPA
                             </span>
                             <span class="font-semibold text-gray-900">{{ student_data.gpa|default:"N/A" }}</span>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600 flex items-center">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-sm text-gray-600 flex items-center min-w-0">
                                 <i class="bi bi-calendar-check-fill text-orange-600 mr-2"></i>Attendance
                             </span>
                             <span class="font-semibold text-gray-900">{{ student_data.attendance_rate|default:"N/A" }}%</span>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600 flex items-center">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-sm text-gray-600 flex items-center min-w-0">
                                 <i class="bi bi-shield-fill-exclamation text-red-600 mr-2"></i>Risk Level
                             </span>
                             <span>
                                 {% if student_data.risk_level == 'high' %}
-                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-red-100 text-red-800">HIGH RISK</span>
+                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-red-100 text-red-800 whitespace-nowrap">HIGH RISK</span>
                                 {% elif student_data.risk_level == 'medium' %}
-                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-800">MEDIUM</span>
+                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-800 whitespace-nowrap">MEDIUM</span>
                                 {% elif student_data.risk_level == 'low' %}
-                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-green-800">LOW RISK</span>
+                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-green-800 whitespace-nowrap">LOW RISK</span>
                                 {% else %}
-                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-gray-100 text-gray-800">N/A</span>
+                                <span class="px-2 py-1 text-xs font-bold rounded-full bg-gray-100 text-gray-800 whitespace-nowrap">N/A</span>
                                 {% endif %}
                             </span>
                         </div>
