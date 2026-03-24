@@ -118,41 +118,15 @@
                     How manageable is your workload? <span class="text-red-600">*</span>
                 </label>
                 <div class="grid grid-cols-5 gap-2" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0.5rem;">
-                    <label class="block w-full text-center cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
-                        <input type="radio" name="workload_level" value="1" required class="hidden peer">
-                        <div class="flex h-20 sm:h-24 w-full flex-col items-center justify-center border-2 border-gray-300 rounded-lg bg-white p-2 sm:p-4 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50" style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
-                            <div class="text-xl sm:text-3xl mb-1 sm:mb-2">&#128524;</div>
-                            <div class="text-xs sm:text-sm font-semibold text-gray-700">1</div>
+                    {% for i in "12345" %}
+                    <label class="block w-full cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
+                        <input type="radio" name="workload_level" value="{{ i }}" required class="sr-only peer">
+                        <div class="flex h-20 sm:h-24 w-full items-center justify-center border-2 border-gray-300 rounded-lg bg-white text-lg sm:text-xl font-semibold text-gray-700 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50"
+                             style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
+                            {{ i }}
                         </div>
                     </label>
-                    <label class="block w-full text-center cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
-                        <input type="radio" name="workload_level" value="2" required class="hidden peer">
-                        <div class="flex h-20 sm:h-24 w-full flex-col items-center justify-center border-2 border-gray-300 rounded-lg bg-white p-2 sm:p-4 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50" style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
-                            <div class="text-xl sm:text-3xl mb-1 sm:mb-2">&#128578;</div>
-                            <div class="text-xs sm:text-sm font-semibold text-gray-700">2</div>
-                        </div>
-                    </label>
-                    <label class="block w-full text-center cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
-                        <input type="radio" name="workload_level" value="3" required class="hidden peer">
-                        <div class="flex h-20 sm:h-24 w-full flex-col items-center justify-center border-2 border-gray-300 rounded-lg bg-white p-2 sm:p-4 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50" style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
-                            <div class="text-xl sm:text-3xl mb-1 sm:mb-2">&#128528;</div>
-                            <div class="text-xs sm:text-sm font-semibold text-gray-700">3</div>
-                        </div>
-                    </label>
-                    <label class="block w-full text-center cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
-                        <input type="radio" name="workload_level" value="4" required class="hidden peer">
-                        <div class="flex h-20 sm:h-24 w-full flex-col items-center justify-center border-2 border-gray-300 rounded-lg bg-white p-2 sm:p-4 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50" style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
-                            <div class="text-xl sm:text-3xl mb-1 sm:mb-2">&#128531;</div>
-                            <div class="text-xs sm:text-sm font-semibold text-gray-700">4</div>
-                        </div>
-                    </label>
-                    <label class="block w-full text-center cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
-                        <input type="radio" name="workload_level" value="5" required class="hidden peer">
-                        <div class="flex h-20 sm:h-24 w-full flex-col items-center justify-center border-2 border-gray-300 rounded-lg bg-white p-2 sm:p-4 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50" style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
-                            <div class="text-xl sm:text-3xl mb-1 sm:mb-2">&#128565;</div>
-                            <div class="text-xs sm:text-sm font-semibold text-gray-700">5</div>
-                        </div>
-                    </label>
+                    {% endfor %}
                 </div>
                 <div class="flex justify-between text-sm text-gray-600 mt-2 px-2">
                     <span>Very manageable</span>
@@ -166,41 +140,15 @@
                     How would you rate your sleep quality? <span class="text-red-600">*</span>
                 </label>
                 <div class="grid grid-cols-5 gap-2" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0.5rem;">
-                    <label class="block w-full text-center cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
-                        <input type="radio" name="sleep_quality" value="1" required class="hidden peer">
-                        <div class="flex h-20 sm:h-24 w-full flex-col items-center justify-center border-2 border-gray-300 rounded-lg bg-white p-2 sm:p-4 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50" style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
-                            <div class="text-xl sm:text-3xl mb-1 sm:mb-2">&#128564;</div>
-                            <div class="text-xs sm:text-sm font-semibold text-gray-700">1</div>
+                    {% for i in "12345" %}
+                    <label class="block w-full cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
+                        <input type="radio" name="sleep_quality" value="{{ i }}" required class="sr-only peer">
+                        <div class="flex h-20 sm:h-24 w-full items-center justify-center border-2 border-gray-300 rounded-lg bg-white text-lg sm:text-xl font-semibold text-gray-700 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50"
+                             style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
+                            {{ i }}
                         </div>
                     </label>
-                    <label class="block w-full text-center cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
-                        <input type="radio" name="sleep_quality" value="2" required class="hidden peer">
-                        <div class="flex h-20 sm:h-24 w-full flex-col items-center justify-center border-2 border-gray-300 rounded-lg bg-white p-2 sm:p-4 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50" style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
-                            <div class="text-xl sm:text-3xl mb-1 sm:mb-2">&#128554;</div>
-                            <div class="text-xs sm:text-sm font-semibold text-gray-700">2</div>
-                        </div>
-                    </label>
-                    <label class="block w-full text-center cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
-                        <input type="radio" name="sleep_quality" value="3" required class="hidden peer">
-                        <div class="flex h-20 sm:h-24 w-full flex-col items-center justify-center border-2 border-gray-300 rounded-lg bg-white p-2 sm:p-4 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50" style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
-                            <div class="text-xl sm:text-3xl mb-1 sm:mb-2">&#128528;</div>
-                            <div class="text-xs sm:text-sm font-semibold text-gray-700">3</div>
-                        </div>
-                    </label>
-                    <label class="block w-full text-center cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
-                        <input type="radio" name="sleep_quality" value="4" required class="hidden peer">
-                        <div class="flex h-20 sm:h-24 w-full flex-col items-center justify-center border-2 border-gray-300 rounded-lg bg-white p-2 sm:p-4 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50" style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
-                            <div class="text-xl sm:text-3xl mb-1 sm:mb-2">&#128522;</div>
-                            <div class="text-xs sm:text-sm font-semibold text-gray-700">4</div>
-                        </div>
-                    </label>
-                    <label class="block w-full text-center cursor-pointer" style="display:block !important;visibility:visible !important;opacity:1 !important;">
-                        <input type="radio" name="sleep_quality" value="5" required class="hidden peer">
-                        <div class="flex h-20 sm:h-24 w-full flex-col items-center justify-center border-2 border-gray-300 rounded-lg bg-white p-2 sm:p-4 transition hover:border-blue-400 peer-checked:border-blue-600 peer-checked:bg-blue-50" style="display:flex !important;visibility:visible !important;opacity:1 !important;min-height:5rem;">
-                            <div class="text-xl sm:text-3xl mb-1 sm:mb-2">&#128513;</div>
-                            <div class="text-xs sm:text-sm font-semibold text-gray-700">5</div>
-                        </div>
-                    </label>
+                    {% endfor %}
                 </div>
                 <div class="flex justify-between text-sm text-gray-600 mt-2 px-2">
                     <span>Very poor</span>

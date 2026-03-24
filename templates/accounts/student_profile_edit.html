@@ -18,7 +18,7 @@
                 <div class="inline-block relative">
                     <div class="w-32 h-32 rounded-full bg-white flex items-center justify-center border-4 border-blue-600 overflow-hidden">
                         {% if user.profile_picture %}
-                        <img src="{{ user.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                        <img src="{{ user.profile_picture.url }}?v={{ user.profile_picture.name|urlencode }}" alt="Profile" class="w-full h-full object-cover">
                         {% else %}
                         <img src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-20 h-20 object-contain">
                         {% endif %}

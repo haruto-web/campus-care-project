@@ -14,7 +14,7 @@
                         <div
                             class="w-32 h-32 bg-white rounded-full mx-auto flex items-center justify-center shadow-lg border-4 border-white overflow-hidden">
                             {% if user.profile_picture %}
-                            <img src="{{ user.profile_picture.url }}" alt="Profile"
+                            <img src="{{ user.profile_picture.url }}?v={{ user.profile_picture.name|urlencode }}" alt="Profile"
                                 class="w-full h-full object-cover">
                             {% else %}
                             <img src="{% static 'images/logo.png' %}" alt="BrightTrack"
