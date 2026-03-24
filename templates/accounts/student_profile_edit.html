@@ -16,25 +16,15 @@
             <!-- Profile Picture -->
             <div class="mb-8 text-center">
                 <div class="inline-block relative">
-<<<<<<< Updated upstream
                     <div class="w-32 h-32 rounded-full bg-white flex items-center justify-center border-4 border-blue-600 overflow-hidden">
                         {% if user.profile_picture %}
-                        <img id="profilePreview" src="{{ user.profile_picture.url }}?v={{ user.profile_picture.name|urlencode }}" alt="Profile"
-                             onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}';this.classList.remove('w-full','h-full','object-cover');this.classList.add('w-20','h-20','object-contain');this.setAttribute('data-is-default','true');"
+                        <img id="profilePreview" src="{{ user.profile_picture.url }}" alt="Profile"
+                             onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'"
                              class="w-full h-full object-cover">
                         {% else %}
                         <img id="profilePreview" src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-20 h-20 object-contain" data-is-default="true">
                         {% endif %}
                     </div>
-=======
-                    {% load static %}
-                    {% if user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" alt="Profile" class="w-32 h-32 rounded-full object-cover border-4 border-blue-600"
-                         onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'">
-                    {% else %}
-                    <img src="{% static 'images/logo.png' %}" alt="Profile" class="w-32 h-32 rounded-full object-cover border-4 border-blue-600">
-                    {% endif %}
->>>>>>> Stashed changes
                     <label for="profile_picture" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition">
                         <i class="bi bi-camera"></i>
                     </label>
