@@ -987,12 +987,12 @@ def profile_view(request):
             except Exception:
                 messages.warning(request, 'Profile picture upload failed. Other changes saved.')
                 uploaded_profile_picture = None
+
+        if uploaded_profile_picture:
+            request.user.profile_picture = uploaded_profile_picture
         
         try:
-            request.user.save(update_fields=['first_name', 'last_name', 'phone'])
-            if uploaded_profile_picture:
-                request.user.profile_picture = uploaded_profile_picture
-                request.user.save(update_fields=['profile_picture'])
+            request.user.save()
         except Exception:
             request.user.save(update_fields=['first_name', 'last_name', 'phone'])
             messages.warning(request, 'Profile picture upload failed. Other changes were saved.')
