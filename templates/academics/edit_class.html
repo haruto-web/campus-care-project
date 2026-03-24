@@ -121,6 +121,7 @@
 
             wrapper.querySelector('[data-remove-schedule]').addEventListener('click', function () {
                 wrapper.remove();
+                writeBlocks();
                 rerender();
             });
 
