@@ -6,6 +6,8 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
 from .models import Class, Announcement, Material, Assignment, Attendance, Submission, Grade
 from .forms import ClassForm, AssignmentForm, MaterialForm
 from campus_care.validators import validate_submission_upload, validate_document_upload
@@ -405,7 +407,16 @@ def upload_material(request, class_id):
             material = form.save(commit=False)
             material.class_obj = class_obj
             material.uploaded_by = request.user
-            material.save()
+            try:
+                material.save()
+            except Exception:
+                if uploaded_file:
+                    fallback_storage = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
+                    fallback_name = fallback_storage.save(f"materials/{uploaded_file.name}", uploaded_file)
+                    material.file = fallback_name
+                    material.save()
+                else:
+                    raise
             log_action(request, 'MATERIAL_UPLOADED', 'Material', material.id, material.title, extra_data={'class_id': class_obj.id})
             messages.success(request, f'Material "{material.title}" uploaded successfully!')
             return redirect('academics:class_detail', class_id=class_id)
