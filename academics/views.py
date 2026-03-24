@@ -855,18 +855,56 @@ def edit_class(request, class_id):
     denied = _teacher_class_or_redirect(request, class_obj)
     if denied:
         return denied
-    
+
+    selected_day, selected_time_range = Class.parse_schedule(class_obj.schedule)
     if request.method == 'POST':
+        schedule_day = request.POST.get('schedule_day', '')
+        schedule_time_range = request.POST.get('schedule_time_range', '')
+        valid_days = {choice[0] for choice in Class.DAY_CHOICES}
+        valid_time_ranges = {choice[0] for choice in Class.TIME_RANGE_CHOICES}
+        if any([schedule_day, schedule_time_range]) and not all([schedule_day, schedule_time_range]):
+            messages.error(request, 'Please select both a class day and a time range.')
+            return render(request, 'academics/edit_class.html', {
+                'class': class_obj,
+                'day_choices': Class.DAY_CHOICES,
+                'time_range_choices': Class.TIME_RANGE_CHOICES,
+                'selected_day': schedule_day,
+                'selected_time_range': schedule_time_range,
+            })
+        if schedule_day and schedule_day not in valid_days:
+            messages.error(request, 'Invalid class day selected.')
+            return render(request, 'academics/edit_class.html', {
+                'class': class_obj,
+                'day_choices': Class.DAY_CHOICES,
+                'time_range_choices': Class.TIME_RANGE_CHOICES,
+                'selected_day': selected_day,
+                'selected_time_range': selected_time_range,
+            })
+        if schedule_time_range and schedule_time_range not in valid_time_ranges:
+            messages.error(request, 'Invalid time range selected.')
+            return render(request, 'academics/edit_class.html', {
+                'class': class_obj,
+                'day_choices': Class.DAY_CHOICES,
+                'time_range_choices': Class.TIME_RANGE_CHOICES,
+                'selected_day': selected_day,
+                'selected_time_range': selected_time_range,
+            })
         class_obj.name = request.POST.get('name')
         class_obj.description = request.POST.get('description', '')
-        class_obj.schedule = request.POST.get('schedule', '')
+        class_obj.schedule = Class.build_schedule(schedule_day, schedule_time_range)
         class_obj.room = request.POST.get('room', '')
         class_obj.save()
         log_action(request, 'USER_UPDATED', 'Class', class_obj.id, class_obj.code)
         messages.success(request, 'Class updated successfully!')
         return redirect('academics:class_detail', class_id=class_id)
-    
-    return render(request, 'academics/edit_class.html', {'class': class_obj})
+
+    return render(request, 'academics/edit_class.html', {
+        'class': class_obj,
+        'day_choices': Class.DAY_CHOICES,
+        'time_range_choices': Class.TIME_RANGE_CHOICES,
+        'selected_day': selected_day,
+        'selected_time_range': selected_time_range,
+    })
 
 @login_required
 @require_POST

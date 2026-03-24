@@ -104,16 +104,25 @@
                 </div>
 
                 <div class="mb-8">
-                    <label for="{{ form.schedule.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
                         Schedule
                     </label>
-                    <input type="text" name="schedule" id="{{ form.schedule.id_for_label }}" 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                           placeholder="e.g., MWF 9:00-10:00 AM"
-                           value="{{ form.schedule.value|default:'' }}">
-                    {% if form.schedule.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.schedule.errors.0 }}</p>
-                    {% endif %}
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="{{ form.schedule_day.id_for_label }}" class="block text-xs font-medium text-gray-600 mb-1">Day</label>
+                            {{ form.schedule_day }}
+                            {% if form.schedule_day.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ form.schedule_day.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.schedule_time_range.id_for_label }}" class="block text-xs font-medium text-gray-600 mb-1">Time Range</label>
+                            {{ form.schedule_time_range }}
+                            {% if form.schedule_time_range.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ form.schedule_time_range.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex gap-3">

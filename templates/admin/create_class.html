@@ -120,12 +120,27 @@
             </div>
             
             <div class="mt-6">
-                <label for="{{ form.schedule.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Class Schedule
                     <span class="text-gray-400 text-xs">(Optional)</span>
                 </label>
-                {{ form.schedule }}
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">When does this class meet? (e.g., MWF 9:00-10:00 AM, Tue/Thu 2:00-3:30 PM)</p>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="{{ form.schedule_day.id_for_label }}" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Day</label>
+                        {{ form.schedule_day }}
+                        {% if form.schedule_day.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.schedule_day.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.schedule_time_range.id_for_label }}" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Time Range</label>
+                        {{ form.schedule_time_range }}
+                        {% if form.schedule_time_range.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.schedule_time_range.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Choose a day and a time range for the class schedule.</p>
             </div>
         </div>
 

@@ -8,6 +8,27 @@ class Class(models.Model):
         ('9', 'Grade 9'),
         ('10', 'Grade 10'),
     ]
+    DAY_CHOICES = [
+        ('Monday', 'Monday'),
+        ('Tuesday', 'Tuesday'),
+        ('Wednesday', 'Wednesday'),
+        ('Thursday', 'Thursday'),
+        ('Friday', 'Friday'),
+        ('Saturday', 'Saturday'),
+        ('Sunday', 'Sunday'),
+    ]
+    TIME_RANGE_CHOICES = [
+        ('07:00 AM - 08:00 AM', '07:00 AM - 08:00 AM'),
+        ('08:00 AM - 09:00 AM', '08:00 AM - 09:00 AM'),
+        ('09:00 AM - 10:00 AM', '09:00 AM - 10:00 AM'),
+        ('10:00 AM - 11:00 AM', '10:00 AM - 11:00 AM'),
+        ('11:00 AM - 12:00 PM', '11:00 AM - 12:00 PM'),
+        ('01:00 PM - 02:00 PM', '01:00 PM - 02:00 PM'),
+        ('02:00 PM - 03:00 PM', '02:00 PM - 03:00 PM'),
+        ('03:00 PM - 04:00 PM', '03:00 PM - 04:00 PM'),
+        ('04:00 PM - 05:00 PM', '04:00 PM - 05:00 PM'),
+        ('05:00 PM - 06:00 PM', '05:00 PM - 06:00 PM'),
+    ]
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=20, unique=True)
     description = models.TextField(blank=True)
@@ -25,6 +46,23 @@ class Class(models.Model):
     
     def __str__(self):
         return f"{self.code} - {self.name}"
+
+    @classmethod
+    def parse_schedule(cls, schedule):
+        if not schedule or ' | ' not in schedule:
+            return '', ''
+        day, time_range = schedule.split(' | ', 1)
+        valid_days = {choice[0] for choice in cls.DAY_CHOICES}
+        valid_time_ranges = {choice[0] for choice in cls.TIME_RANGE_CHOICES}
+        if day not in valid_days or time_range not in valid_time_ranges:
+            return '', ''
+        return day, time_range
+
+    @classmethod
+    def build_schedule(cls, day, time_range):
+        if not day or not time_range:
+            return ''
+        return f'{day} | {time_range}'
 
 class Assignment(models.Model):
     SUBMISSION_TYPE_CHOICES = [
