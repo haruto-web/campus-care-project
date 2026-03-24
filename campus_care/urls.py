@@ -18,6 +18,31 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf import settings
 from accounts.views import protected_media_view
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
+def cloudinary_check_view(request):
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'forbidden'}, status=403)
+    try:
+        import cloudinary
+        import cloudinary.uploader
+        cfg = cloudinary.config()
+        result = cloudinary.uploader.upload(
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+            public_id='brighttrack_test_ping',
+            overwrite=True,
+        )
+        return JsonResponse({
+            'status': 'ok',
+            'cloud_name': cfg.cloud_name,
+            'url': result.get('secure_url'),
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'error': str(e), 'type': type(e).__name__})
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,8 +50,8 @@ urlpatterns = [
     path('class/', include('academics.urls')),
     path('wellness/', include('wellness.urls')),
     path('ai/', include('ai_assistant.urls')),
-
     path('messages/', include('messaging.urls')),
+    path('debug/cloudinary/', cloudinary_check_view, name='cloudinary_check'),
 ]
 
 if settings.DEBUG:

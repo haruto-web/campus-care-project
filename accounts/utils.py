@@ -38,13 +38,22 @@ def record_security_spike(scope, threshold, window_seconds=300, level='warning')
     return count
 
 
-def hit_rate_limit(request, scope, limit, window_seconds):
+def get_client_ip(request):
+    """Return the real client IP, respecting Render's X-Forwarded-For proxy header."""
+    forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', 'unknown')
+
+
+def hit_rate_limit(request, scope, limit, window_seconds, track_spike=True):
     user_part = str(request.user.id) if getattr(request, 'user', None) and request.user.is_authenticated else 'anon'
-    ip_part = request.META.get('REMOTE_ADDR', 'unknown')
+    ip_part = get_client_ip(request)
     cache_key = f'ratelimit:{scope}:{user_part}:{ip_part}'
     count = cache.get(cache_key, 0)
-    metric_scope = f'{scope}:{ip_part}'
-    record_security_spike(metric_scope, threshold=max(5, min(limit, 20)), window_seconds=window_seconds)
+    if track_spike:
+        metric_scope = f'{scope}:{ip_part}'
+        record_security_spike(metric_scope, threshold=max(5, min(limit, 20)), window_seconds=window_seconds)
     if count >= limit:
         logger.warning('Rate limit triggered for scope=%s user=%s ip=%s limit=%s window=%s', scope, user_part, ip_part, limit, window_seconds)
         return True
@@ -110,7 +119,8 @@ def log_action(request_or_user, action, target_type='', target_id=None, target_l
 
         if isinstance(request_or_user, HttpRequest):
             actor = request_or_user.user if request_or_user.user.is_authenticated else None
-            ip_address = ip_address or request_or_user.META.get('REMOTE_ADDR')
+            from accounts.utils import get_client_ip
+            ip_address = ip_address or get_client_ip(request_or_user)
         else:
             actor = request_or_user
 

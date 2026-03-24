@@ -38,6 +38,10 @@ CSRF_TRUSTED_ORIGINS = [f'https://{RENDER_EXTERNAL_HOSTNAME}'] if RENDER_EXTERNA
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f'https://www.{RENDER_EXTERNAL_HOSTNAME}')
 
+# Trust Render's reverse proxy for real client IPs and HTTPS
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 # Application definition
 
@@ -164,6 +168,7 @@ CLOUDINARY_STORAGE = {
     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
     'API_KEY': config('CLOUDINARY_API_KEY', default=''),
     'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
+    'PREFIX': '',
 }
 
 if config('CLOUDINARY_CLOUD_NAME', default='') and not DEBUG:
@@ -246,6 +251,11 @@ LOGGING = {
             'propagate': False,
         },
         'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'accounts': {
             'handlers': ['console'],
             'level': 'ERROR',
             'propagate': False,

@@ -98,7 +98,7 @@ from django.http import JsonResponse
 @login_required
 def notifications_poll(request):
     """Single endpoint polled by base.html every 5s for all notification counts."""
-    if hit_rate_limit(request, 'notifications_poll', limit=120, window_seconds=60):
+    if hit_rate_limit(request, 'notifications_poll', limit=120, window_seconds=60, track_spike=False):
         return JsonResponse({'error': 'Too many requests'}, status=429)
 
     from messaging.models import Message
@@ -511,7 +511,7 @@ def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email', '').strip().lower()
         password = request.POST.get('password')
-        ip = request.META.get('REMOTE_ADDR', 'unknown')
+        ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', 'unknown')).split(',')[0].strip()
         attempt_key = f'login_attempts_{ip}_{email}'
         attempts = cache.get(attempt_key, 0)
 
@@ -994,14 +994,19 @@ def profile_view(request):
 
         try:
             user.save(update_fields=update_fields)
-        except Exception:
-            update_fields_no_pic = [f for f in update_fields if f != 'profile_picture']
-            user.refresh_from_db()
-            user.first_name = request.POST.get('first_name')
-            user.last_name = request.POST.get('last_name')
-            user.phone = request.POST.get('phone', '')
-            user.save(update_fields=update_fields_no_pic)
-            messages.warning(request, 'Profile picture upload failed. Other changes saved.')
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f'Profile save failed for user {user.pk}: {type(e).__name__}: {e}')
+            if 'profile_picture' in update_fields:
+                update_fields_no_pic = [f for f in update_fields if f != 'profile_picture']
+                user.refresh_from_db()
+                user.first_name = request.POST.get('first_name')
+                user.last_name = request.POST.get('last_name')
+                user.phone = request.POST.get('phone', '')
+                user.save(update_fields=update_fields_no_pic)
+                messages.warning(request, f'Profile picture upload failed ({type(e).__name__}). Other changes saved.')
+            else:
+                messages.error(request, 'Failed to save profile. Please try again.')
             return redirect('profile')
 
         log_action(request, 'PROFILE_UPDATED', 'User', user.id, user.get_full_name())
