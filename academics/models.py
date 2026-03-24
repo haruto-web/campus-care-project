@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from datetime import datetime
 
 class Class(models.Model):
     YEAR_LEVEL_CHOICES = [
@@ -16,18 +17,6 @@ class Class(models.Model):
         ('Friday', 'Friday'),
         ('Saturday', 'Saturday'),
         ('Sunday', 'Sunday'),
-    ]
-    TIME_RANGE_CHOICES = [
-        ('07:00 AM - 08:00 AM', '07:00 AM - 08:00 AM'),
-        ('08:00 AM - 09:00 AM', '08:00 AM - 09:00 AM'),
-        ('09:00 AM - 10:00 AM', '09:00 AM - 10:00 AM'),
-        ('10:00 AM - 11:00 AM', '10:00 AM - 11:00 AM'),
-        ('11:00 AM - 12:00 PM', '11:00 AM - 12:00 PM'),
-        ('01:00 PM - 02:00 PM', '01:00 PM - 02:00 PM'),
-        ('02:00 PM - 03:00 PM', '02:00 PM - 03:00 PM'),
-        ('03:00 PM - 04:00 PM', '03:00 PM - 04:00 PM'),
-        ('04:00 PM - 05:00 PM', '04:00 PM - 05:00 PM'),
-        ('05:00 PM - 06:00 PM', '05:00 PM - 06:00 PM'),
     ]
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=20, unique=True)
@@ -50,19 +39,41 @@ class Class(models.Model):
     @classmethod
     def parse_schedule(cls, schedule):
         if not schedule or ' | ' not in schedule:
-            return '', ''
-        day, time_range = schedule.split(' | ', 1)
+            return [], '', ''
+        day_part, time_range = schedule.split(' | ', 1)
+        days = [day.strip() for day in day_part.split(',') if day.strip()]
         valid_days = {choice[0] for choice in cls.DAY_CHOICES}
-        valid_time_ranges = {choice[0] for choice in cls.TIME_RANGE_CHOICES}
-        if day not in valid_days or time_range not in valid_time_ranges:
-            return '', ''
-        return day, time_range
+        if not days or any(day not in valid_days for day in days):
+            return [], '', ''
+        if ' - ' not in time_range:
+            return [], '', ''
+        start_time, end_time = [part.strip() for part in time_range.split(' - ', 1)]
+        if not cls._is_valid_time_display(start_time) or not cls._is_valid_time_display(end_time):
+            return [], '', ''
+        return days, cls._display_to_input_time(start_time), cls._display_to_input_time(end_time)
 
     @classmethod
-    def build_schedule(cls, day, time_range):
-        if not day or not time_range:
+    def build_schedule(cls, days, start_time, end_time):
+        if not days or not start_time or not end_time:
             return ''
-        return f'{day} | {time_range}'
+        display_days = ', '.join(days)
+        return f'{display_days} | {cls._input_to_display_time(start_time)} - {cls._input_to_display_time(end_time)}'
+
+    @staticmethod
+    def _is_valid_time_display(value):
+        try:
+            datetime.strptime(value, '%I:%M %p')
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _input_to_display_time(value):
+        return datetime.strptime(value, '%H:%M').strftime('%I:%M %p')
+
+    @staticmethod
+    def _display_to_input_time(value):
+        return datetime.strptime(value, '%I:%M %p').strftime('%H:%M')
 
 class Assignment(models.Model):
     SUBMISSION_TYPE_CHOICES = [

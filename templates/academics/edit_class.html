@@ -30,26 +30,31 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Schedule (Optional)
                 </label>
-                <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-4 space-y-4">
                     <div>
-                        <label for="schedule_day" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Day</label>
-                        <select id="schedule_day" name="schedule_day"
-                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
-                            <option value="">Select a day</option>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">Class Days</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {% for value, label in day_choices %}
-                            <option value="{{ value }}" {% if selected_day == value %}selected{% endif %}>{{ label }}</option>
+                            <label class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-red-400 transition cursor-pointer">
+                                <input type="checkbox" name="schedule_days" value="{{ value }}"
+                                    class="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                                    {% if value in selected_days %}checked{% endif %}>
+                                <span class="text-sm text-gray-700 dark:text-gray-200">{{ label }}</span>
+                            </label>
                             {% endfor %}
-                        </select>
+                        </div>
                     </div>
-                    <div>
-                        <label for="schedule_time_range" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Time Range</label>
-                        <select id="schedule_time_range" name="schedule_time_range"
-                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
-                            <option value="">Select a time range</option>
-                            {% for value, label in time_range_choices %}
-                            <option value="{{ value }}" {% if selected_time_range == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="schedule_start_time" class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Start Time</label>
+                            <input type="time" id="schedule_start_time" name="schedule_start_time" value="{{ selected_start_time }}"
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label for="schedule_end_time" class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">End Time</label>
+                            <input type="time" id="schedule_end_time" name="schedule_end_time" value="{{ selected_end_time }}"
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+                        </div>
                     </div>
                 </div>
             </div>

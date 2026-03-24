@@ -102,14 +102,6 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label for="{{ form.semester.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Semester/Term *
-                    </label>
-                    {{ form.semester }}
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Which semester or term is this class for?</p>
-                </div>
-                
-                <div>
                     <label for="{{ form.room.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Classroom
                         <span class="text-gray-400 text-xs">(Optional)</span>
@@ -124,23 +116,41 @@
                     Class Schedule
                     <span class="text-gray-400 text-xs">(Optional)</span>
                 </label>
-                <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-4 space-y-4">
                     <div>
-                        <label for="{{ form.schedule_day.id_for_label }}" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Day</label>
-                        {{ form.schedule_day }}
-                        {% if form.schedule_day.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.schedule_day.errors.0 }}</p>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">Class Days</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {% for value, label in form.schedule_days.field.choices %}
+                            <label class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-400 transition cursor-pointer">
+                                <input type="checkbox" name="schedule_days" value="{{ value }}"
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    {% if value in form.schedule_days.value %}checked{% endif %}>
+                                <span class="text-sm text-gray-700 dark:text-gray-200">{{ label }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% if form.schedule_days.errors %}
+                        <p class="text-red-500 text-sm mt-2">{{ form.schedule_days.errors.0 }}</p>
                         {% endif %}
                     </div>
-                    <div>
-                        <label for="{{ form.schedule_time_range.id_for_label }}" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Time Range</label>
-                        {{ form.schedule_time_range }}
-                        {% if form.schedule_time_range.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.schedule_time_range.errors.0 }}</p>
-                        {% endif %}
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="{{ form.schedule_start_time.id_for_label }}" class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Start Time</label>
+                            {{ form.schedule_start_time }}
+                            {% if form.schedule_start_time.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.schedule_start_time.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.schedule_end_time.id_for_label }}" class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">End Time</label>
+                            {{ form.schedule_end_time }}
+                            {% if form.schedule_end_time.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.schedule_end_time.errors.0 }}</p>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Choose a day and a time range for the class schedule.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Choose one or more class days and set a custom start and end time.</p>
             </div>
         </div>
 

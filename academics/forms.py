@@ -2,47 +2,61 @@ from django import forms
 from .models import Class, Announcement, Assignment, Material
 
 class ClassForm(forms.ModelForm):
-    schedule_day = forms.ChoiceField(
-        choices=[('', 'Select a day')] + Class.DAY_CHOICES,
+    schedule_days = forms.MultipleChoiceField(
+        choices=Class.DAY_CHOICES,
         required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.CheckboxSelectMultiple()
     )
-    schedule_time_range = forms.ChoiceField(
-        choices=[('', 'Select a time range')] + Class.TIME_RANGE_CHOICES,
+    schedule_start_time = forms.TimeField(
         required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
+        input_formats=['%H:%M'],
+        widget=forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'})
+    )
+    schedule_end_time = forms.TimeField(
+        required=False,
+        input_formats=['%H:%M'],
+        widget=forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'})
     )
 
     class Meta:
         model = Class
-        fields = ['name', 'code', 'section', 'year_level', 'description', 'semester', 'room']
+        fields = ['name', 'code', 'section', 'year_level', 'description', 'room']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., MATH-7A'}),
             'section': forms.TextInput(attrs={'class': 'form-control'}),
             'year_level': forms.Select(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'semester': forms.TextInput(attrs={'class': 'form-control'}),
             'room': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Room 301'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        day, time_range = Class.parse_schedule(getattr(self.instance, 'schedule', ''))
-        if day:
-            self.fields['schedule_day'].initial = day
-        if time_range:
-            self.fields['schedule_time_range'].initial = time_range
+        days, start_time, end_time = Class.parse_schedule(getattr(self.instance, 'schedule', ''))
+        if days:
+            self.fields['schedule_days'].initial = days
+        if start_time:
+            self.fields['schedule_start_time'].initial = start_time
+        if end_time:
+            self.fields['schedule_end_time'].initial = end_time
 
     def clean(self):
         cleaned_data = super().clean()
-        day = cleaned_data.get('schedule_day', '')
-        time_range = cleaned_data.get('schedule_time_range', '')
-        if any([day, time_range]) and not all([day, time_range]):
-            message = 'Please select both a class day and a time range.'
-            self.add_error('schedule_day', message)
-            self.add_error('schedule_time_range', message)
-        cleaned_data['schedule'] = Class.build_schedule(day, time_range)
+        days = cleaned_data.get('schedule_days') or []
+        start_time = cleaned_data.get('schedule_start_time')
+        end_time = cleaned_data.get('schedule_end_time')
+        if any([days, start_time, end_time]) and not all([days, start_time, end_time]):
+            message = 'Please select class day(s), start time, and end time.'
+            self.add_error('schedule_days', message)
+            self.add_error('schedule_start_time', message)
+            self.add_error('schedule_end_time', message)
+        if start_time and end_time and start_time >= end_time:
+            self.add_error('schedule_end_time', 'End time must be later than start time.')
+        cleaned_data['schedule'] = Class.build_schedule(
+            days,
+            start_time.strftime('%H:%M') if start_time else '',
+            end_time.strftime('%H:%M') if end_time else '',
+        )
         return cleaned_data
 
     def save(self, commit=True):
