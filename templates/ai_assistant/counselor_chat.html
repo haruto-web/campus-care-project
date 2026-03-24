@@ -26,7 +26,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Quick Actions</h3>
             <div class="space-y-3">
-                <button onclick="showInterventionForm()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
+                <button id="quickActionCreateIntervention" onclick="confirmShowInterventionForm()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
                         <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
@@ -34,14 +34,14 @@
                     Create Intervention
                 </button>
 
-                <button onclick="autoCreateInterventions()" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
+                <button id="quickActionAutoCreateInterventions" onclick="confirmAutoCreateInterventions()" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
                     </svg>
                     Auto-Create All Interventions
                 </button>
 
-                <button onclick="generateReport()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
+                <button id="quickActionGenerateReport" onclick="confirmGenerateReport()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/>
                         <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
@@ -49,21 +49,21 @@
                     Generate Report
                 </button>
 
-                <button onclick="showBehaviorAnalysis()" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
+                <button id="quickActionAnalyzeBehavior" onclick="confirmShowBehaviorAnalysis()" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
                     </svg>
                     Analyze Behavior
                 </button>
 
-                <button onclick="generateWeeklySummary()" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
+                <button id="quickActionWeeklySummary" onclick="confirmGenerateWeeklySummary()" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
                     </svg>
                     Weekly Summary
                 </button>
 
-                <button onclick="showDraftEmail()" class="w-full bg-pink-600 hover:bg-pink-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
+                <button id="quickActionDraftEmail" onclick="confirmShowDraftEmail()" class="w-full bg-pink-600 hover:bg-pink-700 text-white px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
                         <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
@@ -71,14 +71,14 @@
                     Draft Parent Email
                 </button>
 
-                <button onclick="showSearchForm()" class="w-full border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
+                <button id="quickActionSearchStudent" onclick="confirmShowSearchForm()" class="w-full border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
                     </svg>
                     Search Student
                 </button>
 
-                <button onclick="showAskAI()" class="w-full border-2 border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
+                <button id="quickActionAskAI" onclick="confirmShowAskAI()" class="w-full border-2 border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 px-4 py-3 rounded-lg flex items-center justify-start transition font-medium">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
                     </svg>
@@ -126,6 +126,51 @@ const csrftoken = '{{ csrf_token }}';
 let currentAction = null;
 let selectedStudentId = null;
 let aiRequestInFlight = false;
+const quickActionLocks = new Set();
+
+function setQuickActionState(buttonId, isLoading) {
+    const button = document.getElementById(buttonId);
+    if (!button) return;
+    button.disabled = isLoading;
+    button.classList.toggle('opacity-60', isLoading);
+    button.classList.toggle('cursor-not-allowed', isLoading);
+}
+
+function runQuickAction(actionKey, buttonId, callback) {
+    if (quickActionLocks.has(actionKey)) {
+        addMessage('Please wait before repeating that action.', false);
+        return;
+    }
+
+    quickActionLocks.add(actionKey);
+    setQuickActionState(buttonId, true);
+
+    let result;
+    try {
+        result = callback();
+    } catch (error) {
+        quickActionLocks.delete(actionKey);
+        setQuickActionState(buttonId, false);
+        throw error;
+    }
+
+    Promise.resolve(result).finally(() => {
+        quickActionLocks.delete(actionKey);
+        setQuickActionState(buttonId, false);
+    });
+}
+
+function confirmQuickAction(config) {
+    showConfirmModal({
+        title: config.title,
+        body: config.body,
+        okLabel: config.okLabel || 'Continue',
+        type: config.type || 'info',
+        onConfirm() {
+            runQuickAction(config.actionKey, config.buttonId, config.callback);
+        }
+    });
+}
 
 function showInputNotice(message, type = 'info') {
     const notice = document.getElementById('inputNotice');
@@ -259,6 +304,18 @@ function showInterventionForm() {
         .catch(error => {
             document.getElementById('studentResults').innerHTML = '<p class="text-red-500 text-sm text-center py-4">Error loading students</p>';
         });
+}
+
+function confirmShowInterventionForm() {
+    confirmQuickAction({
+        actionKey: 'create_intervention',
+        buttonId: 'quickActionCreateIntervention',
+        title: 'Create Intervention',
+        body: 'Open the intervention assistant and select a student?',
+        okLabel: 'Open',
+        type: 'info',
+        callback: showInterventionForm
+    });
 }
 
 function filterStudentList() {
@@ -477,7 +534,7 @@ function analyzeBehavior(studentId, studentName) {
 function generateWeeklySummary() {
     addMessage('Generating weekly summary...', false);
     
-    fetch('/ai/counselor/chat/', {
+    return fetch('/ai/counselor/chat/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -546,6 +603,18 @@ function generateWeeklySummary() {
     });
 }
 
+function confirmGenerateWeeklySummary() {
+    confirmQuickAction({
+        actionKey: 'weekly_summary',
+        buttonId: 'quickActionWeeklySummary',
+        title: 'Weekly Summary',
+        body: 'Generate the latest weekly summary now?',
+        okLabel: 'Generate',
+        type: 'info',
+        callback: generateWeeklySummary
+    });
+}
+
 function showDraftEmail() {
     addMessage('Select a student to draft a parent email:', false);
     
@@ -579,6 +648,18 @@ function showDraftEmail() {
                 displayEmailStudents(filtered);
             });
         });
+}
+
+function confirmShowDraftEmail() {
+    confirmQuickAction({
+        actionKey: 'draft_email',
+        buttonId: 'quickActionDraftEmail',
+        title: 'Draft Parent Email',
+        body: 'Open the email drafting assistant and select a student?',
+        okLabel: 'Open',
+        type: 'info',
+        callback: showDraftEmail
+    });
 }
 
 function displayEmailStudents(students) {
@@ -640,7 +721,7 @@ function draftEmail(studentId, studentName) {
 function generateReport() {
     addMessage('Generating comprehensive report summary...', false);
     
-    fetch('/ai/counselor/chat/', {
+    return fetch('/ai/counselor/chat/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -710,10 +791,34 @@ function generateReport() {
     });
 }
 
+function confirmGenerateReport() {
+    confirmQuickAction({
+        actionKey: 'generate_report',
+        buttonId: 'quickActionGenerateReport',
+        title: 'Generate Report',
+        body: 'Generate the latest counseling report now?',
+        okLabel: 'Generate',
+        type: 'info',
+        callback: generateReport
+    });
+}
+
 function showSearchForm() {
     addMessage('Search for students by filters. Please provide: grade_level (7-10), section, or severity (low/medium/high/critical). Example: "grade 7 section apple high"', false);
     document.getElementById('inputArea').classList.remove('hidden');
     currentAction = 'search_student';
+}
+
+function confirmShowSearchForm() {
+    confirmQuickAction({
+        actionKey: 'search_student',
+        buttonId: 'quickActionSearchStudent',
+        title: 'Search Student',
+        body: 'Open the student search assistant?',
+        okLabel: 'Open',
+        type: 'info',
+        callback: showSearchForm
+    });
 }
 
 function showAskAI() {
@@ -728,6 +833,30 @@ function showAskAI() {
     clearInputNotice();
     addMessage('Ask me anything about counseling, student support, or interventions!', false);
     currentAction = 'ask_ai';
+}
+
+function confirmShowAskAI() {
+    confirmQuickAction({
+        actionKey: 'ask_ai_open',
+        buttonId: 'quickActionAskAI',
+        title: 'Ask AI',
+        body: 'Open the AI question input area?',
+        okLabel: 'Open',
+        type: 'info',
+        callback: showAskAI
+    });
+}
+
+function confirmShowBehaviorAnalysis() {
+    confirmQuickAction({
+        actionKey: 'analyze_behavior',
+        buttonId: 'quickActionAnalyzeBehavior',
+        title: 'Analyze Behavior',
+        body: 'Open behavior analysis and select a student?',
+        okLabel: 'Open',
+        type: 'info',
+        callback: showBehaviorAnalysis
+    });
 }
 
 function sendMessage() {
@@ -874,13 +1003,9 @@ document.getElementById('userInput').addEventListener('keypress', function(e) {
 });
 
 function autoCreateInterventions() {
-    if (!confirm('This will automatically create interventions for ALL high-risk students who don\'t have scheduled interventions. Continue?')) {
-        return;
-    }
-    
     addMessage('Scanning all high-risk students and creating interventions...', false);
     
-    fetch('/ai/counselor/chat/', {
+    return fetch('/ai/counselor/chat/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -905,6 +1030,18 @@ function autoCreateInterventions() {
     })
     .catch(error => {
         addMessage('Error processing request. Please try again.', false);
+    });
+}
+
+function confirmAutoCreateInterventions() {
+    confirmQuickAction({
+        actionKey: 'auto_create_interventions',
+        buttonId: 'quickActionAutoCreateInterventions',
+        title: 'Auto-Create All Interventions',
+        body: 'This will create interventions for all high-risk students without scheduled interventions. Continue?',
+        okLabel: 'Create',
+        type: 'warning',
+        callback: autoCreateInterventions
     });
 }
 </script>
