@@ -18,7 +18,9 @@
                 <div class="inline-block relative">
                     <div class="w-32 h-32 rounded-full bg-white flex items-center justify-center border-4 border-blue-600 overflow-hidden">
                         {% if user.profile_picture %}
-                        <img id="profilePreview" src="{{ user.profile_picture.url }}?v={{ user.profile_picture.name|urlencode }}" alt="Profile" class="w-full h-full object-cover">
+                        <img id="profilePreview" src="{{ user.profile_picture.url }}?v={{ user.profile_picture.name|urlencode }}" alt="Profile"
+                             onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}';this.classList.remove('w-full','h-full','object-cover');this.classList.add('w-20','h-20','object-contain');this.setAttribute('data-is-default','true');"
+                             class="w-full h-full object-cover">
                         {% else %}
                         <img id="profilePreview" src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-20 h-20 object-contain" data-is-default="true">
                         {% endif %}
