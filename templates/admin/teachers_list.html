@@ -29,12 +29,12 @@
             <!-- Teacher Header -->
             <div class="p-6 border-b border-gray-100 dark:border-gray-700">
                 <div class="flex items-center space-x-4">
+                    {% load static %}
                     {% if teacher.profile_picture %}
-                    <img src="{{ teacher.profile_picture.url }}" class="w-16 h-16 rounded-full object-cover border-2 border-green-200">
+                    <img src="{{ teacher.profile_picture.url }}" class="w-16 h-16 rounded-full object-cover border-2 border-green-200"
+                         onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'">
                     {% else %}
-                    <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center border-2 border-green-200">
-                        <span class="text-green-600 font-bold text-xl">{{ teacher.get_full_name|slice:":1"|upper }}</span>
-                    </div>
+                    <img src="{% static 'images/logo.png' %}" class="w-16 h-16 rounded-full object-cover border-2 border-green-200" alt="Profile">
                     {% endif %}
                     <div class="flex-1">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ teacher.get_full_name }}</h3>

@@ -13,6 +13,7 @@
         <!-- Profile Card -->
         <div
             class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 text-center">
+<<<<<<< Updated upstream
             <div
                 class="w-28 h-28 rounded-full bg-white inline-flex items-center justify-center mx-auto mb-4 border-4 border-indigo-400 overflow-hidden">
                 {% if user.profile_picture %}
@@ -21,6 +22,16 @@
                 <img id="counselorAvatar" src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-16 h-16 object-contain">
                 {% endif %}
             </div>
+=======
+            {% load static %}
+            {% if user.profile_picture %}
+            <img src="{{ user.profile_picture.url }}"
+                class="w-28 h-28 rounded-full object-cover border-4 border-indigo-400 mx-auto mb-4" alt="Profile"
+                onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'">
+            {% else %}
+            <img src="{% static 'images/logo.png' %}" class="w-28 h-28 rounded-full object-cover border-4 border-indigo-400 mx-auto mb-4" alt="Profile">
+            {% endif %}
+>>>>>>> Stashed changes
             <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">{{ user.get_full_name }}</h4>
             <p class="text-gray-500 dark:text-gray-400 text-sm mb-5">{{ user.get_role_display }}</p>
             <form method="POST" action="{% url 'logout' %}" class="inline">

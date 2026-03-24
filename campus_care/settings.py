@@ -168,9 +168,7 @@ CLOUDINARY_STORAGE = {
 
 if config('CLOUDINARY_CLOUD_NAME', default='') and not DEBUG:
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    MEDIA_URL = 'https://res.cloudinary.com/{}/'.format(config('CLOUDINARY_CLOUD_NAME', default=''))
-else:
-    MEDIA_URL = '/media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 LOGIN_URL = 'login'

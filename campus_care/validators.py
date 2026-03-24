@@ -2,7 +2,7 @@ import os
 from django.core.exceptions import ValidationError
 
 
-ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.jfif', '.png', '.gif', '.webp', '.bmp'}
 ALLOWED_DOCUMENT_EXTENSIONS = {
     '.pdf', '.doc', '.docx', '.ppt', '.pptx',
     '.xls', '.xlsx', '.txt', '.zip', '.csv',

@@ -980,34 +980,30 @@ def profile_view(request):
         if new_email and new_email != user.email:
             messages.warning(request, 'Email changes require verification. Your email was not updated.')
         
+        update_fields = ['first_name', 'last_name', 'phone']
+
         if uploaded_profile_picture:
-            user.profile_picture = uploaded_profile_picture
+            try:
+                validate_image_upload(uploaded_profile_picture)
+                user.profile_picture = uploaded_profile_picture
+                update_fields.append('profile_picture')
+            except DjangoValidationError as e:
+                messages.warning(request, f'Profile picture rejected: {e.message}')
+            except Exception:
+                messages.warning(request, 'Profile picture upload failed. Other changes saved.')
 
         try:
-            user.save()
-        except Exception as e:
-            # If saving with the picture fails, try saving text fields only
-            if uploaded_profile_picture:
-                try:
-                    user_text_only = User.objects.get(pk=request.user.pk)
-                    fallback_storage = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
-                    fallback_name = fallback_storage.save(f"profiles/{uploaded_profile_picture.name}", uploaded_profile_picture)
-                    user_text_only.first_name = user.first_name
-                    user_text_only.last_name = user.last_name
-                    user_text_only.phone = user.phone
-                    user_text_only.profile_picture = fallback_name
-                    user_text_only.save(update_fields=['first_name', 'last_name', 'phone', 'profile_picture'])
-                    messages.success(request, 'Profile updated successfully!')
-                except Exception:
-                    messages.error(request, 'Profile update failed. Please try again.')
-                return redirect('profile')
-            messages.error(request, 'Profile update failed. Please try again.')
+            user.save(update_fields=update_fields)
+        except Exception:
+            update_fields_no_pic = [f for f in update_fields if f != 'profile_picture']
+            user.refresh_from_db()
+            user.first_name = request.POST.get('first_name')
+            user.last_name = request.POST.get('last_name')
+            user.phone = request.POST.get('phone', '')
+            user.save(update_fields=update_fields_no_pic)
+            messages.warning(request, 'Profile picture upload failed. Other changes saved.')
             return redirect('profile')
 
-        request.user.first_name = user.first_name
-        request.user.last_name = user.last_name
-        request.user.phone = user.phone
-        request.user.profile_picture = user.profile_picture
         log_action(request, 'PROFILE_UPDATED', 'User', user.id, user.get_full_name())
         messages.success(request, 'Profile updated successfully!')
         return redirect('profile')
@@ -1234,7 +1230,13 @@ def complete_profile_view(request):
                 user.id_picture = request.FILES['id_picture']
 
         if request.FILES.get('profile_picture'):
-            user.profile_picture = request.FILES['profile_picture']
+            try:
+                validate_image_upload(request.FILES['profile_picture'])
+                user.profile_picture = request.FILES['profile_picture']
+            except DjangoValidationError as e:
+                messages.warning(request, f'Profile picture rejected: {e.message}')
+            except Exception:
+                messages.warning(request, 'Profile picture upload failed. Other changes saved.')
 
         user.profile_completed = True
         user.profile_skipped_at = None

@@ -175,9 +175,13 @@
         <div class="bt-sidebar-footer">
             <a href="{% url 'profile' %}" class="bt-sidebar-user">
                 {% if user.profile_picture %}
-                <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="bt-sidebar-avatar">
+                <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="bt-sidebar-avatar" onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'">
                 {% else %}
+<<<<<<< Updated upstream
                 <img src="{% static 'images/logo.png' %}" alt="BrightTrack" class="bt-sidebar-avatar object-contain bg-white p-1">
+=======
+                <img src="{% static 'images/logo.png' %}" alt="{{ user.get_full_name }}" class="bt-sidebar-avatar">
+>>>>>>> Stashed changes
                 {% endif %}
                 <div class="bt-sidebar-user-info">
                     <div class="bt-sidebar-user-name">{{ user.get_full_name }}</div>

@@ -73,12 +73,12 @@
                     <h5 class="text-lg font-semibold"><i class="bi bi-person-circle"></i> Teacher Info</h5>
                 </div>
                 <div class="p-6 text-center">
+                    {% load static %}
                     {% if teacher.profile_picture %}
-                    <img src="{{ teacher.profile_picture.url }}" class="rounded-full mx-auto mb-3" width="100" height="100" style="object-fit: cover;">
+                    <img src="{{ teacher.profile_picture.url }}" class="rounded-full mx-auto mb-3" width="100" height="100" style="object-fit: cover;"
+                         onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'">
                     {% else %}
-                    <div class="rounded-full bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center mx-auto mb-3" style="width: 100px; height: 100px;">
-                        <i class="bi bi-person-fill text-4xl"></i>
-                    </div>
+                    <img src="{% static 'images/logo.png' %}" class="rounded-full mx-auto mb-3" width="100" height="100" style="object-fit: cover;" alt="Profile">
                     {% endif %}
                     <h5 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ teacher.get_full_name }}</h5>
                     <p class="text-gray-600 dark:text-gray-400 mb-2">{{ teacher.email }}</p>

@@ -94,12 +94,12 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
+                                    {% load static %}
                                     {% if user.profile_picture %}
-                                    <img src="{{ user.profile_picture.url }}" class="rounded-full mr-3" width="40" height="40" style="object-fit: cover;">
+                                    <img src="{{ user.profile_picture.url }}" class="rounded-full mr-3" width="40" height="40" style="object-fit: cover;"
+                                         onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'">
                                     {% else %}
-                                    <div class="rounded-full bg-gray-300 dark:bg-gray-600 mr-3 flex items-center justify-center" style="width: 40px; height: 40px;">
-                                        <i class="bi bi-person-fill text-gray-600 dark:text-gray-300"></i>
-                                    </div>
+                                    <img src="{% static 'images/logo.png' %}" class="rounded-full mr-3" width="40" height="40" style="object-fit: cover;">
                                     {% endif %}
                                     <span class="font-medium text-gray-900 dark:text-gray-100">{{ user.get_full_name }}</span>
                                 </div>
