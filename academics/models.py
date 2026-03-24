@@ -38,19 +38,42 @@ class Class(models.Model):
 
     @classmethod
     def parse_schedule(cls, schedule):
-        if not schedule or ' | ' not in schedule:
+        blocks = cls.parse_schedule_blocks(schedule)
+        if not blocks:
             return [], '', ''
-        day_part, time_range = schedule.split(' | ', 1)
+        first_block = blocks[0]
+        return first_block['days'], first_block['start_time'], first_block['end_time']
+
+    @classmethod
+    def parse_schedule_blocks(cls, schedule):
+        if not schedule:
+            return []
+        parsed_blocks = []
+        for block in [part.strip() for part in schedule.split(';') if part.strip()]:
+            parsed = cls._parse_schedule_block(block)
+            if parsed:
+                parsed_blocks.append(parsed)
+        return parsed_blocks
+
+    @classmethod
+    def _parse_schedule_block(cls, block):
+        if not block or ' | ' not in block:
+            return None
+        day_part, time_range = block.split(' | ', 1)
         days = [day.strip() for day in day_part.split(',') if day.strip()]
         valid_days = {choice[0] for choice in cls.DAY_CHOICES}
         if not days or any(day not in valid_days for day in days):
-            return [], '', ''
+            return None
         if ' - ' not in time_range:
-            return [], '', ''
+            return None
         start_time, end_time = [part.strip() for part in time_range.split(' - ', 1)]
         if not cls._is_valid_time_display(start_time) or not cls._is_valid_time_display(end_time):
-            return [], '', ''
-        return days, cls._display_to_input_time(start_time), cls._display_to_input_time(end_time)
+            return None
+        return {
+            'days': days,
+            'start_time': cls._display_to_input_time(start_time),
+            'end_time': cls._display_to_input_time(end_time),
+        }
 
     @classmethod
     def build_schedule(cls, days, start_time, end_time):
@@ -58,6 +81,19 @@ class Class(models.Model):
             return ''
         display_days = ', '.join(days)
         return f'{display_days} | {cls._input_to_display_time(start_time)} - {cls._input_to_display_time(end_time)}'
+
+    @classmethod
+    def build_schedule_blocks(cls, blocks):
+        if not blocks:
+            return ''
+        formatted_blocks = []
+        for block in blocks:
+            days = block.get('days') or []
+            start_time = block.get('start_time')
+            end_time = block.get('end_time')
+            if days and start_time and end_time:
+                formatted_blocks.append(cls.build_schedule(days, start_time, end_time))
+        return '; '.join(formatted_blocks)
 
     @staticmethod
     def _is_valid_time_display(value):

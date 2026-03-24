@@ -1,21 +1,14 @@
+import json
+
 from django import forms
+
 from .models import Class, Announcement, Assignment, Material
 
+
 class ClassForm(forms.ModelForm):
-    schedule_days = forms.MultipleChoiceField(
-        choices=Class.DAY_CHOICES,
+    schedule_blocks = forms.CharField(
         required=False,
-        widget=forms.CheckboxSelectMultiple()
-    )
-    schedule_start_time = forms.TimeField(
-        required=False,
-        input_formats=['%H:%M'],
-        widget=forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'})
-    )
-    schedule_end_time = forms.TimeField(
-        required=False,
-        input_formats=['%H:%M'],
-        widget=forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'})
+        widget=forms.HiddenInput()
     )
 
     class Meta:
@@ -32,31 +25,63 @@ class ClassForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        days, start_time, end_time = Class.parse_schedule(getattr(self.instance, 'schedule', ''))
-        if days:
-            self.fields['schedule_days'].initial = days
-        if start_time:
-            self.fields['schedule_start_time'].initial = start_time
-        if end_time:
-            self.fields['schedule_end_time'].initial = end_time
+        self.fields['schedule_blocks'].initial = json.dumps(
+            Class.parse_schedule_blocks(getattr(self.instance, 'schedule', ''))
+        )
 
     def clean(self):
         cleaned_data = super().clean()
-        days = cleaned_data.get('schedule_days') or []
-        start_time = cleaned_data.get('schedule_start_time')
-        end_time = cleaned_data.get('schedule_end_time')
-        if any([days, start_time, end_time]) and not all([days, start_time, end_time]):
-            message = 'Please select class day(s), start time, and end time.'
-            self.add_error('schedule_days', message)
-            self.add_error('schedule_start_time', message)
-            self.add_error('schedule_end_time', message)
-        if start_time and end_time and start_time >= end_time:
-            self.add_error('schedule_end_time', 'End time must be later than start time.')
-        cleaned_data['schedule'] = Class.build_schedule(
-            days,
-            start_time.strftime('%H:%M') if start_time else '',
-            end_time.strftime('%H:%M') if end_time else '',
-        )
+        raw_schedule_blocks = cleaned_data.get('schedule_blocks') or '[]'
+
+        try:
+            schedule_blocks = json.loads(raw_schedule_blocks)
+        except (TypeError, ValueError):
+            raise forms.ValidationError('Invalid schedule data.')
+
+        if not isinstance(schedule_blocks, list):
+            raise forms.ValidationError('Invalid schedule data.')
+
+        valid_days = {choice[0] for choice in Class.DAY_CHOICES}
+        normalized_blocks = []
+
+        for block in schedule_blocks:
+            if not isinstance(block, dict):
+                raise forms.ValidationError('Invalid schedule entry.')
+
+            days = [day for day in (block.get('days') or []) if day]
+            start_time = (block.get('start_time') or '').strip()
+            end_time = (block.get('end_time') or '').strip()
+
+            if not any([days, start_time, end_time]):
+                continue
+
+            if not all([days, start_time, end_time]):
+                self.add_error('schedule_blocks', 'Each schedule entry must include class day(s), start time, and end time.')
+                continue
+
+            if any(day not in valid_days for day in days):
+                self.add_error('schedule_blocks', 'Invalid class day selected.')
+                continue
+
+            try:
+                Class._input_to_display_time(start_time)
+                Class._input_to_display_time(end_time)
+            except ValueError:
+                self.add_error('schedule_blocks', 'Invalid schedule time selected.')
+                continue
+
+            if start_time >= end_time:
+                self.add_error('schedule_blocks', 'Each schedule entry must end after it starts.')
+                continue
+
+            normalized_blocks.append({
+                'days': days,
+                'start_time': start_time,
+                'end_time': end_time,
+            })
+
+        cleaned_data['schedule'] = Class.build_schedule_blocks(normalized_blocks)
+        cleaned_data['schedule_blocks'] = json.dumps(normalized_blocks)
         return cleaned_data
 
     def save(self, commit=True):
@@ -65,6 +90,7 @@ class ClassForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
 
 class AssignmentForm(forms.ModelForm):
     class Meta:
@@ -77,6 +103,7 @@ class AssignmentForm(forms.ModelForm):
             'total_points': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '100'}),
             'submission_type': forms.Select(attrs={'class': 'form-control'}),
         }
+
 
 class MaterialForm(forms.ModelForm):
     class Meta:

@@ -823,42 +823,84 @@ def edit_class(request, class_id):
     if denied:
         return denied
 
-    selected_days, selected_start_time, selected_end_time = Class.parse_schedule(class_obj.schedule)
+    schedule_blocks = Class.parse_schedule_blocks(class_obj.schedule)
     if request.method == 'POST':
-        schedule_days = request.POST.getlist('schedule_days')
-        schedule_start_time = request.POST.get('schedule_start_time', '')
-        schedule_end_time = request.POST.get('schedule_end_time', '')
+        raw_schedule_blocks = request.POST.get('schedule_blocks', '[]')
         valid_days = {choice[0] for choice in Class.DAY_CHOICES}
-        if any([schedule_days, schedule_start_time, schedule_end_time]) and not all([schedule_days, schedule_start_time, schedule_end_time]):
-            messages.error(request, 'Please select class day(s), start time, and end time.')
+        try:
+            submitted_blocks = json.loads(raw_schedule_blocks)
+        except (TypeError, ValueError):
+            submitted_blocks = None
+
+        if not isinstance(submitted_blocks, list):
+            messages.error(request, 'Invalid schedule data.')
             return render(request, 'academics/edit_class.html', {
                 'class': class_obj,
                 'day_choices': Class.DAY_CHOICES,
-                'selected_days': schedule_days,
-                'selected_start_time': schedule_start_time,
-                'selected_end_time': schedule_end_time,
+                'schedule_blocks_json': raw_schedule_blocks,
             })
-        if any(day not in valid_days for day in schedule_days):
-            messages.error(request, 'Invalid class day selected.')
-            return render(request, 'academics/edit_class.html', {
-                'class': class_obj,
-                'day_choices': Class.DAY_CHOICES,
-                'selected_days': selected_days,
-                'selected_start_time': schedule_start_time,
-                'selected_end_time': schedule_end_time,
+
+        normalized_blocks = []
+        for block in submitted_blocks:
+            if not isinstance(block, dict):
+                messages.error(request, 'Invalid schedule entry.')
+                return render(request, 'academics/edit_class.html', {
+                    'class': class_obj,
+                    'day_choices': Class.DAY_CHOICES,
+                    'schedule_blocks_json': raw_schedule_blocks,
+                })
+
+            schedule_days = [day for day in (block.get('days') or []) if day]
+            schedule_start_time = (block.get('start_time') or '').strip()
+            schedule_end_time = (block.get('end_time') or '').strip()
+
+            if not any([schedule_days, schedule_start_time, schedule_end_time]):
+                continue
+
+            if not all([schedule_days, schedule_start_time, schedule_end_time]):
+                messages.error(request, 'Each schedule entry must include class day(s), start time, and end time.')
+                return render(request, 'academics/edit_class.html', {
+                    'class': class_obj,
+                    'day_choices': Class.DAY_CHOICES,
+                    'schedule_blocks_json': raw_schedule_blocks,
+                })
+
+            if any(day not in valid_days for day in schedule_days):
+                messages.error(request, 'Invalid class day selected.')
+                return render(request, 'academics/edit_class.html', {
+                    'class': class_obj,
+                    'day_choices': Class.DAY_CHOICES,
+                    'schedule_blocks_json': raw_schedule_blocks,
+                })
+
+            try:
+                Class._input_to_display_time(schedule_start_time)
+                Class._input_to_display_time(schedule_end_time)
+            except ValueError:
+                messages.error(request, 'Invalid schedule time selected.')
+                return render(request, 'academics/edit_class.html', {
+                    'class': class_obj,
+                    'day_choices': Class.DAY_CHOICES,
+                    'schedule_blocks_json': raw_schedule_blocks,
+                })
+
+            if schedule_start_time >= schedule_end_time:
+                messages.error(request, 'Each schedule entry must end after it starts.')
+                return render(request, 'academics/edit_class.html', {
+                    'class': class_obj,
+                    'day_choices': Class.DAY_CHOICES,
+                    'schedule_blocks_json': raw_schedule_blocks,
+                })
+
+            normalized_blocks.append({
+                'days': schedule_days,
+                'start_time': schedule_start_time,
+                'end_time': schedule_end_time,
             })
-        if schedule_start_time and schedule_end_time and schedule_start_time >= schedule_end_time:
-            messages.error(request, 'End time must be later than start time.')
-            return render(request, 'academics/edit_class.html', {
-                'class': class_obj,
-                'day_choices': Class.DAY_CHOICES,
-                'selected_days': schedule_days,
-                'selected_start_time': schedule_start_time,
-                'selected_end_time': schedule_end_time,
-            })
+
         class_obj.name = request.POST.get('name')
         class_obj.description = request.POST.get('description', '')
-        class_obj.schedule = Class.build_schedule(schedule_days, schedule_start_time, schedule_end_time)
+        class_obj.schedule = Class.build_schedule_blocks(normalized_blocks)
         class_obj.room = request.POST.get('room', '')
         class_obj.save()
         log_action(request, 'USER_UPDATED', 'Class', class_obj.id, class_obj.code)
@@ -868,9 +910,7 @@ def edit_class(request, class_id):
     return render(request, 'academics/edit_class.html', {
         'class': class_obj,
         'day_choices': Class.DAY_CHOICES,
-        'selected_days': selected_days,
-        'selected_start_time': selected_start_time,
-        'selected_end_time': selected_end_time,
+        'schedule_blocks_json': json.dumps(schedule_blocks),
     })
 
 @login_required
