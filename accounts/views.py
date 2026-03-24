@@ -971,27 +971,31 @@ def profile_view(request):
         request.user.first_name = request.POST.get('first_name')
         request.user.last_name = request.POST.get('last_name')
         request.user.phone = request.POST.get('phone', '')
+        uploaded_profile_picture = request.FILES.get('profile_picture')
         
         # Protect email changes — require re-verification
         new_email = request.POST.get('email', '').strip()
         if new_email and new_email != request.user.email:
             messages.warning(request, 'Email changes require verification. Your email was not updated.')
         
-        if request.FILES.get('profile_picture'):
+        if uploaded_profile_picture:
             try:
-                validate_image_upload(request.FILES['profile_picture'])
-                request.user.profile_picture = request.FILES['profile_picture']
+                validate_image_upload(uploaded_profile_picture)
             except DjangoValidationError as e:
                 messages.warning(request, f'Profile picture rejected: {e.message}')
+                uploaded_profile_picture = None
             except Exception:
                 messages.warning(request, 'Profile picture upload failed. Other changes saved.')
+                uploaded_profile_picture = None
         
         try:
-            request.user.save()
+            request.user.save(update_fields=['first_name', 'last_name', 'phone'])
+            if uploaded_profile_picture:
+                request.user.profile_picture = uploaded_profile_picture
+                request.user.save(update_fields=['profile_picture'])
         except Exception:
-            request.user.profile_picture = None
-            request.user.save()
-            messages.warning(request, 'Profile picture upload failed. Other changes saved.')
+            request.user.save(update_fields=['first_name', 'last_name', 'phone'])
+            messages.warning(request, 'Profile picture upload failed. Other changes were saved.')
             return redirect('profile')
         log_action(request, 'PROFILE_UPDATED', 'User', request.user.id, request.user.get_full_name())
         messages.success(request, 'Profile updated successfully!')
