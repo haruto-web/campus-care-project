@@ -968,36 +968,39 @@ def profile_view(request):
         if hit_rate_limit(request, 'accounts_profile_update', limit=15, window_seconds=600):
             messages.error(request, 'Too many profile updates. Please wait before trying again.')
             return redirect('profile')
-        request.user.first_name = request.POST.get('first_name')
-        request.user.last_name = request.POST.get('last_name')
-        request.user.phone = request.POST.get('phone', '')
+        user = User.objects.get(pk=request.user.pk)
+        user.first_name = request.POST.get('first_name')
+        user.last_name = request.POST.get('last_name')
+        user.phone = request.POST.get('phone', '')
         uploaded_profile_picture = request.FILES.get('profile_picture')
         
-        # Protect email changes — require re-verification
+        # Protect email changes - require re-verification
         new_email = request.POST.get('email', '').strip()
-        if new_email and new_email != request.user.email:
+        if new_email and new_email != user.email:
             messages.warning(request, 'Email changes require verification. Your email was not updated.')
         
         if uploaded_profile_picture:
             try:
                 validate_image_upload(uploaded_profile_picture)
+                if user.profile_picture:
+                    user.profile_picture.delete(save=False)
+                user.profile_picture = uploaded_profile_picture
             except DjangoValidationError as e:
                 messages.warning(request, f'Profile picture rejected: {e.message}')
-                uploaded_profile_picture = None
             except Exception:
-                messages.warning(request, 'Profile picture upload failed. Other changes saved.')
-                uploaded_profile_picture = None
-
-        if uploaded_profile_picture:
-            request.user.profile_picture = uploaded_profile_picture
+                messages.warning(request, 'Profile picture upload failed. Other changes were saved.')
         
         try:
-            request.user.save()
+            user.save()
         except Exception:
-            request.user.save(update_fields=['first_name', 'last_name', 'phone'])
-            messages.warning(request, 'Profile picture upload failed. Other changes were saved.')
+            messages.error(request, 'Profile update failed. Please try again.')
             return redirect('profile')
-        log_action(request, 'PROFILE_UPDATED', 'User', request.user.id, request.user.get_full_name())
+
+        request.user.first_name = user.first_name
+        request.user.last_name = user.last_name
+        request.user.phone = user.phone
+        request.user.profile_picture = user.profile_picture
+        log_action(request, 'PROFILE_UPDATED', 'User', user.id, user.get_full_name())
         messages.success(request, 'Profile updated successfully!')
         return redirect('profile')
     
