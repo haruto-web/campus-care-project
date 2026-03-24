@@ -980,15 +980,7 @@ def profile_view(request):
             messages.warning(request, 'Email changes require verification. Your email was not updated.')
         
         if uploaded_profile_picture:
-            try:
-                validate_image_upload(uploaded_profile_picture)
-                if user.profile_picture:
-                    user.profile_picture.delete(save=False)
-                user.profile_picture = uploaded_profile_picture
-            except DjangoValidationError as e:
-                messages.warning(request, f'Profile picture rejected: {e.message}')
-            except Exception:
-                messages.warning(request, 'Profile picture upload failed. Other changes were saved.')
+            user.profile_picture = uploaded_profile_picture
         
         try:
             user.save()
