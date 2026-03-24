@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}My Profile - Campus Care{% endblock %}
 
@@ -10,15 +11,11 @@
             <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                 <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-8">
                     <div class="text-center">
-                        {% if user.profile_picture %}
-                        <img src="{{ user.profile_picture.url }}"
-                            class="w-32 h-32 rounded-full mx-auto border-4 border-white shadow-lg object-cover"
-                            alt="Profile">
-                        {% else %}
                         <div
-                            class="w-32 h-32 bg-white text-blue-600 rounded-full mx-auto flex items-center justify-center text-5xl font-bold shadow-lg">
-                            {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}</div>
-                        {% endif %}
+                            class="w-32 h-32 bg-white rounded-full mx-auto flex items-center justify-center shadow-lg border-4 border-white">
+                            <img src="{% static 'images/logo.png' %}" alt="BrightTrack"
+                                class="w-20 h-20 object-contain">
+                        </div>
                         <h4 class="text-2xl font-bold text-white mt-4">{{ user.get_full_name|title }}</h4>
                         <p class="text-blue-100 mt-1">{{ user.get_role_display }}</p>
                     </div>

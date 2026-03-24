@@ -174,11 +174,7 @@
         <!-- Sidebar Footer — User -->
         <div class="bt-sidebar-footer">
             <a href="{% url 'profile' %}" class="bt-sidebar-user">
-                {% if user.profile_picture %}
-                <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="bt-sidebar-avatar">
-                {% else %}
-                <div class="bt-sidebar-avatar">{{ user.first_name|first }}{{ user.last_name|first }}</div>
-                {% endif %}
+                <img src="{% static 'images/logo.png' %}" alt="BrightTrack" class="bt-sidebar-avatar object-contain bg-white p-1">
                 <div class="bt-sidebar-user-info">
                     <div class="bt-sidebar-user-name">{{ user.get_full_name }}</div>
                     <div class="bt-sidebar-user-role">{{ user.role }}</div>
