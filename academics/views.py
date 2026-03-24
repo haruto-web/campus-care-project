@@ -93,41 +93,8 @@ def create_announcement(request, class_id):
 
 @login_required
 def create_class(request):
-    if request.user.role != 'teacher':
-        messages.error(request, 'Only teachers can create classes.')
-        return redirect('dashboard')
-    
-    if request.method == 'POST':
-        form = ClassForm(request.POST)
-        if form.is_valid():
-            class_obj = form.save(commit=False)
-            class_obj.teacher = request.user
-            
-            # Check if code already exists and generate unique one
-            if Class.objects.filter(code=class_obj.code).exists():
-                messages.error(request, f'Class code "{class_obj.code}" already exists. Please use a different code.')
-                return render(request, 'academics/create_class.html', {'form': form})
-            
-            class_obj.save()
-            log_action(request, 'CLASS_CREATED', 'Class', class_obj.id, class_obj.code)
-            
-            # Auto-enroll students with matching section AND year_level
-            if class_obj.section and class_obj.year_level:
-                from accounts.models import User
-                students_with_section = User.objects.filter(
-                    role='student', 
-                    section__iexact=class_obj.section,
-                    year_level=class_obj.year_level
-                )
-                for student in students_with_section:
-                    class_obj.students.add(student)
-            
-            messages.success(request, f'Class {class_obj.name} created successfully!')
-            return redirect('dashboard')
-    else:
-        form = ClassForm()
-    
-    return render(request, 'academics/create_class.html', {'form': form})
+    messages.error(request, 'Class creation is available through the admin only.')
+    return redirect('academics:my_classes')
 
 @login_required
 def manage_students(request, class_id):

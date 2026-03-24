@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
+from django.core.cache import cache
 from ml_models.gemini_client import GeminiClient
 from ml_models.utils import get_student_profile_for_intervention
 from accounts.models import User
@@ -11,6 +12,7 @@ from wellness.models import RiskAssessment, Alert, Intervention, WellnessCheckIn
 from django.db.models import Q
 import json
 import logging
+import hashlib
 
 logger = logging.getLogger('brighttrack')
 
@@ -50,6 +52,47 @@ def _build_scoped_prompt(message, role_label):
 def _safe_json_error(public_message, status=400):
     return JsonResponse({'error': public_message}, status=status)
 
+
+def _enforce_ai_guard(request, endpoint_scope, action, message=''):
+    limit_map = {
+        'counselor': {
+            'ask_ai': (20, 600),
+            'create_intervention': (5, 600),
+            'generate_report': (8, 600),
+            'analyze_behavior': (10, 600),
+            'weekly_summary': (8, 600),
+            'draft_email': (8, 600),
+            'search_student': (20, 300),
+            'auto_create_interventions': (2, 600),
+            'get_intervention': (30, 300),
+        },
+        'admin': {
+            'ask_ai': (20, 600),
+            'generate_report': (8, 600),
+        },
+    }
+
+    action_limits = limit_map.get(endpoint_scope, {})
+    if action in action_limits:
+        limit, window_seconds = action_limits[action]
+        if hit_rate_limit(request, f'ai_{endpoint_scope}_{action}', limit=limit, window_seconds=window_seconds):
+            return JsonResponse({'error': 'Too many AI requests. Please wait before trying again.'}, status=429)
+
+    normalized_message = ' '.join(str(message or '').strip().lower().split())
+    if len(normalized_message) > 1500:
+        return _safe_json_error('Message is too long.', status=400)
+
+    if normalized_message:
+        spam_signature = hashlib.sha256(
+            f'{request.user.id}:{endpoint_scope}:{action}:{normalized_message[:500]}'.encode('utf-8')
+        ).hexdigest()
+        spam_key = f'ai_spam:{spam_signature}'
+        if cache.get(spam_key):
+            return JsonResponse({'error': 'Please wait before repeating the same AI request.'}, status=429)
+        cache.set(spam_key, True, 20)
+
+    return None
+
 @login_required
 def counselor_chat_view(request):
     """Render counselor chatbox page"""
@@ -83,6 +126,9 @@ def counselor_chat(request):
         data = json.loads(request.body)
         action = data.get('action')
         message = data.get('message', '')
+        guard_response = _enforce_ai_guard(request, 'counselor', action, message)
+        if guard_response:
+            return guard_response
         
         client = GeminiClient()
         
@@ -379,6 +425,9 @@ def admin_chat(request):
         data = json.loads(request.body)
         action = data.get('action')
         message = data.get('message', '')
+        guard_response = _enforce_ai_guard(request, 'admin', action, message)
+        if guard_response:
+            return guard_response
         
         client = GeminiClient()
         

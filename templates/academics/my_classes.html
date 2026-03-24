@@ -51,13 +51,6 @@
     {% endif %}
 
     {% if user.role == 'teacher' %}
-    <!-- Teacher Actions -->
-    <div class="flex justify-end">
-        <a href="{% url 'academics:create_class' %}" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition shadow-md flex items-center">
-            <i class="bi bi-plus-circle mr-2"></i> Create New Class
-        </a>
-    </div>
-
     <!-- Filters for Teachers -->
     <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center mb-4">
@@ -208,16 +201,12 @@
         </h3>
         <p class="text-gray-600 mb-8 max-w-md mx-auto">
             {% if user.role == 'teacher' %}
-                Start by creating your first class to manage students, assignments, and more.
+                Classes are created by the administrator. Your assigned classes will appear here once they are added.
             {% else %}
                 You haven't been enrolled in any classes yet. Classes will appear here once your teacher or administrator enrolls you.
             {% endif %}
         </p>
-        {% if user.role == 'teacher' %}
-        <a href="{% url 'academics:create_class' %}" class="inline-flex items-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition font-semibold text-lg">
-            <i class="bi bi-plus-circle mr-3"></i>Create Your First Class
-        </a>
-        {% else %}
+        {% if user.role != 'teacher' %}
         <div class="bg-white rounded-lg p-6 max-w-md mx-auto">
             <h4 class="font-semibold text-gray-800 mb-2">What to do next:</h4>
             <ul class="text-left text-gray-600 space-y-2">
