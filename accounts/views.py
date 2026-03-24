@@ -2,19 +2,89 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse, FileResponse
 from django.db.models import Count, Avg, Q
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.conf import settings
 from datetime import datetime, timedelta
+from pathlib import Path
+import mimetypes
 from academics.models import Class, Assignment, Submission, Attendance, Grade
 from wellness.models import WellnessCheckIn, RiskAssessment, Alert, Intervention
 from campus_care.validators import validate_image_upload
 from .models import User, OTPCode, RegistrationRequest
-from .otp_utils import send_otp_email
-from .utils import log_action
+from .otp_utils import send_otp_email, send_transactional_email
+from .utils import log_action, hit_rate_limit, record_security_spike, run_background_task
+from .decorators import teacher_owns_class
+
+
+def _send_security_email(to_email, subject, lines):
+    send_transactional_email(
+        to_email=to_email,
+        subject=subject,
+        text_content="\n".join(lines),
+    )
+
+
+def _local_media_response(path):
+    media_root = Path(settings.MEDIA_ROOT).resolve()
+    file_path = (media_root / path).resolve()
+    if media_root not in file_path.parents:
+        raise Http404
+    if not file_path.exists() or not file_path.is_file():
+        raise Http404
+    content_type = mimetypes.guess_type(str(file_path))[0] or 'application/octet-stream'
+    return FileResponse(open(file_path, 'rb'), content_type=content_type)
+
+
+@login_required
+def protected_media_view(request, path):
+    normalized_path = path.replace('\\', '/').lstrip('/')
+
+    if normalized_path.startswith('profiles/'):
+        return _local_media_response(normalized_path)
+
+    if normalized_path.startswith('id_pictures/'):
+        owner = User.objects.filter(id_picture=normalized_path).first()
+        if owner and (request.user.id == owner.id or request.user.role in ['admin', 'counselor']):
+            return _local_media_response(normalized_path)
+        raise Http404
+
+    if normalized_path.startswith('materials/'):
+        from academics.models import Material
+        material = Material.objects.select_related('class_obj', 'class_obj__teacher').filter(file=normalized_path).first()
+        if material and (
+            request.user.role in ['admin', 'counselor']
+            or teacher_owns_class(request.user, material.class_obj)
+            or material.class_obj.students.filter(id=request.user.id).exists()
+        ):
+            return _local_media_response(normalized_path)
+        raise Http404
+
+    if normalized_path.startswith('submissions/'):
+        submission = Submission.objects.select_related('assignment__class_obj', 'student').filter(file=normalized_path).first()
+        if submission and (
+            request.user.role in ['admin', 'counselor']
+            or request.user.id == submission.student_id
+            or teacher_owns_class(request.user, submission.assignment.class_obj)
+        ):
+            return _local_media_response(normalized_path)
+        raise Http404
+
+    if normalized_path.startswith('message_attachments/'):
+        from messaging.models import Message
+        message = Message.objects.filter(attachment=normalized_path).first()
+        if message and (
+            request.user.role == 'admin'
+            or message.conversation.participants.filter(id=request.user.id).exists()
+        ):
+            return _local_media_response(normalized_path)
+        raise Http404
+
+    raise Http404
 
 def landing_view(request):
     if request.user.is_authenticated:
@@ -27,6 +97,9 @@ from django.http import JsonResponse
 @login_required
 def notifications_poll(request):
     """Single endpoint polled by base.html every 5s for all notification counts."""
+    if hit_rate_limit(request, 'notifications_poll', limit=120, window_seconds=60):
+        return JsonResponse({'error': 'Too many requests'}, status=429)
+
     from messaging.models import Message
     from academics.models import Announcement, Submission
     from wellness.models import Alert
@@ -284,9 +357,15 @@ def otp_forgot_password_view(request):
 
     if request.method == 'POST':
         email = request.POST.get('email', '').strip().lower()
+        rate_key = f'forgot_password_send_{email}'
+        send_count = cache.get(rate_key, 0)
+        if send_count >= 3:
+            messages.error(request, 'Too many reset requests. Please wait 15 minutes before trying again.')
+            return render(request, 'accounts/otp_forgot_password.html')
+
         user = User.objects.filter(email=email).first()
         if not user:
-            messages.error(request, 'No account found with that email.')
+            messages.success(request, 'If an account exists for that email, a reset code will be sent.')
             return render(request, 'accounts/otp_forgot_password.html')
 
         otp = OTPCode.generate(email)
@@ -298,6 +377,18 @@ def otp_forgot_password_view(request):
             messages.error(request, 'Failed to send code. Please try again later.')
             return render(request, 'accounts/otp_forgot_password.html')
 
+        cache.set(rate_key, send_count + 1, 900)
+        _send_security_email(
+            email,
+            'BrightTrack Password Reset Requested',
+            [
+                f'Dear {user.get_full_name() or user.email},',
+                '',
+                'A password reset code was requested for your BrightTrack account.',
+                'If this was you, you can continue using the verification code that was just sent.',
+                'If this was not you, please ignore this message and consider changing your password after logging in.',
+            ],
+        )
         request.session['otp_email'] = email
         request.session['otp_purpose'] = 'reset'
         return redirect('verify_otp')
@@ -332,6 +423,20 @@ def otp_reset_password_view(request):
             return redirect('login')
         user.set_password(password)
         user.save()
+        log_action(request, 'PASSWORD_RESET', 'User', user.id, user.get_full_name())
+        _send_security_email(
+            user.email,
+            'BrightTrack Password Changed',
+            [
+                f'Dear {user.get_full_name() or user.email},',
+                '',
+                'Your BrightTrack password was changed successfully.',
+                f'Time: {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}',
+                f'IP Address: {request.META.get("REMOTE_ADDR", "unknown")}',
+                '',
+                'If this was not you, please contact an administrator immediately.',
+            ],
+        )
 
         for key in ['otp_email', 'otp_verified', 'otp_purpose']:
             request.session.pop(key, None)
@@ -405,6 +510,13 @@ def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email', '').strip().lower()
         password = request.POST.get('password')
+        ip = request.META.get('REMOTE_ADDR', 'unknown')
+        attempt_key = f'login_attempts_{ip}_{email}'
+        attempts = cache.get(attempt_key, 0)
+
+        if attempts >= 5:
+            messages.error(request, 'Too many login attempts. Please wait 10 minutes before trying again.')
+            return render(request, 'accounts/login.html')
 
         try:
             u = User.objects.get(email=email)
@@ -421,11 +533,14 @@ def login_view(request):
                 logging.getLogger(__name__).error('OTP email failed during login')
                 messages.error(request, 'Failed to send verification code. Please try again.')
                 return render(request, 'accounts/login.html')
+            cache.delete(attempt_key)
             request.session['otp_user_id'] = user.id
             request.session['otp_email'] = email
             request.session['otp_purpose'] = 'login'
             return redirect('verify_otp')
         else:
+            cache.set(attempt_key, attempts + 1, 600)
+            record_security_spike(f'failed_login:{ip}', threshold=5, window_seconds=600)
             log_action(request, 'LOGIN_FAILED', 'User', None, email)
             messages.error(request, 'Invalid email or password.')
 
@@ -469,6 +584,20 @@ def verify_otp_view(request):
                 request.session.pop(key, None)
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             log_action(request, 'LOGIN', 'User', user.id, user.get_full_name())
+            if user.role in ['teacher', 'counselor', 'admin']:
+                _send_security_email(
+                    user.email,
+                    'BrightTrack New Login Alert',
+                    [
+                        f'Dear {user.get_full_name() or user.email},',
+                        '',
+                        f'A new login to your BrightTrack account was completed as {user.role}.',
+                        f'Time: {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}',
+                        f'IP Address: {request.META.get("REMOTE_ADDR", "unknown")}',
+                        '',
+                        'If this was not you, please change your password and contact an administrator immediately.',
+                    ],
+                )
             return redirect('dashboard')
 
         elif purpose == 'register':
@@ -481,7 +610,7 @@ def verify_otp_view(request):
                 if User.objects.filter(email=email).exists():
                     messages.error(request, 'An account with this email already exists.')
                     return redirect('register')
-                RegistrationRequest.objects.update_or_create(
+                registration, _ = RegistrationRequest.objects.update_or_create(
                     student_number=reg['student_number'],
                     email=email,
                     defaults={
@@ -496,6 +625,7 @@ def verify_otp_view(request):
                         'rejection_reason': '',
                     }
                 )
+            log_action(request, 'REGISTRATION_SUBMITTED', 'RegistrationRequest', registration.id, registration.email)
             for key in ['otp_email', 'otp_purpose', 'reg_data']:
                 request.session.pop(key, None)
             messages.success(request, 'Registration submitted. Please wait for admin approval. We will email you once approved or rejected.')
@@ -537,6 +667,11 @@ def dashboard_view(request):
 
 @login_required
 def student_dashboard(request):
+    cache_key = f'dashboard:student:{request.user.id}'
+    cached_context = cache.get(cache_key)
+    if cached_context:
+        return render(request, 'dashboard/student_dashboard.html', cached_context)
+
     user = request.user
     classes = user.enrolled_classes.all()
     
@@ -584,10 +719,16 @@ def student_dashboard(request):
         'last_checkin': last_checkin,
         'missing_assignments': missing_assignments,
     }
+    cache.set(cache_key, context, 120)
     return render(request, 'dashboard/student_dashboard.html', context)
 
 @login_required
 def teacher_dashboard(request):
+    cache_key = f'dashboard:teacher:{request.user.id}'
+    cached_context = cache.get(cache_key)
+    if cached_context:
+        return render(request, 'dashboard/teacher_dashboard.html', cached_context)
+
     user = request.user
     classes = Class.objects.filter(teacher=user)
     
@@ -670,10 +811,16 @@ def teacher_dashboard(request):
         'atrisk_by_section': atrisk_by_section_list,
         'pending_by_section': pending_by_section_list,
     }
+    cache.set(cache_key, context, 120)
     return render(request, 'dashboard/teacher_dashboard.html', context)
 
 @login_required
 def counselor_dashboard(request):
+    cache_key = f'dashboard:counselor:{request.user.id}'
+    cached_context = cache.get(cache_key)
+    if cached_context:
+        return render(request, 'dashboard/counselor_dashboard.html', cached_context)
+
     # Get risk assessments
     high_risk_students = RiskAssessment.objects.filter(
         risk_level='high'
@@ -726,6 +873,7 @@ def counselor_dashboard(request):
         'highrisk_by_section': highrisk_by_section_list,
         'mediumrisk_by_section': mediumrisk_by_section_list,
     }
+    cache.set(cache_key, context, 120)
     return render(request, 'dashboard/counselor_dashboard.html', context)
 
 @login_required
@@ -733,15 +881,28 @@ def admin_dashboard(request):
     from django.db.models import Count
     from datetime import timedelta
     from django.core.management import call_command
-    
-    # Auto-calculate risk assessments if none exist or if last calculation was > 1 day ago
-    latest_assessment = RiskAssessment.objects.order_by('-date').first()
-    if not latest_assessment or (timezone.now().date() - latest_assessment.date).days > 0:
+
+    def _refresh_risk_assessments():
         try:
             call_command('calculate_risk')
-        except:
+            cache.set('dashboard:risk_last_refresh', timezone.now().isoformat(), 86400)
+        except Exception:
             pass
-    
+        finally:
+            cache.delete('dashboard:risk_refresh_running')
+
+    # Auto-calculate risk assessments if none exist or if last calculation was > 1 day ago
+    latest_assessment = RiskAssessment.objects.order_by('-date').first()
+    refresh_lock = cache.get('dashboard:risk_refresh_running')
+    if (not latest_assessment or (timezone.now().date() - latest_assessment.date).days > 0) and not refresh_lock:
+        cache.set('dashboard:risk_refresh_running', True, 300)
+        run_background_task(_refresh_risk_assessments)
+
+    cache_key = 'dashboard:admin'
+    cached_context = cache.get(cache_key)
+    if cached_context:
+        return render(request, 'dashboard/admin_dashboard.html', cached_context)
+
     # User statistics
     total_users = User.objects.count()
     total_students = User.objects.filter(role='student').count()
@@ -798,11 +959,15 @@ def admin_dashboard(request):
         'activity_labels': activity_labels,
         'activity_data': activity_data,
     }
+    cache.set(cache_key, context, 120)
     return render(request, 'dashboard/admin_dashboard.html', context)
 
 @login_required
 def profile_view(request):
     if request.method == 'POST':
+        if hit_rate_limit(request, 'accounts_profile_update', limit=15, window_seconds=600):
+            messages.error(request, 'Too many profile updates. Please wait before trying again.')
+            return redirect('profile')
         request.user.first_name = request.POST.get('first_name')
         request.user.last_name = request.POST.get('last_name')
         request.user.phone = request.POST.get('phone', '')
@@ -828,6 +993,7 @@ def profile_view(request):
             request.user.save()
             messages.warning(request, 'Profile picture upload failed. Other changes saved.')
             return redirect('profile')
+        log_action(request, 'PROFILE_UPDATED', 'User', request.user.id, request.user.get_full_name())
         messages.success(request, 'Profile updated successfully!')
         return redirect('profile')
     
@@ -861,6 +1027,17 @@ def student_profile_view(request, student_id):
     if request.user.role not in ['teacher', 'counselor', 'admin']:
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
+    if request.user.role == 'teacher' and not request.user.classes_taught.filter(students=student).exists():
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    log_action(
+        request,
+        'STUDENT_PROFILE_VIEWED',
+        'User',
+        student.id,
+        student.get_full_name(),
+        extra_data={'viewer_role': request.user.role},
+    )
     
     # Get enrolled classes
     enrolled_classes = student.enrolled_classes.all()
@@ -1018,9 +1195,13 @@ def complete_profile_view(request):
             request.user.profile_skipped_at = timezone.now()
         request.user.profile_completed = True
         request.user.save(update_fields=['profile_completed', 'profile_skipped_at'])
+        log_action(request, 'PROFILE_COMPLETED', 'User', request.user.id, request.user.get_full_name(), extra_data={'skipped': True})
         return redirect('dashboard')
 
     if request.method == 'POST':
+        if hit_rate_limit(request, 'accounts_complete_profile', limit=10, window_seconds=600):
+            messages.error(request, 'Too many profile submissions. Please wait before trying again.')
+            return redirect('complete_profile')
         user = request.user
         user.phone = request.POST.get('phone', '')
         user.date_of_birth = request.POST.get('date_of_birth') if request.POST.get('date_of_birth') else None
@@ -1035,11 +1216,13 @@ def complete_profile_view(request):
                 user.year_level = request.POST.get('year_level')
             if request.FILES.get('id_picture'):
                 try:
+                    validate_image_upload(request.FILES['id_picture'])
                     user.id_picture = request.FILES['id_picture']
                 except Exception:
                     messages.warning(request, 'ID picture upload failed. Other changes saved.')
         if request.FILES.get('profile_picture'):
             try:
+                validate_image_upload(request.FILES['profile_picture'])
                 user.profile_picture = request.FILES['profile_picture']
             except Exception:
                 messages.warning(request, 'Profile picture upload failed. Other changes saved.')
@@ -1062,6 +1245,7 @@ def complete_profile_view(request):
             for section_class in section_classes:
                 section_class.students.add(user)
 
+        log_action(request, 'PROFILE_COMPLETED', 'User', user.id, user.get_full_name(), extra_data={'skipped': False})
         messages.success(request, 'Profile completed successfully!')
         return redirect('dashboard')
 

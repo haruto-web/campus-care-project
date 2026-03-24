@@ -6,6 +6,7 @@ from django.utils import timezone
 from ml_models.gemini_client import GeminiClient
 from ml_models.utils import get_student_profile_for_intervention
 from accounts.models import User
+from accounts.utils import log_action, hit_rate_limit
 from wellness.models import RiskAssessment, Alert, Intervention, WellnessCheckIn, TeacherConcern
 from django.db.models import Q
 import json
@@ -45,6 +46,10 @@ def _build_scoped_prompt(message, role_label):
         f"User request:\n{message}"
     )
 
+
+def _safe_json_error(public_message, status=400):
+    return JsonResponse({'error': public_message}, status=status)
+
 @login_required
 def counselor_chat_view(request):
     """Render counselor chatbox page"""
@@ -70,7 +75,9 @@ def admin_chat_view(request):
 def counselor_chat(request):
     """AI Assistant for Counselor"""
     if request.user.role not in ['counselor', 'admin']:
-        return JsonResponse({'error': 'Permission denied'}, status=403)
+        return _safe_json_error('Permission denied', status=403)
+    if hit_rate_limit(request, 'ai_counselor_chat', limit=30, window_seconds=600):
+        return JsonResponse({'error': 'Too many requests. Please wait before trying again.'}, status=429)
     
     try:
         data = json.loads(request.body)
@@ -108,6 +115,7 @@ def counselor_chat(request):
                     resolved=False
                 )
                 
+                log_action(request, 'AI_USED', 'Intervention', intervention.id, student.get_full_name(), extra_data={'action': action, 'student_id': student.id})
                 return JsonResponse({
                     'response': result.get('summary', ''),
                     'recommendations': result.get('recommendations', []),
@@ -115,10 +123,10 @@ def counselor_chat(request):
                     'intervention_id': intervention.id
                 })
             except User.DoesNotExist:
-                return JsonResponse({'error': 'Student not found'}, status=404)
+                return _safe_json_error('Requested resource is not available.', status=404)
             except Exception as e:
                 logger.error(f'Error in create_intervention: {e}', exc_info=True)
-                return JsonResponse({'error': 'An error occurred while creating the intervention. Please try again.'}, status=500)
+                return _safe_json_error('An internal error occurred. Please try again.', status=500)
         
         elif action == 'generate_report':
             high_risk = RiskAssessment.objects.filter(risk_level='high').count()
@@ -147,6 +155,7 @@ Write in a conversational, easy-to-read style:
 - Use plain text only"""
             summary = client.generate_text(prompt)
             
+            log_action(request, 'AI_USED', 'Report', None, 'Counselor system overview', extra_data={'action': action})
             return JsonResponse({'response': summary, 'data': summary_data})
         
         elif action == 'analyze_behavior':
@@ -154,7 +163,7 @@ Write in a conversational, easy-to-read style:
             try:
                 student = User.objects.get(id=student_id, role='student')
             except User.DoesNotExist:
-                return JsonResponse({'error': 'Student not found'}, status=404)
+                return _safe_json_error('Requested resource is not available.', status=404)
             
             # Get student data
             from academics.models import Attendance, Submission
@@ -180,6 +189,7 @@ Provide:
 4. Recommendations"""
             
             analysis = client.generate_text(prompt)
+            log_action(request, 'AI_USED', 'User', student.id, student.get_full_name(), extra_data={'action': action})
             return JsonResponse({'response': analysis})
         
         elif action == 'weekly_summary':
@@ -214,6 +224,7 @@ Write in a conversational, easy-to-read style:
 - Use plain text only"""
             
             summary = client.generate_text(prompt)
+            log_action(request, 'AI_USED', 'Report', None, 'Weekly summary', extra_data={'action': action})
             return JsonResponse({'response': summary, 'data': weekly_data})
         
         elif action == 'draft_email':
@@ -222,7 +233,7 @@ Write in a conversational, easy-to-read style:
             try:
                 student = User.objects.get(id=student_id, role='student')
             except User.DoesNotExist:
-                return JsonResponse({'error': 'Student not found'}, status=404)
+                return _safe_json_error('Requested resource is not available.', status=404)
             
             # Get recent data
             risk = RiskAssessment.objects.filter(student=student).order_by('-date').first()
@@ -249,6 +260,7 @@ The email should:
 Format: Subject line and email body"""
             
             email = client.generate_text(prompt)
+            log_action(request, 'AI_USED', 'User', student.id, student.get_full_name(), extra_data={'action': action, 'purpose': purpose})
             return JsonResponse({'response': email})
         
         elif action == 'search_student':
@@ -270,7 +282,6 @@ Format: Subject line and email body"""
                 'name': s.get_full_name(),
                 'year_level': s.year_level,
                 'section': s.section,
-                'email': s.email
             } for s in students[:10]]
             
             return JsonResponse({'students': results})
@@ -319,6 +330,7 @@ Format: Subject line and email body"""
                     print(f"Error creating intervention for {student.username}: {e}")
                     continue
             
+            log_action(request, 'AI_USED', 'Intervention', None, 'Bulk AI interventions', extra_data={'action': action, 'created_count': created_count, 'intervention_ids': created_ids})
             return JsonResponse({
                 'success': True,
                 'created_count': created_count,
@@ -338,27 +350,30 @@ Format: Subject line and email body"""
                     'description': iv.description,
                 }})
             except Intervention.DoesNotExist:
-                return JsonResponse({'error': 'Not found'}, status=404)
+                return _safe_json_error('Requested resource is not available.', status=404)
         
         elif action == 'ask_ai':
             if not _is_system_related_prompt(message):
                 return JsonResponse({'response': AI_SCOPE_REFUSAL})
             response = client.generate_text(_build_scoped_prompt(message, 'counselor'))
+            log_action(request, 'AI_USED', 'AI', None, 'Counselor chat', extra_data={'action': action})
             return JsonResponse({'response': response})
         
         else:
-            return JsonResponse({'error': 'Invalid action'}, status=400)
+            return _safe_json_error('Invalid request.', status=400)
     
     except Exception as e:
         logger.error(f'Counselor chat error: {e}', exc_info=True)
-        return JsonResponse({'error': 'An internal error occurred. Please try again.'}, status=500)
+        return _safe_json_error('An internal error occurred. Please try again.', status=500)
 
 @login_required
 @require_http_methods(["POST"])
 def admin_chat(request):
     """AI Assistant for Admin"""
     if request.user.role != 'admin':
-        return JsonResponse({'error': 'Permission denied'}, status=403)
+        return _safe_json_error('Permission denied', status=403)
+    if hit_rate_limit(request, 'ai_admin_chat', limit=30, window_seconds=600):
+        return JsonResponse({'error': 'Too many requests. Please wait before trying again.'}, status=429)
     
     try:
         data = json.loads(request.body)
@@ -394,17 +409,19 @@ Write in a conversational, easy-to-read style:
 - Use plain text only"""
             summary = client.generate_text(prompt)
             
+            log_action(request, 'AI_USED', 'Report', None, 'Admin system overview', extra_data={'action': action})
             return JsonResponse({'response': summary, 'data': summary_data})
         
         elif action == 'ask_ai':
             if not _is_system_related_prompt(message):
                 return JsonResponse({'response': AI_SCOPE_REFUSAL})
             response = client.generate_text(_build_scoped_prompt(message, 'admin'))
+            log_action(request, 'AI_USED', 'AI', None, 'Admin chat', extra_data={'action': action})
             return JsonResponse({'response': response})
         
         else:
-            return JsonResponse({'error': 'Invalid action'}, status=400)
+            return _safe_json_error('Invalid request.', status=400)
     
     except Exception as e:
         logger.error(f'Admin chat error: {e}', exc_info=True)
-        return JsonResponse({'error': 'An internal error occurred. Please try again.'}, status=500)
+        return _safe_json_error('An internal error occurred. Please try again.', status=500)

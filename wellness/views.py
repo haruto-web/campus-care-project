@@ -3,39 +3,53 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Count, Avg
 from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django.core.cache import cache
 from datetime import datetime, timedelta
 from .models import TeacherConcern, Intervention, Alert, RiskAssessment, WellnessCheckIn
 from .forms import TeacherConcernForm, InterventionForm
 from accounts.models import User
+from accounts.decorators import deny_access, teacher_teaches_student
+from accounts.utils import log_action, hit_rate_limit
 
 @login_required
 def create_concern(request, student_id=None):
     if request.user.role != 'teacher':
         messages.error(request, 'Only teachers can report concerns.')
         return redirect('dashboard')
+
+    from academics.models import Class
+    teacher_classes = Class.objects.filter(teacher=request.user)
+    allowed_students = User.objects.filter(
+        id__in=teacher_classes.values_list('students__id', flat=True),
+        role='student'
+    ).distinct()
+
+    selected_student = None
+    if student_id:
+        selected_student = get_object_or_404(User, id=student_id, role='student')
+        if not teacher_teaches_student(request.user, selected_student):
+            return deny_access(request, message='You can only report concerns for students in your classes.')
     
     if request.method == 'POST':
+        if hit_rate_limit(request, 'wellness_create_concern', limit=10, window_seconds=600):
+            messages.error(request, 'Too many concern submissions. Please wait before trying again.')
+            return render(request, 'wellness/create_concern.html', {'form': TeacherConcernForm()})
         form = TeacherConcernForm(request.POST)
+        form.fields['student'].queryset = allowed_students
         if form.is_valid():
             concern = form.save(commit=False)
             concern.teacher = request.user
             concern.save()
+            log_action(request, 'CONCERN_SUBMITTED', 'TeacherConcern', concern.id, concern.student.get_full_name())
             messages.success(request, f'Concern about {concern.student.get_full_name()} reported successfully!')
             return redirect('wellness:view_concerns')
     else:
-        if student_id:
-            student = get_object_or_404(User, id=student_id, role='student')
-            form = TeacherConcernForm(initial={'student': student})
+        if selected_student:
+            form = TeacherConcernForm(initial={'student': selected_student})
         else:
             form = TeacherConcernForm()
-        
-        # Filter students to only show those in teacher's classes
-        from academics.models import Class
-        teacher_classes = Class.objects.filter(teacher=request.user)
-        student_ids = []
-        for cls in teacher_classes:
-            student_ids.extend(cls.students.values_list('id', flat=True))
-        form.fields['student'].queryset = User.objects.filter(id__in=student_ids, role='student')
+        form.fields['student'].queryset = allowed_students
     
     return render(request, 'wellness/create_concern.html', {'form': form})
 
@@ -105,12 +119,22 @@ def create_intervention(request, student_id=None):
     if request.user.role not in ['counselor', 'admin', 'teacher']:
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
+
+    if request.user.role == 'teacher':
+        allowed_students = User.objects.filter(
+            id__in=request.user.classes_taught.values_list('students__id', flat=True),
+            role='student'
+        ).distinct()
+    else:
+        allowed_students = User.objects.filter(role='student')
     
     # Get AI recommendations if student_id provided
     ai_recommendations = None
     selected_student = None
     if student_id:
         selected_student = get_object_or_404(User, id=student_id, role='student')
+        if request.user.role == 'teacher' and not teacher_teaches_student(request.user, selected_student):
+            return deny_access(request, message='You can only create interventions for students in your classes.')
         risk_assessment = RiskAssessment.objects.filter(student=selected_student).order_by('-date').first()
         
         if risk_assessment and risk_assessment.risk_level in ['medium', 'high']:
@@ -127,7 +151,11 @@ def create_intervention(request, student_id=None):
                 logging.getLogger('brighttrack').warning(f'AI recommendation failed for student {selected_student.id}: {e}')
     
     if request.method == 'POST':
+        if hit_rate_limit(request, 'wellness_create_intervention', limit=10, window_seconds=600):
+            messages.error(request, 'Too many intervention requests. Please wait before trying again.')
+            return redirect('wellness:interventions_list')
         form = InterventionForm(request.POST)
+        form.fields['student'].queryset = allowed_students
         if form.is_valid():
             intervention = form.save(commit=False)
             intervention.counselor = request.user
@@ -135,6 +163,7 @@ def create_intervention(request, student_id=None):
                 messages.error(request, f'{intervention.student.get_full_name()} already has a scheduled intervention.')
                 return redirect('wellness:interventions_list')
             intervention.save()
+            log_action(request, 'INTERVENTION_CREATED', 'Intervention', intervention.id, intervention.student.get_full_name())
 
             # Mark teacher concerns for this student as resolved
             TeacherConcern.objects.filter(student=intervention.student, resolved=False).update(resolved=True)
@@ -153,8 +182,7 @@ def create_intervention(request, student_id=None):
             form = InterventionForm(initial={'student': selected_student})
         else:
             form = InterventionForm()
-        
-        form.fields['student'].queryset = User.objects.filter(role='student')
+        form.fields['student'].queryset = allowed_students
     
     # Students with existing scheduled interventions
     scheduled_student_ids = set(
@@ -216,8 +244,10 @@ def update_intervention(request, intervention_id):
     
     if request.method == 'POST':
         form = InterventionForm(request.POST, instance=intervention)
+        form.fields['student'].queryset = User.objects.filter(role='student')
         if form.is_valid():
             form.save()
+            log_action(request, 'INTERVENTION_UPDATED', 'Intervention', intervention.id, intervention.student.get_full_name())
             messages.success(request, 'Intervention updated successfully!')
             return redirect('wellness:interventions_list')
     else:
@@ -295,6 +325,7 @@ def alerts_list(request):
     return render(request, 'wellness/alerts_list.html', context)
 
 @login_required
+@require_POST
 def bulk_create_interventions(request):
     from django.utils import timezone as tz
     from datetime import timedelta as td
@@ -346,6 +377,7 @@ def bulk_create_interventions(request):
 
 
 @login_required
+@require_POST
 def mark_alert_read(request, alert_id):
     if request.user.role not in ['counselor', 'admin']:
         messages.error(request, 'Permission denied.')
@@ -354,6 +386,7 @@ def mark_alert_read(request, alert_id):
     alert = get_object_or_404(Alert, id=alert_id)
     alert.is_read = True
     alert.save()
+    log_action(request, 'ALERT_RESOLVED', 'Alert', alert.id, alert.student.get_full_name(), extra_data={'marked_read': True, 'resolved': False})
     
     from django.urls import reverse
     params = request.GET.urlencode()
@@ -361,6 +394,7 @@ def mark_alert_read(request, alert_id):
     return redirect(f'{url}?{params}' if params else url)
 
 @login_required
+@require_POST
 def resolve_alert(request, alert_id):
     if request.user.role not in ['counselor', 'admin']:
         messages.error(request, 'Permission denied.')
@@ -370,6 +404,7 @@ def resolve_alert(request, alert_id):
     alert.resolved = True
     alert.is_read = True
     alert.save()
+    log_action(request, 'ALERT_RESOLVED', 'Alert', alert.id, alert.student.get_full_name(), extra_data={'resolved': True})
     
     from django.urls import reverse
     params = request.GET.urlencode()
@@ -381,7 +416,12 @@ def reports_view(request):
     if request.user.role not in ['counselor', 'admin']:
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
-    
+
+    cache_key = 'wellness:reports_view'
+    cached_context = cache.get(cache_key)
+    if cached_context:
+        return render(request, 'wellness/reports.html', cached_context)
+
     # Risk level counts
     high_risk_count = RiskAssessment.objects.filter(risk_level='high').values('student').distinct().count()
     medium_risk_count = RiskAssessment.objects.filter(risk_level='medium').values('student').distinct().count()
@@ -504,6 +544,7 @@ def reports_view(request):
         'risk_distribution_data': risk_distribution_data,
         'intervention_status_data': intervention_status_data,
     }
+    cache.set(cache_key, context, 180)
     return render(request, 'wellness/reports.html', context)
 
 @login_required
@@ -511,48 +552,60 @@ def generate_report(request):
     if request.user.role not in ['counselor', 'admin']:
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
+    if hit_rate_limit(request, 'wellness_generate_report', limit=10, window_seconds=600):
+        messages.error(request, 'Too many report requests. Please wait a few minutes before trying again.')
+        return redirect('wellness:reports')
     
     from django.http import HttpResponse
     from django.template.loader import render_to_string
-    
+
+    cache_key = f'wellness:generate_report:{request.user.role}'
+    cached_context = cache.get(cache_key)
+    if cached_context is None:
     # Get all data for report
-    high_risk_students = RiskAssessment.objects.filter(risk_level='high').select_related('student')
-    medium_risk_students = RiskAssessment.objects.filter(risk_level='medium').select_related('student')
-    
-    # Statistics
-    high_risk_count = high_risk_students.count()
-    medium_risk_count = medium_risk_students.count()
-    low_risk_count = RiskAssessment.objects.filter(risk_level='low').count()
-    
-    scheduled_interventions = Intervention.objects.filter(status='scheduled').count()
-    completed_interventions = Intervention.objects.filter(status='completed').count()
-    
-    unresolved_alerts = Alert.objects.filter(resolved=False).count()
-    
-    # Recent concerns
-    seven_days_ago = datetime.now() - timedelta(days=7)
-    recent_concerns = TeacherConcern.objects.filter(created_at__gte=seven_days_ago).select_related('student', 'teacher')
-    
+        high_risk_students = list(RiskAssessment.objects.filter(risk_level='high').select_related('student'))
+        medium_risk_students = list(RiskAssessment.objects.filter(risk_level='medium').select_related('student'))
+
+        # Statistics
+        high_risk_count = len(high_risk_students)
+        medium_risk_count = len(medium_risk_students)
+        low_risk_count = RiskAssessment.objects.filter(risk_level='low').count()
+
+        scheduled_interventions = Intervention.objects.filter(status='scheduled').count()
+        completed_interventions = Intervention.objects.filter(status='completed').count()
+
+        unresolved_alerts = Alert.objects.filter(resolved=False).count()
+
+        # Recent concerns
+        seven_days_ago = datetime.now() - timedelta(days=7)
+        recent_concerns = list(TeacherConcern.objects.filter(created_at__gte=seven_days_ago).select_related('student', 'teacher'))
+
+        cached_context = {
+            'high_risk_students': high_risk_students,
+            'medium_risk_students': medium_risk_students,
+            'high_risk_count': high_risk_count,
+            'medium_risk_count': medium_risk_count,
+            'low_risk_count': low_risk_count,
+            'scheduled_interventions': scheduled_interventions,
+            'completed_interventions': completed_interventions,
+            'unresolved_alerts': unresolved_alerts,
+            'recent_concerns': recent_concerns,
+        }
+        cache.set(cache_key, cached_context, 180)
     context = {
         'generated_date': datetime.now(),
         'generated_by': request.user.get_full_name(),
-        'high_risk_students': high_risk_students,
-        'medium_risk_students': medium_risk_students,
-        'high_risk_count': high_risk_count,
-        'medium_risk_count': medium_risk_count,
-        'low_risk_count': low_risk_count,
-        'scheduled_interventions': scheduled_interventions,
-        'completed_interventions': completed_interventions,
-        'unresolved_alerts': unresolved_alerts,
-        'recent_concerns': recent_concerns,
+        **cached_context,
     }
     
     html = render_to_string('wellness/report_template.html', context)
     response = HttpResponse(html, content_type='text/html')
     response['Content-Disposition'] = f'attachment; filename="campus_care_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html"'
+    log_action(request, 'REPORT_DOWNLOADED', 'Report', None, 'Wellness report')
     return response
 
 @login_required
+@require_POST
 def mark_notifications_read(request):
     from django.http import JsonResponse
     if request.user.role != 'student':
@@ -568,11 +621,20 @@ def api_students(request):
     if request.user.role not in ['counselor', 'admin', 'teacher']:
         from django.http import JsonResponse
         return JsonResponse({'error': 'Permission denied'}, status=403)
+    if hit_rate_limit(request, 'wellness_api_students', limit=60, window_seconds=60):
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Too many requests'}, status=429)
     
     from django.http import JsonResponse
-    students = User.objects.filter(role='student').values(
-        'id', 'first_name', 'last_name', 'email', 'year_level', 'section', 'gender'
-    )
+    if request.user.role == 'teacher':
+        student_ids = request.user.classes_taught.values_list('students__id', flat=True)
+        students = User.objects.filter(id__in=student_ids, role='student').distinct().values(
+            'id', 'first_name', 'last_name', 'year_level', 'section'
+        )
+    else:
+        students = User.objects.filter(role='student').values(
+            'id', 'first_name', 'last_name', 'year_level', 'section'
+        )
     
     scheduled_ids = set(
         Intervention.objects.filter(status='scheduled').values_list('student_id', flat=True)
@@ -589,10 +651,8 @@ def api_students(request):
         students_list.append({
             'id': s['id'],
             'name': f"{s['first_name']} {s['last_name']}",
-            'email': s['email'],
             'year_level': s['year_level'],
             'section': s.get('section', ''),
-            'gender': s.get('gender', ''),
             'risk_level': risk_level,
             'has_intervention': s['id'] in scheduled_ids,
         })
@@ -622,6 +682,7 @@ def wellness_checkin(request):
             need_help=need_help,
             text_response=comments
         )
+        log_action(request, 'USER_UPDATED', 'WellnessCheckIn', checkin.id, request.user.get_full_name())
         
         # AI Sentiment Analysis
         if comments:

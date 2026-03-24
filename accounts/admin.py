@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, OTPCode
+from .models import User, OTPCode, AuditLog
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
@@ -14,3 +14,18 @@ class CustomUserAdmin(UserAdmin):
 class OTPCodeAdmin(admin.ModelAdmin):
     list_display = ['contact_value', 'code', 'created_at', 'is_used']
     list_filter = ['is_used']
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = ['timestamp', 'actor', 'action', 'target_type', 'target_label', 'ip_address']
+    list_filter = ['action', 'timestamp']
+    search_fields = ['actor__username', 'actor__first_name', 'actor__last_name', 'target_type', 'target_label', 'ip_address']
+    readonly_fields = [field.name for field in AuditLog._meta.fields]
+    ordering = ['-timestamp']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

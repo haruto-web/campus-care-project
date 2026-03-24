@@ -36,11 +36,14 @@
                                        title="Report Concern">
                                         <i class="bi bi-exclamation-triangle"></i> Report
                                     </a>
-                                    <a href="{% url 'academics:drop_student' class.id student.id %}" 
-                                       class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
-                                       onclick="return confirm('Are you sure you want to drop {{ student.get_full_name }} from this class? This action will remove all their grades and attendance records for this class.')">
-                                        <i class="bi bi-person-dash"></i> Drop
-                                    </a>
+                                    <form method="post" action="{% url 'academics:drop_student' class.id student.id %}" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                                class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
+                                                onclick="return confirm('Are you sure you want to drop {{ student.get_full_name }} from this class? This action will remove all their grades and attendance records for this class.')">
+                                            <i class="bi bi-person-dash"></i> Drop
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                             {% endfor %}

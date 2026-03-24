@@ -1,30 +1,35 @@
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.core.cache import cache
+from accounts.utils import log_action, hit_rate_limit
 
 
 def get_report_data():
+    cache_key = 'accounts:report_data'
+    cached_data = cache.get(cache_key)
+    if cached_data is not None:
+        return cached_data
+
     from accounts.models import User
     from wellness.models import RiskAssessment, Alert, Intervention
     from academics.models import Class, Assignment, Submission
 
     students = User.objects.filter(role='student')
-    high_risk = RiskAssessment.objects.filter(risk_level='high').select_related('student')
-    medium_risk = RiskAssessment.objects.filter(risk_level='medium').select_related('student')
-    low_risk = RiskAssessment.objects.filter(risk_level='low').select_related('student')
-
-    return {
+    data = {
         'generated': timezone.now().strftime('%B %d, %Y %I:%M %p'),
         'total_students': students.count(),
         'total_teachers': User.objects.filter(role='teacher').count(),
         'total_counselors': User.objects.filter(role='counselor').count(),
         'total_classes': Class.objects.count(),
-        'high_risk': high_risk,
-        'medium_risk': medium_risk,
-        'low_risk': low_risk,
+        'high_risk': list(RiskAssessment.objects.filter(risk_level='high').select_related('student')),
+        'medium_risk': list(RiskAssessment.objects.filter(risk_level='medium').select_related('student')),
+        'low_risk': list(RiskAssessment.objects.filter(risk_level='low').select_related('student')),
         'unresolved_alerts': Alert.objects.filter(resolved=False).count(),
         'pending_interventions': Intervention.objects.filter(status='scheduled').count(),
     }
+    cache.set(cache_key, data, 180)
+    return data
 
 
 @login_required
@@ -32,9 +37,15 @@ def download_report(request):
     if request.user.role not in ('admin', 'counselor'):
         from django.shortcuts import redirect
         return redirect('dashboard')
+    if hit_rate_limit(request, 'accounts_download_report', limit=10, window_seconds=600):
+        from django.shortcuts import redirect
+        from django.contrib import messages
+        messages.error(request, 'Too many report downloads. Please wait a few minutes before trying again.')
+        return redirect('dashboard')
 
     fmt = request.GET.get('format', 'pdf')
     data = get_report_data()
+    log_action(request, 'REPORT_DOWNLOADED', 'Report', None, f'Accounts report ({fmt})')
 
     if fmt == 'pdf':
         return _pdf_report(data)

@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
@@ -8,8 +9,10 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Count, Q
 from accounts.models import User, AuditLog, ApprovedStudent, RegistrationRequest
+from accounts.decorators import admin_required, superadmin_required
 from academics.models import Class
 from academics.forms import ClassForm
+from accounts.utils import log_action, verify_audit_entry
 import csv
 import io
 import logging
@@ -20,12 +23,63 @@ logger = logging.getLogger('brighttrack.audit')
 def _registration_tab_redirect():
     return redirect(f"{reverse('admin_upload_students')}?tab=registrations")
 
+
+def _apply_audit_log_filters(request):
+    logs = AuditLog.objects.select_related('actor').all()
+
+    action_filter = request.GET.get('action', '')
+    actor_filter = request.GET.get('actor', '')
+    target_filter = request.GET.get('target', '')
+    ip_filter = request.GET.get('ip', '')
+    integrity_filter = request.GET.get('integrity', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+
+    if action_filter:
+        logs = logs.filter(action=action_filter)
+    if actor_filter:
+        logs = logs.filter(
+            Q(actor__first_name__icontains=actor_filter) |
+            Q(actor__last_name__icontains=actor_filter) |
+            Q(actor__username__icontains=actor_filter)
+        )
+    if target_filter:
+        target_query = (
+            Q(target_label__icontains=target_filter) |
+            Q(target_type__icontains=target_filter)
+        )
+        if target_filter.isdigit():
+            target_query |= Q(target_id=int(target_filter))
+        logs = logs.filter(target_query)
+    if ip_filter:
+        logs = logs.filter(ip_address__icontains=ip_filter)
+    if date_from:
+        logs = logs.filter(timestamp__date__gte=date_from)
+    if date_to:
+        logs = logs.filter(timestamp__date__lte=date_to)
+
+    logs = list(logs)
+    for log in logs:
+        log.integrity_ok = verify_audit_entry(log)
+
+    if integrity_filter == 'unaltered':
+        logs = [log for log in logs if log.integrity_ok is True]
+    elif integrity_filter == 'not_verified':
+        logs = [log for log in logs if log.integrity_ok is not True]
+
+    return logs, {
+        'action_filter': action_filter,
+        'actor_filter': actor_filter,
+        'target_filter': target_filter,
+        'ip_filter': ip_filter,
+        'integrity_filter': integrity_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+
 @login_required
+@admin_required
 def admin_create_user(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
-    
     if request.method == 'POST':
         username = request.POST.get('username')
         email = request.POST.get('email')
@@ -62,6 +116,7 @@ def admin_create_user(request):
             role=role,
             profile_completed=True
         )
+        log_action(request, 'USER_CREATED', 'User', user.id, user.get_full_name(), extra_data={'role': role})
         
         if role == 'teacher':
             subjects_input = request.POST.get('subject', '')
@@ -107,11 +162,8 @@ def admin_create_user(request):
     return render(request, 'accounts/admin_create_user.html')
 
 @login_required
+@admin_required
 def admin_manage_users(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
-    
     role_filter = request.GET.get('role', 'all')
     search_query = request.GET.get('search', '')
     year_level_filter = request.GET.get('year_level', '')
@@ -152,12 +204,9 @@ def admin_manage_users(request):
     return render(request, 'admin/manage_users.html', context)
 
 @login_required
+@admin_required
 @require_POST
 def admin_delete_user(request, user_id):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
-    
     user = get_object_or_404(User, id=user_id)
     
     if user.role == 'admin':
@@ -167,6 +216,7 @@ def admin_delete_user(request, user_id):
     user_name = user.get_full_name()
     user_role = user.role
     logger.warning(f'User {user_name} (role={user_role}, id={user_id}) deleted by admin {request.user.username}')
+    log_action(request, 'USER_DELETED', 'User', user.id, user_name, extra_data={'role': user_role})
     user.delete()
     
     messages.success(request, f'{user_role.capitalize()} {user_name} has been removed successfully.')
@@ -177,11 +227,8 @@ def admin_delete_user(request, user_id):
         return redirect('admin_manage_users')
 
 @login_required
+@admin_required
 def admin_teachers_list(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
-    
     teachers = User.objects.filter(role='teacher').annotate(
         classes_count=Count('classes_taught')
     ).order_by('last_name', 'first_name')
@@ -192,11 +239,8 @@ def admin_teachers_list(request):
     return render(request, 'admin/teachers_list.html', context)
 
 @login_required
+@admin_required
 def admin_teacher_dashboard(request, teacher_id):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
-    
     teacher = get_object_or_404(User, id=teacher_id, role='teacher')
     classes = Class.objects.filter(teacher=teacher)
     
@@ -228,11 +272,8 @@ def admin_teacher_dashboard(request, teacher_id):
     return render(request, 'admin/teacher_dashboard_view.html', context)
 
 @login_required
+@admin_required
 def admin_create_class(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
-    
     if request.method == 'POST':
         form = ClassForm(request.POST)
         teacher_id = request.POST.get('teacher')
@@ -242,6 +283,7 @@ def admin_create_class(request):
             class_obj = form.save(commit=False)
             class_obj.teacher = teacher
             class_obj.save()
+            log_action(request, 'CLASS_CREATED', 'Class', class_obj.id, class_obj.code, extra_data={'teacher_id': teacher.id})
             messages.success(request, f'Class {class_obj.code} created successfully for {teacher.get_full_name()}!')
             return redirect('dashboard')
         else:
@@ -258,11 +300,8 @@ def admin_create_class(request):
     return render(request, 'admin/create_class.html', context)
 
 @login_required
+@admin_required
 def admin_enroll_student(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
-    
     if request.method == 'POST':
         student_ids = request.POST.getlist('student')
         class_id = request.POST.get('class')
@@ -277,6 +316,8 @@ def admin_enroll_student(request):
                 else:
                     class_obj.students.add(student)
                     enrolled.append(student.get_full_name())
+            if enrolled:
+                log_action(request, 'STUDENT_ENROLLED', 'Class', class_obj.id, class_obj.code, extra_data={'student_ids': student_ids})
             if enrolled:
                 messages.success(request, f'Enrolled: {", ".join(enrolled)} into {class_obj.code}.')
             if skipped:
@@ -315,11 +356,8 @@ def admin_enroll_student(request):
     return render(request, 'admin/enroll_student.html', context)
 
 @login_required
+@superadmin_required
 def admin_cleanup_users(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
-    
     if request.method == 'POST':
         confirmation = request.POST.get('confirmation', '').strip()
         if confirmation != 'DELETE ALL USERS':
@@ -330,6 +368,7 @@ def admin_cleanup_users(request):
         deleted_count = User.objects.exclude(role='admin').delete()[0]
         
         logger.critical(f'MASS DELETION by admin {request.user.username}: {deleted_count} users deleted, {admins_count} admins kept')
+        log_action(request, 'MASS_DELETE', 'User', None, 'Non-admin users', extra_data={'deleted_count': deleted_count, 'admins_kept': admins_count})
         messages.success(request, f'Cleanup complete! Deleted {deleted_count} users. {admins_count} admin accounts kept safe.')
         return redirect('dashboard')
     
@@ -343,11 +382,8 @@ def admin_cleanup_users(request):
     return render(request, 'admin/cleanup_users.html', context)
 
 @login_required
+@superadmin_required
 def admin_create_superuser(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
-    
     if request.method == 'POST':
         username = request.POST.get('username')
         email = request.POST.get('email')
@@ -377,6 +413,7 @@ def admin_create_superuser(request):
         )
         
         logger.warning(f'Superuser {username} created by admin {request.user.username}')
+        log_action(request, 'USER_CREATED', 'User', user.id, user.get_full_name(), extra_data={'role': 'admin', 'is_superuser': True})
         messages.success(request, f'Superuser {username} created successfully! You can now access Django admin.')
         return redirect('dashboard')
     
@@ -384,11 +421,8 @@ def admin_create_superuser(request):
 
 
 @login_required
+@admin_required
 def admin_upload_students(request):
-    if request.user.role != 'admin':
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
-
     if request.method == 'POST' and request.POST.get('action') == 'manual':
         sn = request.POST.get('student_number', '').strip()
         email = request.POST.get('email', '').strip().lower()
@@ -408,6 +442,7 @@ def admin_upload_students(request):
                 student_number=sn,
                 defaults={'email': email, 'first_name': fn, 'last_name': ln, 'year_level': yl, 'section': section}
             )
+            log_action(request, 'USER_UPDATED', 'ApprovedStudent', None, f'{fn} {ln}', extra_data={'created': created, 'student_number': sn})
             messages.success(request, f'Student {fn} {ln} {"added" if created else "updated"} successfully.')
         return redirect('admin_upload_students')
 
@@ -464,6 +499,7 @@ def admin_upload_students(request):
                     'section': section,
                 }
             )
+            log_action(request, 'USER_UPDATED', 'ApprovedStudent', None, f'{fn} {ln}', extra_data={'created': was_created, 'student_number': sn, 'source': 'csv'})
             if was_created:
                 created += 1
             else:
@@ -487,24 +523,22 @@ def admin_upload_students(request):
 
 
 @login_required
+@admin_required
+@require_POST
 def admin_suspend_approved_student(request, student_id):
-    if request.user.role != 'admin':
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
     from accounts.models import ApprovedStudent
     student = get_object_or_404(ApprovedStudent, id=student_id)
     student.is_suspended = not student.is_suspended
     student.save()
+    log_action(request, 'USER_UPDATED', 'ApprovedStudent', student.id, f'{student.first_name} {student.last_name}', extra_data={'is_suspended': student.is_suspended})
     action = 'suspended' if student.is_suspended else 'unsuspended'
     messages.success(request, f'{student.first_name} {student.last_name} has been {action}.')
     return redirect('admin_upload_students')
 
 
 @login_required
+@admin_required
 def admin_edit_approved_student(request, student_id):
-    if request.user.role != 'admin':
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
     from accounts.models import ApprovedStudent
     student = get_object_or_404(ApprovedStudent, id=student_id)
     if request.method == 'POST':
@@ -530,18 +564,16 @@ def admin_edit_approved_student(request, student_id):
             student.year_level = yl
             student.section = section
             student.save()
+            log_action(request, 'USER_UPDATED', 'ApprovedStudent', student.id, f'{student.first_name} {student.last_name}')
             messages.success(request, f'Student {fn} {ln} updated successfully.')
         return redirect('admin_upload_students')
     return redirect('admin_upload_students')
 
 
 @login_required
+@admin_required
 @require_POST
 def admin_approve_registration(request, request_id):
-    if request.user.role != 'admin':
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
-
     with transaction.atomic():
         registration = get_object_or_404(
             RegistrationRequest.objects.select_for_update(), id=request_id
@@ -597,6 +629,7 @@ def admin_approve_registration(request, request_id):
         registration.decided_at = timezone.now()
         registration.rejection_reason = ''
         registration.save(update_fields=['status', 'approved_by', 'decided_at', 'rejection_reason', 'updated_at'])
+        log_action(request, 'USER_CREATED', 'User', user.id, user.get_full_name(), extra_data={'registration_request_id': registration.id})
 
     from accounts.otp_utils import send_transactional_email
     send_transactional_email(
@@ -614,12 +647,9 @@ def admin_approve_registration(request, request_id):
 
 
 @login_required
+@admin_required
 @require_POST
 def admin_reject_registration(request, request_id):
-    if request.user.role != 'admin':
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
-
     registration = get_object_or_404(RegistrationRequest, id=request_id)
     if registration.status != RegistrationRequest.Status.PENDING:
         messages.error(request, 'This registration request was already processed.')
@@ -634,6 +664,7 @@ def admin_reject_registration(request, request_id):
     registration.decided_at = timezone.now()
     registration.rejection_reason = reason[:255]
     registration.save(update_fields=['status', 'approved_by', 'decided_at', 'rejection_reason', 'updated_at'])
+    log_action(request, 'USER_UPDATED', 'RegistrationRequest', registration.id, registration.email, extra_data={'status': registration.status})
 
     from accounts.otp_utils import send_transactional_email
     send_transactional_email(
@@ -652,14 +683,13 @@ def admin_reject_registration(request, request_id):
 
 
 @login_required
+@admin_required
 @require_POST
 def admin_lift_messaging_suspension(request, user_id):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
     user = get_object_or_404(User, id=user_id)
     user.messaging_suspended_until = None
     user.save(update_fields=['messaging_suspended_until'])
+    log_action(request, 'USER_UPDATED', 'User', user.id, user.get_full_name(), extra_data={'messaging_suspension_lifted': True})
     from accounts.otp_utils import send_transactional_email
     send_transactional_email(
         to_email=user.email,
@@ -676,83 +706,81 @@ def admin_lift_messaging_suspension(request, user_id):
 
 
 @login_required
+@admin_required
 def admin_all_classes(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
     classes = Class.objects.all().select_related('teacher').annotate(student_count=Count('students')).order_by('year_level', 'section', 'name')
     return render(request, 'admin/all_classes.html', {'classes': classes})
 
 
 @login_required
+@admin_required
 def admin_view_class(request, class_id):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
     cls = get_object_or_404(Class, id=class_id)
     students = cls.students.all().order_by('last_name', 'first_name')
     return render(request, 'admin/view_class.html', {'cls': cls, 'students': students})
 
 
 @login_required
+@admin_required
 @require_POST
 def admin_delete_class(request, class_id):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
     cls = get_object_or_404(Class, id=class_id)
     name = cls.name
+    log_action(request, 'USER_UPDATED', 'Class', cls.id, name, extra_data={'deleted': True})
     cls.delete()
     messages.success(request, f'Class "{name}" deleted successfully.')
     return redirect('admin_all_classes')
 
 
 @login_required
+@admin_required
 def admin_audit_log(request):
-    if request.user.role.lower() != 'admin':
-        messages.error(request, 'Permission denied. Admin access required.')
-        return redirect('dashboard')
+    logs, filters = _apply_audit_log_filters(request)
 
-    logs = AuditLog.objects.select_related('actor').all()
-
-    action_filter = request.GET.get('action', '')
-    actor_filter = request.GET.get('actor', '')
-    date_from = request.GET.get('date_from', '')
-    date_to = request.GET.get('date_to', '')
-
-    if action_filter:
-        logs = logs.filter(action=action_filter)
-    if actor_filter:
-        logs = logs.filter(
-            Q(actor__first_name__icontains=actor_filter) |
-            Q(actor__last_name__icontains=actor_filter) |
-            Q(actor__username__icontains=actor_filter)
-        )
-    if date_from:
-        logs = logs.filter(timestamp__date__gte=date_from)
-    if date_to:
-        logs = logs.filter(timestamp__date__lte=date_to)
+    if request.GET.get('export') == 'csv':
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow(['Timestamp', 'Actor', 'Action', 'Target Type', 'Target ID', 'Target Label', 'IP Address', 'Integrity', 'Details'])
+        for log in logs:
+            if log.integrity_ok is True:
+                integrity_label = 'Unaltered'
+            else:
+                integrity_label = 'Not Verified'
+            actor_label = log.actor.get_full_name() if log.actor else 'System'
+            writer.writerow([
+                timezone.localtime(log.timestamp).strftime('%Y-%m-%d %H:%M:%S'),
+                actor_label,
+                log.get_action_display(),
+                log.target_type,
+                log.target_id or '',
+                log.target_label,
+                log.ip_address or '',
+                integrity_label,
+                log.extra_data,
+            ])
+        log_action(request, 'AUDIT_LOG_EXPORTED', 'AuditLog', None, 'Audit Log', extra_data=filters)
+        response = HttpResponse(buffer.getvalue(), content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="audit-log.csv"'
+        return response
 
     paginator = Paginator(logs, 50)
     page = paginator.get_page(request.GET.get('page'))
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+    query_params.pop('export', None)
 
     context = {
         'page_obj': page,
         'action_choices': AuditLog.ACTION_CHOICES,
-        'action_filter': action_filter,
-        'actor_filter': actor_filter,
-        'date_from': date_from,
-        'date_to': date_to,
+        **filters,
+        'filter_query': query_params.urlencode(),
     }
     return render(request, 'admin/audit_log.html', context)
 
 
 @login_required
+@superadmin_required
 def admin_manage_admins(request):
-    if request.user.role.lower() != 'admin' or request.user.admin_role != 'superadmin':
-        messages.error(request, 'Permission denied. Superadmin access required.')
-        return redirect('dashboard')
-
     if request.method == 'POST':
         target_id = request.POST.get('user_id')
         new_role = request.POST.get('admin_role', '')
@@ -771,7 +799,6 @@ def admin_manage_admins(request):
         target.admin_role = new_role
         target.save()
 
-        from accounts.utils import log_action
         log_action(request, 'ADMIN_ROLE_CHANGED', 'User', target.id, target.get_full_name(),
                    extra_data={'old_role': old_role, 'new_role': new_role})
 
