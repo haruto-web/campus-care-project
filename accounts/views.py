@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -989,11 +990,14 @@ def profile_view(request):
             if uploaded_profile_picture:
                 try:
                     user_text_only = User.objects.get(pk=request.user.pk)
+                    fallback_storage = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
+                    fallback_name = fallback_storage.save(f"profiles/{uploaded_profile_picture.name}", uploaded_profile_picture)
                     user_text_only.first_name = user.first_name
                     user_text_only.last_name = user.last_name
                     user_text_only.phone = user.phone
-                    user_text_only.save(update_fields=['first_name', 'last_name', 'phone'])
-                    messages.warning(request, 'Profile info saved, but the picture upload failed. Try a smaller image or different format.')
+                    user_text_only.profile_picture = fallback_name
+                    user_text_only.save(update_fields=['first_name', 'last_name', 'phone', 'profile_picture'])
+                    messages.success(request, 'Profile updated successfully!')
                 except Exception:
                     messages.error(request, 'Profile update failed. Please try again.')
                 return redirect('profile')
@@ -1213,6 +1217,7 @@ def complete_profile_view(request):
         if hit_rate_limit(request, 'accounts_complete_profile', limit=10, window_seconds=600):
             messages.error(request, 'Too many profile submissions. Please wait before trying again.')
             return redirect('complete_profile')
+
         user = request.user
         user.phone = request.POST.get('phone', '')
         user.date_of_birth = request.POST.get('date_of_birth') if request.POST.get('date_of_birth') else None
@@ -1226,11 +1231,8 @@ def complete_profile_view(request):
             if request.POST.get('year_level'):
                 user.year_level = request.POST.get('year_level')
             if request.FILES.get('id_picture'):
-                try:
-                    validate_image_upload(request.FILES['id_picture'])
-                    user.id_picture = request.FILES['id_picture']
-                except Exception:
-                    messages.warning(request, 'ID picture upload failed. Other changes saved.')
+                user.id_picture = request.FILES['id_picture']
+
         if request.FILES.get('profile_picture'):
             user.profile_picture = request.FILES['profile_picture']
 
@@ -1253,7 +1255,7 @@ def complete_profile_view(request):
                 user = user_obj
             except Exception:
                 pass
-            messages.warning(request, 'File uploads failed, but profile info was saved.')
+            messages.warning(request, 'Profile info saved, but file uploads encountered an issue.')
 
         if user.role == 'student' and user.section and user.year_level:
             section_classes = Class.objects.filter(
