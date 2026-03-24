@@ -185,7 +185,7 @@
         }
 
         function rerender() {
-            const blocks = readBlocks().filter((block) => block && (block.days?.length || block.start_time || block.end_time));
+            const blocks = readBlocks();
             blocksContainer.innerHTML = '';
             const items = blocks.length ? blocks : [{}];
             items.forEach((block, index) => blocksContainer.appendChild(renderBlock(block, index)));
