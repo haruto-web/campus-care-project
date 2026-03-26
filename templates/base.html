@@ -367,11 +367,16 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             if (icon && localStorage.getItem('theme') === 'dark') icon.className = 'bi bi-sun';
 
             // Remove duplicate page heading when topbar title matches the first content heading.
+            // Only remove if the heading is standalone (no sibling elements in its parent),
+            // to avoid stripping headings that are part of a toolbar row with other controls.
             const normalize = (text) => (text || '').replace(/\s+/g, ' ').trim().toLowerCase();
             const topbarTitle = document.querySelector('.bt-page-title');
             const contentHeading = document.querySelector('.bt-content h1, .bt-content h2');
             if (topbarTitle && contentHeading && normalize(topbarTitle.textContent) && normalize(topbarTitle.textContent) === normalize(contentHeading.textContent)) {
-                contentHeading.remove();
+                const siblings = Array.from(contentHeading.parentElement.children).filter(el => el !== contentHeading);
+                if (siblings.length === 0) {
+                    contentHeading.remove();
+                }
             }
         });
         document.addEventListener('focusin', function (event) {
