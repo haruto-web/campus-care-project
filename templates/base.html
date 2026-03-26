@@ -397,7 +397,9 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
 
     {% if user.is_authenticated %}
     <!-- Toast container -->
-    <div id="toastContainer" class="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none"></div>`n`n    <script>
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none"></div>
+
+    <script>
         /* === Notification Dropdown === */
         function toggleNotifDropdown() {
             document.getElementById('notifDropdown').classList.toggle('hidden');
@@ -498,7 +500,9 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             updateNotifList();
             const nb = document.getElementById('notifBadge');
             if (nb) { nb.textContent = '0'; nb.classList.add('hidden'); }
-        }`n`n        function pollNotifications() {
+        }
+
+        function pollNotifications() {
             fetch('/notifications/poll/', {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -529,4 +533,5 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
 </body>
 
 </html>
+
 

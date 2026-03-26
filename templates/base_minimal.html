@@ -65,7 +65,9 @@
         });
 
         {% if user.is_authenticated %}
-        (function () {`n`n            function heartbeat() {
+        (function () {
+
+            function heartbeat() {
                 fetch('{% url "session_heartbeat" %}', {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -93,4 +95,5 @@
     {% block extra_js %}{% endblock %}
 </body>
 </html>
+
 
