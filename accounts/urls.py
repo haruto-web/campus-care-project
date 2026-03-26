@@ -18,6 +18,7 @@ urlpatterns = [
     path('complete-profile/', views.complete_profile_view, name='complete_profile'),
     path('students/', views.students_list_view, name='students_list'),
     path('notifications/poll/', views.notifications_poll, name='notifications_poll'),
+    path('session/heartbeat/', views.session_heartbeat_view, name='session_heartbeat'),
 
     # Admin URLs
     path('manage/users/', admin_views.admin_manage_users, name='admin_manage_users'),

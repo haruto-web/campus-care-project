@@ -201,6 +201,11 @@ def notifications_poll(request):
     return JsonResponse(data)
 
 
+@login_required
+def session_heartbeat_view(request):
+    return JsonResponse({'ok': True})
+
+
 def fix_site_domain(request):
     """Temporary view to fix Site domain for OAuth - admin only"""
     if not request.user.is_authenticated or not request.user.is_superuser:
