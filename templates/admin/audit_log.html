@@ -7,7 +7,7 @@
     <div class="flex items-center justify-between">
         <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Audit Log</h2>
         <div class="flex items-center gap-3">
-            <form method="get" class="flex items-center gap-2">
+            <form method="get" class="flex items-center gap-3">
                 <input type="hidden" name="action" value="{{ action_filter }}">
                 <input type="hidden" name="actor" value="{{ actor_filter }}">
                 <input type="hidden" name="target" value="{{ target_filter }}">
@@ -15,11 +15,14 @@
                 <input type="hidden" name="integrity" value="{{ integrity_filter }}">
                 <input type="hidden" name="date_from" value="{{ date_from }}">
                 <input type="hidden" name="date_to" value="{{ date_to }}">
-                <select name="export" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white">
-                    <option value="csv" selected>CSV</option>
-                    <option value="pdf">PDF</option>
-                    <option value="docs">DOCS</option>
-                </select>
+                <div class="relative">
+                    <select name="export" class="min-w-[110px] border border-gray-300 dark:border-gray-600 rounded-lg pl-3 pr-10 py-2 text-sm text-left appearance-none bg-white dark:bg-gray-700 dark:text-white">
+                        <option value="csv" selected>CSV</option>
+                        <option value="pdf">PDF</option>
+                        <option value="docs">DOC</option>
+                    </select>
+                    <i class="bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-300"></i>
+                </div>
                 <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">
                     Export
                 </button>

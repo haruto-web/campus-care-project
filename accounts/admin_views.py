@@ -101,42 +101,131 @@ def _audit_log_export_rows(logs):
     return rows
 
 
-def _build_simple_pdf(lines):
-    def _escape_pdf_text(value):
-        safe = ''.join(ch if ord(ch) < 128 else '?' for ch in str(value))
-        return safe.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
+def _audit_log_visual_rows(logs):
+    rows = []
+    for log in logs:
+        integrity_label = 'Unaltered' if log.integrity_ok is True else 'Not Verified'
+        actor_label = log.actor.get_full_name() if log.actor else 'System'
+        target_label = log.target_label or '—'
+        if log.target_type:
+            target_label = f'{target_label} ({log.target_type})'
+        details = '—'
+        if log.extra_data:
+            details = str(log.extra_data)
+        rows.append([
+            timezone.localtime(log.timestamp).strftime('%b %d, %Y %I:%M %p'),
+            actor_label,
+            log.get_action_display(),
+            target_label,
+            log.ip_address or '—',
+            integrity_label,
+            details,
+        ])
+    return rows
 
-    max_lines = 50
-    prepared = [_escape_pdf_text(line)[:110] for line in lines[:max_lines]]
-    if len(lines) > max_lines:
-        prepared.append(_escape_pdf_text('... output truncated for PDF export ...'))
 
-    stream_parts = ["BT", "/F1 9 Tf", "12 TL", "40 760 Td"]
-    for idx, line in enumerate(prepared):
-        if idx > 0:
-            stream_parts.append("T*")
-        stream_parts.append(f"({line}) Tj")
-    stream_parts.append("ET")
-    stream = "\n".join(stream_parts).encode('latin-1', errors='replace')
+def _pdf_escape(value):
+    safe = ''.join(ch if ord(ch) < 128 else '?' for ch in str(value))
+    return safe.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
 
-    obj1 = b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
-    obj2 = b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
-    obj3 = b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n"
-    obj4_head = f"4 0 obj\n<< /Length {len(stream)} >>\nstream\n".encode('latin-1')
-    obj4_tail = b"\nendstream\nendobj\n"
-    obj5 = b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"
+
+def _truncate_text(value, length):
+    text = str(value or '')
+    return text if len(text) <= length else f'{text[:max(0, length - 3)]}...'
+
+
+def _build_simple_pdf_table(headers, rows):
+    page_w, page_h = 842, 595  # A4 landscape
+    left_margin = 20
+    top_y = page_h - 28
+    row_h = 20
+    col_widths = [128, 140, 105, 210, 88, 88, 43]  # fits 7 columns
+
+    draw_rows = []
+    for row in rows:
+        draw_rows.append([
+            _truncate_text(row[0], 20),
+            _truncate_text(row[1], 24),
+            _truncate_text(row[2], 18),
+            _truncate_text(row[3], 38),
+            _truncate_text(row[4], 16),
+            _truncate_text(row[5], 14),
+            _truncate_text(row[6], 8),
+        ])
+
+    lines_per_page = max(10, int((page_h - 65) / row_h) - 1)  # header + rows
+    pages = []
+    for idx in range(0, len(draw_rows), lines_per_page):
+        pages.append(draw_rows[idx:idx + lines_per_page])
+    if not pages:
+        pages = [[]]
+
+    streams = []
+    for page_rows in pages:
+        total_rows = 1 + len(page_rows)  # header + data
+        table_h = total_rows * row_h
+        y_bottom = top_y - table_h
+        x = left_margin
+
+        ops = [
+            "0.95 g",
+            f"{left_margin} {top_y - row_h} {sum(col_widths)} {row_h} re f",
+            "0 g",
+            "0.4 w",
+            f"{left_margin} {y_bottom} {sum(col_widths)} {table_h} re S",
+        ]
+
+        for i in range(1, total_rows):
+            y = top_y - (i * row_h)
+            ops.append(f"{left_margin} {y} m {left_margin + sum(col_widths)} {y} l S")
+
+        for w in col_widths[:-1]:
+            x += w
+            ops.append(f"{x} {y_bottom} m {x} {top_y} l S")
+
+        x = left_margin + 4
+        y_text = top_y - 14
+        for i, header in enumerate(headers):
+            ops.append(f"BT /F1 8 Tf {x} {y_text} Td ({_pdf_escape(header)}) Tj ET")
+            x += col_widths[i]
+
+        for ridx, row in enumerate(page_rows):
+            x = left_margin + 4
+            y_text = top_y - row_h - 14 - (ridx * row_h)
+            for cidx, cell in enumerate(row):
+                ops.append(f"BT /F1 8 Tf {x} {y_text} Td ({_pdf_escape(cell)}) Tj ET")
+                x += col_widths[cidx]
+
+        streams.append("\n".join(ops).encode('latin-1', errors='replace'))
 
     pdf = bytearray(b"%PDF-1.4\n")
     offsets = [0]
-    for chunk in [obj1, obj2, obj3]:
+    objects = []
+
+    # 1 Catalog, 2 Pages
+    objects.append(b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
+    kids = " ".join(f"{3 + i*2} 0 R" for i in range(len(streams)))
+    objects.append(f"2 0 obj\n<< /Type /Pages /Kids [{kids}] /Count {len(streams)} >>\nendobj\n".encode('latin-1'))
+
+    # page/content objects
+    for i, stream in enumerate(streams):
+        page_obj_id = 3 + i * 2
+        content_obj_id = page_obj_id + 1
+        objects.append(
+            f"{page_obj_id} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {page_w} {page_h}] /Resources << /Font << /F1 {3 + len(streams)*2} 0 R >> >> /Contents {content_obj_id} 0 R >>\nendobj\n".encode('latin-1')
+        )
+        objects.append(
+            f"{content_obj_id} 0 obj\n<< /Length {len(stream)} >>\nstream\n".encode('latin-1') +
+            stream +
+            b"\nendstream\nendobj\n"
+        )
+
+    font_obj_id = 3 + len(streams) * 2
+    objects.append(f"{font_obj_id} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n".encode('latin-1'))
+
+    for obj in objects:
         offsets.append(len(pdf))
-        pdf.extend(chunk)
-    offsets.append(len(pdf))
-    pdf.extend(obj4_head)
-    pdf.extend(stream)
-    pdf.extend(obj4_tail)
-    offsets.append(len(pdf))
-    pdf.extend(obj5)
+        pdf.extend(obj)
 
     xref_pos = len(pdf)
     pdf.extend(f"xref\n0 {len(offsets)}\n".encode('latin-1'))
@@ -808,6 +897,8 @@ def admin_audit_log(request):
     export_format = request.GET.get('export')
     if export_format in ['csv', 'pdf', 'docs']:
         rows = _audit_log_export_rows(logs)
+        visual_headers = ['TIMESTAMP', 'ACTOR', 'ACTION', 'TARGET', 'IP', 'INTEGRITY', 'DETAILS']
+        visual_rows = _audit_log_visual_rows(logs)
         headers = ['Timestamp', 'Actor', 'Action', 'Target Type', 'Target ID', 'Target Label', 'IP Address', 'Integrity', 'Details']
 
         if export_format == 'csv':
@@ -822,14 +913,14 @@ def admin_audit_log(request):
 
         if export_format == 'docs':
             table_rows = ''.join(
-                '<tr>' + ''.join(f'<td>{html.escape(str(cell))}</td>' for cell in row) + '</tr>'
-                for row in rows
+                '<tr>' + ''.join(f'<td style="padding:8px;border:1px solid #e5e7eb;font-size:12px;">{html.escape(str(cell))}</td>' for cell in row) + '</tr>'
+                for row in visual_rows
             )
             content = (
                 '<html><head><meta charset="utf-8"></head><body>'
-                '<h2>Audit Log Export</h2>'
-                '<table border="1" cellspacing="0" cellpadding="4">'
-                '<tr>' + ''.join(f'<th>{h}</th>' for h in headers) + '</tr>'
+                '<h2 style="font-family:Arial,sans-serif;margin-bottom:12px;">Audit Log Export</h2>'
+                '<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;">'
+                '<tr style="background:#f3f4f6;">' + ''.join(f'<th style="text-align:left;padding:8px;border:1px solid #e5e7eb;font-size:12px;">{h}</th>' for h in visual_headers) + '</tr>'
                 f'{table_rows}</table></body></html>'
             )
             response = HttpResponse(content, content_type='application/msword')
@@ -837,8 +928,7 @@ def admin_audit_log(request):
             log_action(request, 'AUDIT_LOG_EXPORTED', 'AuditLog', None, 'Audit Log', extra_data={**filters, 'format': export_format})
             return response
 
-        pdf_lines = [' | '.join(headers)] + [' | '.join(str(cell) for cell in row) for row in rows]
-        response = HttpResponse(_build_simple_pdf(pdf_lines), content_type='application/pdf')
+        response = HttpResponse(_build_simple_pdf_table(visual_headers, visual_rows), content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="audit-log.pdf"'
         log_action(request, 'AUDIT_LOG_EXPORTED', 'AuditLog', None, 'Audit Log', extra_data={**filters, 'format': export_format})
         return response

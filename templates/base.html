@@ -394,6 +394,50 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
     <!-- Toast container -->
     <div id="toastContainer" class="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none"></div>
 
+    <!-- ===== DEVICE CONFLICT MODAL ===== -->
+    <div id="deviceConflictModal"
+         class="hidden fixed inset-0 z-[99999] items-center justify-center"
+         style="background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);">
+        <div class="btdc-card" style="
+            background:var(--bt-surface);
+            border:1px solid var(--bt-border);
+            border-radius:20px;
+            box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);
+            width:min(92vw,440px);
+            overflow:hidden;
+        ">
+            <!-- Header -->
+            <div style="background:linear-gradient(135deg,#d97706 0%,#f59e0b 100%);padding:20px 24px 16px;display:flex;align-items:center;gap:14px;">
+                <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="bi bi-phone-fill" style="font-size:1.3rem;color:#fff;"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.8);margin-bottom:2px;">Security Alert</div>
+                    <h3 style="margin:0;font-size:1.1rem;font-weight:700;color:#fff;">Logged In on Another Device</h3>
+                </div>
+            </div>
+            <!-- Body -->
+            <div style="padding:24px;">
+                <p id="deviceConflictMsg" style="margin:0 0 16px;font-size:0.9rem;line-height:1.6;color:var(--bt-text);">Your account was logged in on another device. You have been signed out for security.</p>
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;background:var(--bt-surface-hover);border:1px solid var(--bt-border);font-size:0.82rem;color:var(--bt-text-secondary);">
+                    <i class="bi bi-info-circle" style="font-size:1rem;color:#d97706;flex-shrink:0;"></i>
+                    <span>If this wasn't you, consider changing your password after logging back in.</span>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div style="padding:0 24px 24px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:0.78rem;color:var(--bt-text-muted);">Redirecting in <span id="deviceConflictCount" style="font-weight:700;color:#d97706;">8</span>s…</span>
+                <button id="deviceConflictOkBtn"
+                        onclick="deviceConflictOk()"
+                        style="background:#4f46e5;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:0.875rem;font-weight:600;cursor:pointer;font-family:var(--font-sans);transition:background 0.15s;"
+                        onmouseover="this.style.background='#3730a3'"
+                        onmouseout="this.style.background='#4f46e5'">
+                    OK, Got It
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         /* === Notification Dropdown === */
         function toggleNotifDropdown() {
@@ -497,6 +541,51 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             if (nb) { nb.textContent = '0'; nb.classList.add('hidden'); }
         }
 
+        /* === Duplicate-Login / Device-Conflict Modal === */
+        let _deviceConflictShown = false;
+        let _deviceConflictTimer = null;
+
+        function showDeviceConflictModal(message) {
+            if (_deviceConflictShown) return;
+            _deviceConflictShown = true;
+            const modal = document.getElementById('deviceConflictModal');
+            if (!modal) {
+                alert(message);
+                window.location.href = '{% url "session_expired_notice" %}';
+                return;
+            }
+            const msgEl = document.getElementById('deviceConflictMsg');
+            if (msgEl) msgEl.textContent = message;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            const card = modal.querySelector('.btdc-card');
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.92) translateY(12px)';
+                requestAnimationFrame(function() {
+                    card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'scale(1) translateY(0)';
+                });
+            }
+            var secs = 8;
+            var countEl = document.getElementById('deviceConflictCount');
+            if (countEl) countEl.textContent = secs;
+            _deviceConflictTimer = setInterval(function() {
+                secs--;
+                if (countEl) countEl.textContent = secs;
+                if (secs <= 0) {
+                    clearInterval(_deviceConflictTimer);
+                    window.location.href = '{% url "session_expired_notice" %}';
+                }
+            }, 1000);
+        }
+
+        function deviceConflictOk() {
+            if (_deviceConflictTimer) clearInterval(_deviceConflictTimer);
+            window.location.href = '{% url "session_expired_notice" %}';
+        }
+
         function pollNotifications() {
             fetch('/notifications/poll/', {
                 headers: {
@@ -507,21 +596,10 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
                 .then(r => {
                     if (r.status === 440) {
                         return r.json().then(data => {
-                            const msg = (data && data.message) ? data.message : 'Session expired. This account was logged in on another device.';
-                            if (typeof showConfirmModal === 'function') {
-                                showConfirmModal({
-                                    title: 'Session Expired',
-                                    body: msg,
-                                    okLabel: 'Continue',
-                                    type: 'warning',
-                                    onConfirm: () => {
-                                        window.location.href = '{% url "session_expired_notice" %}';
-                                    }
-                                });
-                            } else {
-                                alert(msg);
-                                window.location.href = '{% url "session_expired_notice" %}';
-                            }
+                            const msg = (data && data.message)
+                                ? data.message
+                                : 'Your account was logged in on another device. You have been signed out for security.';
+                            showDeviceConflictModal(msg);
                             return null;
                         });
                     }

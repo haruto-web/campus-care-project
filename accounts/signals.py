@@ -1,8 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.signals import user_logged_in
-from django.contrib.sessions.models import Session
-from django.utils import timezone
 from .models import User
 
 @receiver(post_save, sender=User)
@@ -30,25 +28,15 @@ def create_risk_assessment_for_student(sender, instance, created, **kwargs):
             notes='Initial assessment created automatically'
         )
 
-
-def _clear_other_sessions_for_user(user_id, keep_session_key=None):
-    """Enforce one active device/session per account."""
-    active_sessions = Session.objects.filter(expire_date__gte=timezone.now())
-    for session in active_sessions:
-        data = session.get_decoded()
-        if str(data.get('_auth_user_id')) != str(user_id):
-            continue
-        if keep_session_key and session.session_key == keep_session_key:
-            continue
-        session.delete()
-
-
 @receiver(user_logged_in)
 def enforce_single_device_session(sender, request, user, **kwargs):
     """
-    When a user logs in on a new device/browser, expire previous sessions
-    so only one device remains active for that account.
+    Track the latest active session key so other devices can be expired
+    gracefully by middleware with a user-facing message.
     """
     if not request.session.session_key:
         request.session.save()
-    _clear_other_sessions_for_user(user.id, keep_session_key=request.session.session_key)
+    session_key = request.session.session_key or ''
+    if user.current_session_key != session_key:
+        user.current_session_key = session_key
+        user.save(update_fields=['current_session_key'])

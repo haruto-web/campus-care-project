@@ -46,6 +46,7 @@ class User(AbstractUser):
     guardian_occupation = models.CharField(max_length=100, blank=True)
     profile_skipped_at = models.DateTimeField(blank=True, null=True)
     messaging_suspended_until = models.DateTimeField(blank=True, null=True)
+    current_session_key = models.CharField(max_length=40, blank=True, default='')
 
     def is_messaging_suspended(self):
         if self.messaging_suspended_until:

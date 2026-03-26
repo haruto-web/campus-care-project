@@ -154,12 +154,22 @@ def notifications_poll(request):
     if hit_rate_limit(request, 'notifications_poll', limit=120, window_seconds=60, track_spike=False):
         return JsonResponse({'error': 'Too many requests'}, status=429)
 
+    # --- Duplicate-login / session-displacement check ---
+    user = request.user
+    current_session_key = (request.session.session_key or '').strip()
+    stored_session_key = (getattr(user, 'current_session_key', '') or '').strip()
+    if stored_session_key and current_session_key and stored_session_key != current_session_key:
+        # This device's session has been displaced by a newer login on another device.
+        return JsonResponse(
+            {'message': 'Your account was logged in on another device. You have been signed out for security.'},
+            status=440,
+        )
+
     from messaging.models import Message
     from academics.models import Announcement, Submission
     from wellness.models import Alert
     from django.db.models import Q
 
-    user = request.user
     data = {}
 
     # Unread messages

@@ -58,6 +58,10 @@
                     class="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition duration-200">
                     Verify Code
                 </button>
+                <button type="submit" id="resendOtpBtn" name="resend_otp" value="1"
+                    class="w-full hidden bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 py-3 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200">
+                    Resend Code
+                </button>
             </form>
             {% endif %}
 
@@ -74,7 +78,8 @@
         const timerEl = document.getElementById('otpTimer');
         const codeInput = document.getElementById('code');
         const submitBtn = document.getElementById('otpSubmitBtn');
-        if (!timerEl || !codeInput || !submitBtn) return;
+        const resendBtn = document.getElementById('resendOtpBtn');
+        if (!timerEl || !codeInput || !submitBtn || !resendBtn) return;
 
         const expiresAtRaw = timerEl.getAttribute('data-expires-at');
         const expiresAt = expiresAtRaw ? new Date(expiresAtRaw) : null;
@@ -90,6 +95,7 @@
             codeInput.disabled = true;
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            resendBtn.classList.remove('hidden');
         }
 
         function tick() {
