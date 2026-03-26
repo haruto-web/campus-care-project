@@ -498,9 +498,27 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
         }
 
         function pollNotifications() {
-            fetch('/notifications/poll/')
-                .then(r => r.json())
-                .then(data => updateNotifUI(data))
+            fetch('/notifications/poll/', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+                .then(r => {
+                    if (r.status === 440) {
+                        return r.json().then(data => {
+                            if (data && data.message) {
+                                showToast(data.message, 'bg-red-600');
+                            }
+                            setTimeout(() => {
+                                window.location.href = '{% url "login" %}?session_expired=1';
+                            }, 600);
+                            return null;
+                        });
+                    }
+                    return r.json();
+                })
+                .then(data => { if (data) updateNotifUI(data); })
                 .catch(() => { });
         }
 

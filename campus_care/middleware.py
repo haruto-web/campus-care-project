@@ -1,8 +1,33 @@
+from django.contrib import messages
+from django.contrib.auth import logout
+from django.http import JsonResponse
+from django.shortcuts import redirect
+from django.urls import reverse
+
+
 class NoCacheAuthenticatedPagesMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
+        if getattr(request, 'user', None) and request.user.is_authenticated:
+            expected_session_key = getattr(request.user, 'current_session_key', '')
+            current_session_key = request.session.session_key or ''
+            if expected_session_key and current_session_key and expected_session_key != current_session_key:
+                logout(request)
+                accepts_json = 'application/json' in (request.headers.get('accept') or '').lower()
+                is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or accepts_json
+                if is_ajax:
+                    return JsonResponse(
+                        {
+                            'session_expired': True,
+                            'message': 'Session expired. This account was logged in on another device.',
+                        },
+                        status=440
+                    )
+                messages.warning(request, 'Session expired. This account was logged in on another device.')
+                return redirect(f"{reverse('login')}?session_expired=1")
+
         response = self.get_response(request)
 
         if getattr(request, 'user', None) and request.user.is_authenticated:

@@ -46,13 +46,15 @@ def _get_active_otp_expiry(email):
     return timezone.localtime(otp.created_at + timedelta(minutes=3))
 
 
-def _otp_verify_context(email, purpose):
+def _otp_verify_context(email, purpose, **extra):
     expires_at = _get_active_otp_expiry(email)
-    return {
+    context = {
         'email': email,
         'purpose': purpose,
         'otp_expires_at': expires_at.isoformat() if expires_at else '',
     }
+    context.update(extra)
+    return context
 
 
 def _resolve_ip_location(ip_address):
@@ -559,6 +561,9 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
 
+    if request.method == 'GET' and request.GET.get('session_expired') == '1':
+        messages.warning(request, 'Session expired: this account was logged in on another device.')
+
     if request.method == 'POST':
         email = request.POST.get('email', '').strip().lower()
         password = request.POST.get('password')
@@ -606,7 +611,59 @@ def verify_otp_view(request):
     if not email or purpose not in ('login', 'register', 'reset'):
         return redirect('login')
 
+    def _complete_login(user):
+        for key in ['otp_user_id', 'otp_email', 'otp_purpose', 'otp_login_verified']:
+            request.session.pop(key, None)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        if not request.session.session_key:
+            request.session.save()
+        active_session_key = request.session.session_key or ''
+        if user.current_session_key != active_session_key:
+            user.current_session_key = active_session_key
+            user.save(update_fields=['current_session_key'])
+        log_action(request, 'LOGIN', 'User', user.id, user.get_full_name())
+        if user.role in ['teacher', 'counselor', 'admin']:
+            actor_ip = get_client_ip(request)
+            actor_location = _resolve_ip_location(actor_ip)
+            email_lines = [
+                f'Dear {user.get_full_name() or user.email},',
+                '',
+                f'A new login to your BrightTrack account was completed as {user.role}.',
+                f'Time: {_format_email_timestamp()}',
+            ]
+            if actor_ip and actor_ip != 'unknown':
+                email_lines.append(f'IP Address: {actor_ip}')
+            if actor_location:
+                email_lines.append(f'Location: {actor_location}')
+            email_lines.extend([
+                '',
+                'If this was not you, please change your password and contact an administrator immediately.',
+            ])
+            _send_security_email(
+                user.email,
+                'BrightTrack New Login Alert',
+                email_lines,
+            )
+        return redirect('dashboard')
+
     if request.method == 'POST':
+        if purpose == 'login' and request.POST.get('cancel_continue_login') == '1':
+            for key in ['otp_user_id', 'otp_email', 'otp_purpose', 'otp_login_verified']:
+                request.session.pop(key, None)
+            messages.info(request, 'Login cancelled.')
+            return redirect('login')
+
+        if purpose == 'login' and request.POST.get('confirm_continue_login') == '1':
+            user_id = request.session.get('otp_user_id')
+            if not user_id or not request.session.get('otp_login_verified'):
+                messages.error(request, 'Login session expired. Please sign in again.')
+                return redirect('login')
+            user = User.objects.filter(id=user_id).first()
+            if not user:
+                messages.error(request, 'User not found. Please sign in again.')
+                return redirect('login')
+            return _complete_login(user)
+
         attempt_key = f'otp_attempts_{email}'
         attempts = cache.get(attempt_key, 0)
         if attempts >= 5:
@@ -632,33 +689,25 @@ def verify_otp_view(request):
             if not user_id:
                 return redirect('login')
             user = User.objects.get(id=user_id)
-            for key in ['otp_user_id', 'otp_email', 'otp_purpose']:
-                request.session.pop(key, None)
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            log_action(request, 'LOGIN', 'User', user.id, user.get_full_name())
-            if user.role in ['teacher', 'counselor', 'admin']:
-                actor_ip = get_client_ip(request)
-                actor_location = _resolve_ip_location(actor_ip)
-                email_lines = [
-                    f'Dear {user.get_full_name() or user.email},',
-                    '',
-                    f'A new login to your BrightTrack account was completed as {user.role}.',
-                    f'Time: {_format_email_timestamp()}',
-                ]
-                if actor_ip and actor_ip != 'unknown':
-                    email_lines.append(f'IP Address: {actor_ip}')
-                if actor_location:
-                    email_lines.append(f'Location: {actor_location}')
-                email_lines.extend([
-                    '',
-                    'If this was not you, please change your password and contact an administrator immediately.',
-                ])
-                _send_security_email(
-                    user.email,
-                    'BrightTrack New Login Alert',
-                    email_lines,
+            if not request.session.session_key:
+                request.session.save()
+            current_session_key = request.session.session_key or ''
+            existing_session_key = (user.current_session_key or '').strip()
+            if existing_session_key and existing_session_key != current_session_key:
+                request.session['otp_login_verified'] = True
+                return render(
+                    request,
+                    'accounts/verify_otp.html',
+                    _otp_verify_context(
+                        email,
+                        purpose,
+                        show_session_conflict_confirm=True,
+                        session_conflict_message='This account is currently active on another device. Continuing will end that session.',
+                    )
                 )
-            return redirect('dashboard')
+
+            request.session['otp_login_verified'] = True
+            return _complete_login(user)
 
         elif purpose == 'register':
             from django.db import transaction
