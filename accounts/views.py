@@ -618,9 +618,13 @@ def verify_otp_view(request):
         if not request.session.session_key:
             request.session.save()
         active_session_key = request.session.session_key or ''
-        if user.current_session_key != active_session_key:
-            user.current_session_key = active_session_key
-            user.save(update_fields=['current_session_key'])
+        if hasattr(user, 'current_session_key'):
+            try:
+                if (getattr(user, 'current_session_key', '') or '') != active_session_key:
+                    user.current_session_key = active_session_key
+                    user.save(update_fields=['current_session_key'])
+            except Exception:
+                pass
         log_action(request, 'LOGIN', 'User', user.id, user.get_full_name())
         if user.role in ['teacher', 'counselor', 'admin']:
             actor_ip = get_client_ip(request)
@@ -647,6 +651,24 @@ def verify_otp_view(request):
         return redirect('dashboard')
 
     if request.method == 'POST':
+        if request.POST.get('resend_otp') == '1':
+            resend_key = f'otp_resend_{purpose}_{email}'
+            resend_count = cache.get(resend_key, 0)
+            if resend_count >= 3:
+                messages.error(request, 'Too many resend requests. Please wait 15 minutes before trying again.')
+                return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
+            try:
+                otp = OTPCode.generate(email)
+                send_otp_email(email, otp.code)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).error('OTP resend failed')
+                messages.error(request, 'Failed to resend code. Please try again.')
+                return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
+            cache.set(resend_key, resend_count + 1, 900)
+            messages.success(request, 'A new verification code has been sent.')
+            return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
+
         if purpose == 'login' and request.POST.get('cancel_continue_login') == '1':
             for key in ['otp_user_id', 'otp_email', 'otp_purpose', 'otp_login_verified']:
                 request.session.pop(key, None)
@@ -692,7 +714,7 @@ def verify_otp_view(request):
             if not request.session.session_key:
                 request.session.save()
             current_session_key = request.session.session_key or ''
-            existing_session_key = (user.current_session_key or '').strip()
+            existing_session_key = (getattr(user, 'current_session_key', '') or '').strip()
             if existing_session_key and existing_session_key != current_session_key:
                 request.session['otp_login_verified'] = True
                 return render(
