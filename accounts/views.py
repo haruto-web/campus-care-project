@@ -38,6 +38,9 @@ def _format_email_timestamp(dt=None):
     current = timezone.localtime(dt or timezone.now())
     return current.strftime("%b %d, %Y %I:%M:%S %p")
 
+def _email_datetime_line(dt=None):
+    return f"Date & Time: {_format_email_timestamp(dt)}"
+
 
 def _get_active_otp_expiry(email):
     otp = OTPCode.objects.filter(contact_value=email, is_used=False).order_by('-created_at').first()
@@ -454,6 +457,7 @@ def otp_forgot_password_view(request):
                 f'Dear {user.get_full_name() or user.email},',
                 '',
                 'A password reset code was requested for your BrightTrack account.',
+                _email_datetime_line(),
                 'If this was you, you can continue using the verification code that was just sent.',
                 'If this was not you, please ignore this message and consider changing your password after logging in.',
             ],
@@ -500,7 +504,7 @@ def otp_reset_password_view(request):
                 f'Dear {user.get_full_name() or user.email},',
                 '',
                 'Your BrightTrack password was changed successfully.',
-                f'Time: {_format_email_timestamp()}',
+                _email_datetime_line(),
                 f'IP Address: {request.META.get("REMOTE_ADDR", "unknown")}',
                 '',
                 'If this was not you, please contact an administrator immediately.',
@@ -648,7 +652,7 @@ def verify_otp_view(request):
                 f'Dear {user.get_full_name() or user.email},',
                 '',
                 f'A new login to your BrightTrack account was completed as {user.role}.',
-                f'Time: {_format_email_timestamp()}',
+                _email_datetime_line(),
             ]
             if actor_ip and actor_ip != 'unknown':
                 email_lines.append(f'IP Address: {actor_ip}')

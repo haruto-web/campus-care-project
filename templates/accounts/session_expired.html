@@ -18,30 +18,4 @@
         </div>
     </div>
 </div>
-<div id="sessionExpiredModal" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-     style="background:rgba(15,23,42,0.45);z-index:1060;">
-    <div class="bg-white shadow border-0" style="width:min(92vw,420px);border-radius:16px;overflow:hidden;">
-        <div class="px-4 py-3 d-flex align-items-center gap-2" style="background:#eef2ff;border-bottom:1px solid #e5e7eb;">
-            <img src="{% static 'images/logo.png' %}" alt="BrightTrack" style="width:28px;height:28px;object-fit:contain;">
-            <h3 class="m-0 fw-bold" style="font-size:1rem;color:#111827;">Session Expired</h3>
-        </div>
-        <div class="p-4">
-            <p class="mb-0" style="color:#4b5563;">Please log in again.</p>
-        </div>
-        <div class="px-4 pb-4 text-end">
-            <button id="sessionExpiredOk" type="button" class="btn text-white fw-semibold px-4"
-                    style="background:#4f46e5;border:none;border-radius:10px;">OK</button>
-        </div>
-    </div>
-</div>
-<script>
-    (function () {
-        const modal = document.getElementById('sessionExpiredModal');
-        const okBtn = document.getElementById('sessionExpiredOk');
-        if (!modal || !okBtn) return;
-        okBtn.addEventListener('click', function () {
-            modal.style.display = 'none';
-        });
-    })();
-</script>
 {% endblock %}
