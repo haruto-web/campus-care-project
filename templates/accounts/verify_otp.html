@@ -63,6 +63,7 @@
         const submitBtn = document.getElementById('otpSubmitBtn');
         const resendBtn = document.getElementById('resendOtpBtn');
         if (!timerEl || !codeInput || !submitBtn || !resendBtn) return;
+        const otpLocked = '{{ otp_locked|yesno:"true,false" }}' === 'true';
 
         const expiresAtRaw = timerEl.getAttribute('data-expires-at');
         const expiresAt = expiresAtRaw ? new Date(expiresAtRaw) : null;
@@ -78,7 +79,9 @@
             codeInput.disabled = true;
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            resendBtn.classList.remove('hidden');
+            if (!otpLocked) {
+                resendBtn.classList.remove('hidden');
+            }
         }
 
         function tick() {

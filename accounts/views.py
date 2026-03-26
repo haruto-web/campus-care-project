@@ -630,6 +630,18 @@ def verify_otp_view(request):
     if not email or purpose not in ('login', 'register', 'reset'):
         return redirect('login')
 
+    attempt_key = f'otp_attempts_{email}'
+
+    def _is_otp_locked():
+        return cache.get(attempt_key, 0) >= 5
+
+    def _render_verify():
+        return render(
+            request,
+            'accounts/verify_otp.html',
+            _otp_verify_context(email, purpose, otp_locked=_is_otp_locked()),
+        )
+
     def _complete_login(user):
         for key in ['otp_user_id', 'otp_email', 'otp_purpose', 'otp_login_verified']:
             request.session.pop(key, None)
@@ -671,11 +683,14 @@ def verify_otp_view(request):
 
     if request.method == 'POST':
         if request.POST.get('resend_otp') == '1':
+            if _is_otp_locked():
+                messages.error(request, 'Too many failed attempts. Please wait 30 minutes.')
+                return _render_verify()
             resend_key = f'otp_resend_{purpose}_{email}'
             resend_count = cache.get(resend_key, 0)
             if resend_count >= 3:
                 messages.error(request, 'Too many resend requests. Please wait 15 minutes before trying again.')
-                return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
+                return _render_verify()
             try:
                 otp = OTPCode.generate(email)
                 send_otp_email(email, otp.code)
@@ -683,16 +698,15 @@ def verify_otp_view(request):
                 import logging
                 logging.getLogger(__name__).error('OTP resend failed')
                 messages.error(request, 'Failed to resend code. Please try again.')
-                return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
+                return _render_verify()
             cache.set(resend_key, resend_count + 1, 900)
             messages.success(request, 'A new verification code has been sent.')
-            return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
+            return _render_verify()
 
-        attempt_key = f'otp_attempts_{email}'
         attempts = cache.get(attempt_key, 0)
         if attempts >= 5:
             messages.error(request, 'Too many failed attempts. Please wait 30 minutes.')
-            return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
+            return _render_verify()
 
         code = request.POST.get('code', '').strip()
         otp = OTPCode.objects.filter(
@@ -700,9 +714,13 @@ def verify_otp_view(request):
         ).order_by('-created_at').first()
 
         if not otp or not otp.is_valid():
-            cache.set(attempt_key, attempts + 1, 1800)
-            messages.error(request, 'Invalid or expired code.')
-            return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
+            new_attempts = attempts + 1
+            cache.set(attempt_key, new_attempts, 1800)
+            if new_attempts >= 5:
+                messages.error(request, 'Too many failed attempts. Please wait 30 minutes.')
+            else:
+                messages.error(request, 'Invalid or expired code.')
+            return _render_verify()
 
         otp.is_used = True
         otp.save()
@@ -750,7 +768,7 @@ def verify_otp_view(request):
             request.session['otp_verified'] = True
             return redirect('otp_reset_password')
 
-    return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
+    return _render_verify()
 
 @login_required
 def session_expired_notice_view(request):
