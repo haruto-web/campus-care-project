@@ -13,12 +13,16 @@ from django.conf import settings
 from datetime import datetime, timedelta
 from pathlib import Path
 import mimetypes
+import ipaddress
+import json
+from urllib import request as urllib_request
+from urllib import error as urllib_error
 from academics.models import Class, Assignment, Submission, Attendance, Grade
 from wellness.models import WellnessCheckIn, RiskAssessment, Alert, Intervention
 from campus_care.validators import validate_image_upload
 from .models import User, OTPCode, RegistrationRequest
 from .otp_utils import send_otp_email, send_transactional_email
-from .utils import log_action, hit_rate_limit, record_security_spike, run_background_task
+from .utils import log_action, hit_rate_limit, record_security_spike, run_background_task, get_client_ip
 from .decorators import teacher_owns_class
 
 
@@ -28,6 +32,32 @@ def _send_security_email(to_email, subject, lines):
         subject=subject,
         text_content="\n".join(lines),
     )
+
+
+def _resolve_ip_location(ip_address):
+    if not ip_address:
+        return None
+    try:
+        parsed_ip = ipaddress.ip_address(ip_address)
+    except ValueError:
+        return None
+
+    if parsed_ip.is_private or parsed_ip.is_loopback or parsed_ip.is_link_local:
+        return None
+
+    try:
+        with urllib_request.urlopen(
+            f"http://ip-api.com/json/{ip_address}?fields=status,country,regionName,city",
+            timeout=2,
+        ) as response:
+            payload = json.loads(response.read().decode("utf-8", errors="ignore"))
+        if payload.get("status") != "success":
+            return None
+        parts = [payload.get("city"), payload.get("regionName"), payload.get("country")]
+        location = ", ".join([part for part in parts if part])
+        return location or None
+    except (urllib_error.URLError, TimeoutError, ValueError, OSError):
+        return None
 
 
 def _local_media_response(path):
@@ -586,18 +616,26 @@ def verify_otp_view(request):
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             log_action(request, 'LOGIN', 'User', user.id, user.get_full_name())
             if user.role in ['teacher', 'counselor', 'admin']:
+                actor_ip = get_client_ip(request)
+                actor_location = _resolve_ip_location(actor_ip)
+                email_lines = [
+                    f'Dear {user.get_full_name() or user.email},',
+                    '',
+                    f'A new login to your BrightTrack account was completed as {user.role}.',
+                    f'Time: {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}',
+                ]
+                if actor_ip and actor_ip != 'unknown':
+                    email_lines.append(f'IP Address: {actor_ip}')
+                if actor_location:
+                    email_lines.append(f'Location: {actor_location}')
+                email_lines.extend([
+                    '',
+                    'If this was not you, please change your password and contact an administrator immediately.',
+                ])
                 _send_security_email(
                     user.email,
                     'BrightTrack New Login Alert',
-                    [
-                        f'Dear {user.get_full_name() or user.email},',
-                        '',
-                        f'A new login to your BrightTrack account was completed as {user.role}.',
-                        f'Time: {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}',
-                        f'IP Address: {request.META.get("REMOTE_ADDR", "unknown")}',
-                        '',
-                        'If this was not you, please change your password and contact an administrator immediately.',
-                    ],
+                    email_lines,
                 )
             return redirect('dashboard')
 
