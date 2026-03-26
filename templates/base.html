@@ -512,15 +512,15 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
                                 showConfirmModal({
                                     title: 'Session Expired',
                                     body: msg,
-                                    okLabel: 'Go to Login',
+                                    okLabel: 'Continue',
                                     type: 'warning',
                                     onConfirm: () => {
-                                        window.location.href = '{% url "login" %}?session_expired=1';
+                                        window.location.href = '{% url "session_expired_notice" %}';
                                     }
                                 });
                             } else {
                                 alert(msg);
-                                window.location.href = '{% url "login" %}?session_expired=1';
+                                window.location.href = '{% url "session_expired_notice" %}';
                             }
                             return null;
                         });

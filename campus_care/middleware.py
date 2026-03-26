@@ -14,7 +14,6 @@ class NoCacheAuthenticatedPagesMiddleware:
             expected_session_key = getattr(request.user, 'current_session_key', '')
             current_session_key = request.session.session_key or ''
             if expected_session_key and current_session_key and expected_session_key != current_session_key:
-                logout(request)
                 accepts_json = 'application/json' in (request.headers.get('accept') or '').lower()
                 is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or accepts_json
                 if is_ajax:
@@ -25,8 +24,9 @@ class NoCacheAuthenticatedPagesMiddleware:
                         },
                         status=440
                     )
-                messages.warning(request, 'Session expired. This account was logged in on another device.')
-                return redirect(f"{reverse('login')}?session_expired=1")
+                notice_path = reverse('session_expired_notice')
+                if request.path != notice_path:
+                    return redirect('session_expired_notice')
 
         response = self.get_response(request)
 

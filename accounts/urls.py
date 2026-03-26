@@ -8,6 +8,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('verify-otp/', views.verify_otp_view, name='verify_otp'),
+    path('session-expired/', views.session_expired_notice_view, name='session_expired_notice'),
     path('forgot-password/', views.otp_forgot_password_view, name='otp_forgot_password'),
     path('reset-password/', views.otp_reset_password_view, name='otp_reset_password'),
     path('student/<int:student_id>/', views.student_profile_view, name='student_profile'),

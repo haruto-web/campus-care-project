@@ -768,6 +768,14 @@ def verify_otp_view(request):
 
     return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
 
+@login_required
+def session_expired_notice_view(request):
+    if request.method == 'POST':
+        logout(request)
+        messages.warning(request, 'Session expired: this account was logged in on another device.')
+        return redirect('login')
+    return render(request, 'accounts/session_expired.html')
+
 @require_POST
 def logout_view(request):
     log_action(request, 'LOGOUT', 'User', request.user.id, request.user.get_full_name())
