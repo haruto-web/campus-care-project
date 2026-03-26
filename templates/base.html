@@ -507,12 +507,21 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
                 .then(r => {
                     if (r.status === 440) {
                         return r.json().then(data => {
-                            if (data && data.message) {
-                                showToast(data.message, 'bg-red-600');
-                            }
-                            setTimeout(() => {
+                            const msg = (data && data.message) ? data.message : 'Session expired. This account was logged in on another device.';
+                            if (typeof showConfirmModal === 'function') {
+                                showConfirmModal({
+                                    title: 'Session Expired',
+                                    body: msg,
+                                    okLabel: 'Go to Login',
+                                    type: 'warning',
+                                    onConfirm: () => {
+                                        window.location.href = '{% url "login" %}?session_expired=1';
+                                    }
+                                });
+                            } else {
+                                alert(msg);
                                 window.location.href = '{% url "login" %}?session_expired=1';
-                            }, 600);
+                            }
                             return null;
                         });
                     }
