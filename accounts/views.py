@@ -684,23 +684,6 @@ def verify_otp_view(request):
             messages.success(request, 'A new verification code has been sent.')
             return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
 
-        if purpose == 'login' and request.POST.get('cancel_continue_login') == '1':
-            for key in ['otp_user_id', 'otp_email', 'otp_purpose', 'otp_login_verified']:
-                request.session.pop(key, None)
-            messages.info(request, 'Login cancelled.')
-            return redirect('login')
-
-        if purpose == 'login' and request.POST.get('confirm_continue_login') == '1':
-            user_id = request.session.get('otp_user_id')
-            if not user_id or not request.session.get('otp_login_verified'):
-                messages.error(request, 'Login session expired. Please sign in again.')
-                return redirect('login')
-            user = User.objects.filter(id=user_id).first()
-            if not user:
-                messages.error(request, 'User not found. Please sign in again.')
-                return redirect('login')
-            return _complete_login(user)
-
         attempt_key = f'otp_attempts_{email}'
         attempts = cache.get(attempt_key, 0)
         if attempts >= 5:
@@ -726,24 +709,6 @@ def verify_otp_view(request):
             if not user_id:
                 return redirect('login')
             user = User.objects.get(id=user_id)
-            if not request.session.session_key:
-                request.session.save()
-            current_session_key = request.session.session_key or ''
-            existing_session_key = (getattr(user, 'current_session_key', '') or '').strip()
-            if existing_session_key and existing_session_key != current_session_key:
-                request.session['otp_login_verified'] = True
-                return render(
-                    request,
-                    'accounts/verify_otp.html',
-                    _otp_verify_context(
-                        email,
-                        purpose,
-                        show_session_conflict_confirm=True,
-                        session_conflict_message='This account is currently active on another device. Continuing will end that session.',
-                    )
-                )
-
-            request.session['otp_login_verified'] = True
             return _complete_login(user)
 
         elif purpose == 'register':

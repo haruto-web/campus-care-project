@@ -29,22 +29,6 @@
             </div>
             {% endif %}
 
-            {% if show_session_conflict_confirm %}
-            <div class="mb-4 p-4 rounded-lg text-sm bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
-                {{ session_conflict_message|default:"This account is already logged in on another device. Do you want to continue?" }}
-            </div>
-            <form method="post" class="space-y-3">
-                {% csrf_token %}
-                <button type="submit" name="confirm_continue_login" value="1"
-                    class="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition duration-200">
-                    Continue Login
-                </button>
-                <button type="submit" name="cancel_continue_login" value="1"
-                    class="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 py-3 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200">
-                    Cancel
-                </button>
-            </form>
-            {% else %}
             <form method="post" class="space-y-6" id="otpVerifyForm">
                 {% csrf_token %}
                 <div>
@@ -63,7 +47,6 @@
                     Resend Code
                 </button>
             </form>
-            {% endif %}
 
             <div class="text-center mt-6">
                 <a href="{% url 'login' %}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700">
