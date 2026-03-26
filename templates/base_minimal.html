@@ -121,6 +121,11 @@
                 .catch(function () { });
             }
 
+            heartbeat();
+            window.addEventListener('focus', heartbeat);
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') heartbeat();
+            });
             setInterval(heartbeat, 4000);
         })();
         {% endif %}

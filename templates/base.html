@@ -531,6 +531,11 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
                 .catch(() => { });
         }
 
+        pollNotifications();
+        window.addEventListener('focus', pollNotifications);
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') pollNotifications();
+        });
         setInterval(pollNotifications, 5000);
     </script>
     {% endif %}
