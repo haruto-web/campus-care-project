@@ -23,6 +23,38 @@
         .fade-up-delay { animation-delay: 0.2s; }
         .fade-up-delay-2 { animation-delay: 0.4s; }
         @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+        .hero-student-layer { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
+        .hero-scroll-node { will-change: transform; transform: translate3d(0,0,0); }
+        .hero-idle { animation: heroIdleFloat 5.8s ease-in-out infinite; }
+        .hero-idle-slow { animation: heroIdleFloat 7.2s ease-in-out infinite; }
+        @keyframes heroIdleFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .hero-lms-card {
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(255,255,255,0.55);
+            box-shadow: 0 16px 32px rgba(30,41,59,0.22);
+            backdrop-filter: blur(8px);
+            border-radius: 0.85rem;
+        }
+        .hero-student-figure {
+            width: 190px;
+            height: 220px;
+            filter: drop-shadow(0 14px 24px rgba(15, 23, 42, 0.35));
+        }
+        @media (max-width: 1024px) {
+            .hero-student-figure { width: 150px; height: 178px; }
+        }
+        @media (max-width: 768px) {
+            .hero-student-figure { width: 132px; height: 158px; }
+            .hero-lms-card { transform: scale(0.92); transform-origin: center; }
+        }
+        @media (max-width: 640px) {
+            .hero-student-layer { inset: 6px; }
+            .hero-lms-card { transform: scale(0.86); }
+            #heroCardWellness, #heroCardAnalytics { display: none; }
+        }
     </style>
 </head>
 
@@ -113,10 +145,61 @@
                         </a>
                     </div>
                 </div>
-                <div class="relative hidden md:flex items-center justify-center">
+                <div class="relative flex items-center justify-center">
                     <div class="w-full max-w-2xl float-animation">
                         <img src="{% static 'images/landing_img.png' %}" alt="Students using BrightTrack"
-                            class="w-full h-[420px] rounded-2xl object-cover shadow-2xl shadow-indigo-950/30 border border-white/20">
+                            class="w-full h-[280px] sm:h-[340px] md:h-[420px] rounded-2xl object-cover shadow-2xl shadow-indigo-950/30 border border-white/20">
+                        <div class="hero-student-layer">
+                            <div id="heroStudentNode" data-depth="1.05" class="hero-scroll-node absolute bottom-4 right-5">
+                                <div class="hero-idle">
+                                    <div class="hero-student-figure">
+                                        <svg viewBox="0 0 220 250" class="w-full h-full" aria-hidden="true">
+                                            <ellipse cx="110" cy="236" rx="58" ry="9" fill="rgba(15,23,42,0.25)"></ellipse>
+                                            <circle cx="108" cy="55" r="28" fill="#f8c9a4"></circle>
+                                            <path d="M82 52c3-18 15-28 32-28 15 0 28 9 31 24-8-5-18-8-29-8-12 0-24 4-34 12z" fill="#1e293b"></path>
+                                            <rect x="73" y="86" width="74" height="80" rx="18" fill="#4f46e5"></rect>
+                                            <rect x="91" y="90" width="36" height="18" rx="9" fill="#818cf8" opacity="0.75"></rect>
+                                            <rect x="58" y="116" width="22" height="58" rx="11" fill="#f8c9a4"></rect>
+                                            <rect x="140" y="116" width="22" height="58" rx="11" fill="#f8c9a4"></rect>
+                                            <rect x="50" y="150" width="122" height="62" rx="10" fill="#0f172a"></rect>
+                                            <rect x="58" y="158" width="106" height="46" rx="7" fill="#1d4ed8"></rect>
+                                            <rect x="67" y="166" width="40" height="7" rx="3.5" fill="#bfdbfe"></rect>
+                                            <rect x="67" y="178" width="84" height="6" rx="3" fill="#93c5fd"></rect>
+                                            <rect x="67" y="188" width="62" height="6" rx="3" fill="#93c5fd"></rect>
+                                            <circle cx="151" cy="171" r="8" fill="#22c55e"></circle>
+                                            <path d="M147 171l3 3 5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                                            <rect x="82" y="166" width="16" height="42" rx="7" fill="#1e293b"></rect>
+                                            <rect x="122" y="166" width="16" height="42" rx="7" fill="#1e293b"></rect>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="heroCardProgress" data-depth="0.95" class="hero-scroll-node absolute top-8 right-8">
+                                <div class="hero-idle-slow hero-lms-card px-3 py-2">
+                                    <div class="text-[10px] font-semibold text-gray-500">Progress</div>
+                                    <div class="text-sm font-bold text-indigo-700">82% Complete</div>
+                                </div>
+                            </div>
+                            <div id="heroCardAttendance" data-depth="0.75" class="hero-scroll-node absolute top-28 left-6">
+                                <div class="hero-idle hero-lms-card px-3 py-2">
+                                    <div class="text-[10px] font-semibold text-gray-500">Attendance</div>
+                                    <div class="text-sm font-bold text-emerald-600">96% Present</div>
+                                </div>
+                            </div>
+                            <div id="heroCardWellness" data-depth="0.65" class="hero-scroll-node absolute bottom-28 left-8">
+                                <div class="hero-idle-slow hero-lms-card px-3 py-2">
+                                    <div class="text-[10px] font-semibold text-gray-500">Wellness</div>
+                                    <div class="text-sm font-bold text-purple-600"><i class="bi bi-heart-pulse mr-1"></i>Stable</div>
+                                </div>
+                            </div>
+                            <div id="heroCardAnalytics" data-depth="0.9" class="hero-scroll-node absolute bottom-6 right-10">
+                                <div class="hero-idle hero-lms-card px-3 py-2">
+                                    <div class="text-[10px] font-semibold text-gray-500">Analytics</div>
+                                    <div class="text-sm font-bold text-sky-700"><i class="bi bi-graph-up-arrow mr-1"></i>Real-time</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -246,6 +329,52 @@
             </div>
         </div>
     </footer>
+    <script>
+        (function () {
+            const hero = document.querySelector('.hero-gradient');
+            const nodes = [
+                document.getElementById('heroStudentNode'),
+                document.getElementById('heroCardProgress'),
+                document.getElementById('heroCardAttendance'),
+                document.getElementById('heroCardWellness'),
+                document.getElementById('heroCardAnalytics'),
+            ].filter(Boolean);
+            if (!hero || nodes.length === 0) return;
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+            let target = 0;
+            let current = 0;
+            let raf = null;
+
+            function clamp(v, min, max) {
+                return Math.max(min, Math.min(max, v));
+            }
+
+            function computeTarget() {
+                const rect = hero.getBoundingClientRect();
+                const vh = window.innerHeight || 1;
+                const progress = clamp((vh - rect.top) / (vh + rect.height), 0, 1);
+                target = (progress - 0.5) * 2; // -1 to 1
+            }
+
+            function render() {
+                current += (target - current) * 0.12;
+                nodes.forEach((node, idx) => {
+                    const depth = parseFloat(node.dataset.depth || (0.6 + idx * 0.08));
+                    const x = current * (8 * depth);
+                    const y = current * (18 * depth);
+                    const r = current * (2.4 * depth);
+                    node.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${r}deg)`;
+                });
+                raf = window.requestAnimationFrame(render);
+            }
+
+            computeTarget();
+            window.addEventListener('scroll', computeTarget, { passive: true });
+            window.addEventListener('resize', computeTarget);
+            if (!raf) raf = window.requestAnimationFrame(render);
+        })();
+    </script>
 </body>
 
 </html>
