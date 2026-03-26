@@ -16,6 +16,7 @@ from accounts.utils import log_action, verify_audit_entry
 import csv
 import io
 import logging
+import html
 
 logger = logging.getLogger('brighttrack.audit')
 
@@ -76,6 +77,74 @@ def _apply_audit_log_filters(request):
         'date_from': date_from,
         'date_to': date_to,
     }
+
+
+def _audit_log_export_rows(logs):
+    rows = []
+    for log in logs:
+        if log.integrity_ok is True:
+            integrity_label = 'Unaltered'
+        else:
+            integrity_label = 'Not Verified'
+        actor_label = log.actor.get_full_name() if log.actor else 'System'
+        rows.append([
+            timezone.localtime(log.timestamp).strftime('%Y-%m-%d %H:%M:%S'),
+            actor_label,
+            log.get_action_display(),
+            log.target_type,
+            log.target_id or '',
+            log.target_label,
+            log.ip_address or '',
+            integrity_label,
+            log.extra_data,
+        ])
+    return rows
+
+
+def _build_simple_pdf(lines):
+    def _escape_pdf_text(value):
+        safe = ''.join(ch if ord(ch) < 128 else '?' for ch in str(value))
+        return safe.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
+
+    max_lines = 50
+    prepared = [_escape_pdf_text(line)[:110] for line in lines[:max_lines]]
+    if len(lines) > max_lines:
+        prepared.append(_escape_pdf_text('... output truncated for PDF export ...'))
+
+    stream_parts = ["BT", "/F1 9 Tf", "12 TL", "40 760 Td"]
+    for idx, line in enumerate(prepared):
+        if idx > 0:
+            stream_parts.append("T*")
+        stream_parts.append(f"({line}) Tj")
+    stream_parts.append("ET")
+    stream = "\n".join(stream_parts).encode('latin-1', errors='replace')
+
+    obj1 = b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+    obj2 = b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
+    obj3 = b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n"
+    obj4_head = f"4 0 obj\n<< /Length {len(stream)} >>\nstream\n".encode('latin-1')
+    obj4_tail = b"\nendstream\nendobj\n"
+    obj5 = b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"
+
+    pdf = bytearray(b"%PDF-1.4\n")
+    offsets = [0]
+    for chunk in [obj1, obj2, obj3]:
+        offsets.append(len(pdf))
+        pdf.extend(chunk)
+    offsets.append(len(pdf))
+    pdf.extend(obj4_head)
+    pdf.extend(stream)
+    pdf.extend(obj4_tail)
+    offsets.append(len(pdf))
+    pdf.extend(obj5)
+
+    xref_pos = len(pdf)
+    pdf.extend(f"xref\n0 {len(offsets)}\n".encode('latin-1'))
+    pdf.extend(b"0000000000 65535 f \n")
+    for off in offsets[1:]:
+        pdf.extend(f"{off:010d} 00000 n \n".encode('latin-1'))
+    pdf.extend(f"trailer\n<< /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref_pos}\n%%EOF".encode('latin-1'))
+    return bytes(pdf)
 
 @login_required
 @admin_required
@@ -736,31 +805,42 @@ def admin_delete_class(request, class_id):
 @admin_required
 def admin_audit_log(request):
     logs, filters = _apply_audit_log_filters(request)
+    export_format = request.GET.get('export')
+    if export_format in ['csv', 'pdf', 'docs']:
+        rows = _audit_log_export_rows(logs)
+        headers = ['Timestamp', 'Actor', 'Action', 'Target Type', 'Target ID', 'Target Label', 'IP Address', 'Integrity', 'Details']
 
-    if request.GET.get('export') == 'csv':
-        buffer = io.StringIO()
-        writer = csv.writer(buffer)
-        writer.writerow(['Timestamp', 'Actor', 'Action', 'Target Type', 'Target ID', 'Target Label', 'IP Address', 'Integrity', 'Details'])
-        for log in logs:
-            if log.integrity_ok is True:
-                integrity_label = 'Unaltered'
-            else:
-                integrity_label = 'Not Verified'
-            actor_label = log.actor.get_full_name() if log.actor else 'System'
-            writer.writerow([
-                timezone.localtime(log.timestamp).strftime('%Y-%m-%d %H:%M:%S'),
-                actor_label,
-                log.get_action_display(),
-                log.target_type,
-                log.target_id or '',
-                log.target_label,
-                log.ip_address or '',
-                integrity_label,
-                log.extra_data,
-            ])
-        log_action(request, 'AUDIT_LOG_EXPORTED', 'AuditLog', None, 'Audit Log', extra_data=filters)
-        response = HttpResponse(buffer.getvalue(), content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="audit-log.csv"'
+        if export_format == 'csv':
+            buffer = io.StringIO()
+            writer = csv.writer(buffer)
+            writer.writerow(headers)
+            writer.writerows(rows)
+            response = HttpResponse(buffer.getvalue(), content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="audit-log.csv"'
+            log_action(request, 'AUDIT_LOG_EXPORTED', 'AuditLog', None, 'Audit Log', extra_data={**filters, 'format': export_format})
+            return response
+
+        if export_format == 'docs':
+            table_rows = ''.join(
+                '<tr>' + ''.join(f'<td>{html.escape(str(cell))}</td>' for cell in row) + '</tr>'
+                for row in rows
+            )
+            content = (
+                '<html><head><meta charset="utf-8"></head><body>'
+                '<h2>Audit Log Export</h2>'
+                '<table border="1" cellspacing="0" cellpadding="4">'
+                '<tr>' + ''.join(f'<th>{h}</th>' for h in headers) + '</tr>'
+                f'{table_rows}</table></body></html>'
+            )
+            response = HttpResponse(content, content_type='application/msword')
+            response['Content-Disposition'] = 'attachment; filename="audit-log.doc"'
+            log_action(request, 'AUDIT_LOG_EXPORTED', 'AuditLog', None, 'Audit Log', extra_data={**filters, 'format': export_format})
+            return response
+
+        pdf_lines = [' | '.join(headers)] + [' | '.join(str(cell) for cell in row) for row in rows]
+        response = HttpResponse(_build_simple_pdf(pdf_lines), content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="audit-log.pdf"'
+        log_action(request, 'AUDIT_LOG_EXPORTED', 'AuditLog', None, 'Audit Log', extra_data={**filters, 'format': export_format})
         return response
 
     paginator = Paginator(logs, 50)

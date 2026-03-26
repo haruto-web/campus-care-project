@@ -7,8 +7,23 @@
     <div class="flex items-center justify-between">
         <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Audit Log</h2>
         <div class="flex items-center gap-3">
-            <a href="{% url 'admin_audit_log' %}?{{ filter_query }}{% if filter_query %}&{% endif %}export=csv"
-                class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">Export CSV</a>
+            <form method="get" class="flex items-center gap-2">
+                <input type="hidden" name="action" value="{{ action_filter }}">
+                <input type="hidden" name="actor" value="{{ actor_filter }}">
+                <input type="hidden" name="target" value="{{ target_filter }}">
+                <input type="hidden" name="ip" value="{{ ip_filter }}">
+                <input type="hidden" name="integrity" value="{{ integrity_filter }}">
+                <input type="hidden" name="date_from" value="{{ date_from }}">
+                <input type="hidden" name="date_to" value="{{ date_to }}">
+                <select name="export" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white">
+                    <option value="csv" selected>CSV</option>
+                    <option value="pdf">PDF</option>
+                    <option value="docs">DOCS</option>
+                </select>
+                <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">
+                    Export
+                </button>
+            </form>
             <span class="text-sm text-gray-500">{{ page_obj.paginator.count }} total entries</span>
         </div>
     </div>
@@ -80,7 +95,7 @@
                     {% for log in page_obj %}
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         <td class="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">
-                            {{ log.timestamp|date:"M d, Y H:i" }}
+                            {{ log.timestamp|date:"M d, Y g:i A" }}
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-900 dark:text-white">
                             {% if log.actor %}{{ log.actor.get_full_name }}{% else %}<span class="text-gray-400">System</span>{% endif %}
