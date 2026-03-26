@@ -758,7 +758,10 @@ def session_expired_notice_view(request):
 
 @require_POST
 def logout_view(request):
-    log_action(request, 'LOGOUT', 'User', request.user.id, request.user.get_full_name())
+    if request.user.is_authenticated:
+        user_id = request.user.id
+        user_label = request.user.get_full_name() if hasattr(request.user, 'get_full_name') else str(request.user)
+        log_action(request, 'LOGOUT', 'User', user_id, user_label)
     logout(request)
     return redirect('landing')
 
