@@ -5,7 +5,6 @@
 {% block content %}
 <div class="space-y-6">
     <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Audit Log</h2>
         <div class="flex items-center gap-3">
             <form method="get" class="flex items-center gap-3">
                 <input type="hidden" name="action" value="{{ action_filter }}">
@@ -21,7 +20,6 @@
                         <option value="pdf">PDF</option>
                         <option value="docs">DOC</option>
                     </select>
-                    <i class="bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-300"></i>
                 </div>
                 <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">
                     Export
