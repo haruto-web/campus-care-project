@@ -72,40 +72,57 @@ def at_risk_students_list(request):
     if request.user.role not in ['counselor', 'admin']:
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
-    
-    # Get all students with risk assessments
-    risk_assessments = RiskAssessment.objects.select_related('student').filter(student__role='student').order_by('-risk_score')
-    
+
+    # Build cards from teacher concerns so counselor can see who reported each student.
+    # Deduplicate by (student, teacher): same teacher reporting the same student multiple
+    # times should produce one card; different teachers for the same student are allowed.
+    concerns_qs = TeacherConcern.objects.select_related('student', 'teacher').filter(student__role='student').order_by('-created_at')
+
     # Apply filters
     risk_filter = request.GET.get('risk_level', '')
     search_query = request.GET.get('search', '')
     year_level_filter = request.GET.get('year_level', '')
-    
-    if risk_filter:
-        risk_assessments = risk_assessments.filter(risk_level=risk_filter)
-    
+
     if search_query:
-        risk_assessments = risk_assessments.filter(
+        concerns_qs = concerns_qs.filter(
             Q(student__first_name__icontains=search_query) |
             Q(student__last_name__icontains=search_query) |
             Q(student__email__icontains=search_query)
         )
-    
+
     if year_level_filter:
-        risk_assessments = risk_assessments.filter(student__year_level=year_level_filter)
-    
-    # Prepare student data
+        concerns_qs = concerns_qs.filter(student__year_level=year_level_filter)
+
+    # Latest risk snapshot per student for scoring and support-level filters.
+    latest_assessment_by_student = {}
+    for assessment in RiskAssessment.objects.select_related('student').filter(student__role='student').order_by('student_id', '-date', '-id'):
+        if assessment.student_id not in latest_assessment_by_student:
+            latest_assessment_by_student[assessment.student_id] = assessment
+
+    # Prepare student data with dedupe rule: unique (student_id, teacher_id).
     students_data = []
-    for assessment in risk_assessments:
+    seen_pairs = set()
+    for concern in concerns_qs:
+        pair_key = (concern.student_id, concern.teacher_id)
+        if pair_key in seen_pairs:
+            continue
+        seen_pairs.add(pair_key)
+
+        assessment = latest_assessment_by_student.get(concern.student_id)
+        risk_level = assessment.risk_level if assessment else 'low'
+        if risk_filter and risk_level != risk_filter:
+            continue
+
         students_data.append({
-            'student': assessment.student,
-            'risk_level': assessment.risk_level,
-            'risk_score': assessment.risk_score,
-            'gpa': assessment.gpa,
-            'attendance_rate': assessment.attendance_rate,
-            'missing_assignments': assessment.missing_assignments,
+            'student': concern.student,
+            'reported_by': concern.teacher.get_full_name() or concern.teacher.username,
+            'risk_level': risk_level,
+            'risk_score': assessment.risk_score if assessment else 0,
+            'gpa': assessment.gpa if assessment else None,
+            'attendance_rate': assessment.attendance_rate if assessment else None,
+            'missing_assignments': assessment.missing_assignments if assessment else 0,
         })
-    
+
     context = {
         'students': students_data,
         'risk_filter': risk_filter,
