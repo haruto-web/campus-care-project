@@ -34,6 +34,27 @@ def _send_security_email(to_email, subject, lines):
     )
 
 
+def _format_email_timestamp(dt=None):
+    current = timezone.localtime(dt or timezone.now())
+    return current.strftime("%b %d, %Y %I:%M:%S %p")
+
+
+def _get_active_otp_expiry(email):
+    otp = OTPCode.objects.filter(contact_value=email, is_used=False).order_by('-created_at').first()
+    if not otp:
+        return None
+    return timezone.localtime(otp.created_at + timedelta(minutes=3))
+
+
+def _otp_verify_context(email, purpose):
+    expires_at = _get_active_otp_expiry(email)
+    return {
+        'email': email,
+        'purpose': purpose,
+        'otp_expires_at': expires_at.isoformat() if expires_at else '',
+    }
+
+
 def _resolve_ip_location(ip_address):
     if not ip_address:
         return None
@@ -462,7 +483,7 @@ def otp_reset_password_view(request):
                 f'Dear {user.get_full_name() or user.email},',
                 '',
                 'Your BrightTrack password was changed successfully.',
-                f'Time: {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}',
+                f'Time: {_format_email_timestamp()}',
                 f'IP Address: {request.META.get("REMOTE_ADDR", "unknown")}',
                 '',
                 'If this was not you, please contact an administrator immediately.',
@@ -590,7 +611,7 @@ def verify_otp_view(request):
         attempts = cache.get(attempt_key, 0)
         if attempts >= 5:
             messages.error(request, 'Too many failed attempts. Please wait 30 minutes.')
-            return render(request, 'accounts/verify_otp.html', {'email': email, 'purpose': purpose})
+            return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
 
         code = request.POST.get('code', '').strip()
         otp = OTPCode.objects.filter(
@@ -600,7 +621,7 @@ def verify_otp_view(request):
         if not otp or not otp.is_valid():
             cache.set(attempt_key, attempts + 1, 1800)
             messages.error(request, 'Invalid or expired code.')
-            return render(request, 'accounts/verify_otp.html', {'email': email, 'purpose': purpose})
+            return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
 
         otp.is_used = True
         otp.save()
@@ -622,7 +643,7 @@ def verify_otp_view(request):
                     f'Dear {user.get_full_name() or user.email},',
                     '',
                     f'A new login to your BrightTrack account was completed as {user.role}.',
-                    f'Time: {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}',
+                    f'Time: {_format_email_timestamp()}',
                 ]
                 if actor_ip and actor_ip != 'unknown':
                     email_lines.append(f'IP Address: {actor_ip}')
@@ -674,7 +695,7 @@ def verify_otp_view(request):
             request.session['otp_verified'] = True
             return redirect('otp_reset_password')
 
-    return render(request, 'accounts/verify_otp.html', {'email': email, 'purpose': purpose})
+    return render(request, 'accounts/verify_otp.html', _otp_verify_context(email, purpose))
 
 @require_POST
 def logout_view(request):
