@@ -33,14 +33,12 @@
         }
         .hero-orbit-layer {
             position: absolute;
-            inset: 0;
+            inset: -32px;
             pointer-events: none;
             z-index: 5;
         }
         .hero-orbit-badge {
             position: absolute;
-            left: 50%;
-            top: 50%;
             min-width: 118px;
             text-align: center;
             border-radius: 999px;
@@ -50,33 +48,38 @@
             letter-spacing: 0.01em;
             color: #ffffff;
             box-shadow: 0 12px 22px rgba(30, 41, 59, 0.28);
-            transform-origin: center center;
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255,255,255,0.4);
         }
         .badge-attendance {
+            top: -8px;
+            left: 8%;
             background: linear-gradient(135deg, rgba(16,185,129,0.95), rgba(5,150,105,0.9));
-            animation: orbitA 14s linear infinite;
+            animation: badgeFloatA 5.6s ease-in-out infinite;
         }
         .badge-wellness {
+            top: 8%;
+            right: -24px;
             background: linear-gradient(135deg, rgba(139,92,246,0.95), rgba(109,40,217,0.9));
-            animation: orbitB 16s linear infinite;
+            animation: badgeFloatB 6.4s ease-in-out infinite;
         }
         .badge-progress {
+            bottom: -10px;
+            left: 20%;
             background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(37,99,235,0.9));
-            animation: orbitC 18s linear infinite;
+            animation: badgeFloatC 6.1s ease-in-out infinite;
         }
-        @keyframes orbitA {
-            from { transform: rotate(0deg) translateX(165px) rotate(0deg); }
-            to { transform: rotate(360deg) translateX(165px) rotate(-360deg); }
+        @keyframes badgeFloatA {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50% { transform: translate3d(8px, -5px, 0); }
         }
-        @keyframes orbitB {
-            from { transform: rotate(120deg) translateX(150px) rotate(-120deg); }
-            to { transform: rotate(480deg) translateX(150px) rotate(-480deg); }
+        @keyframes badgeFloatB {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50% { transform: translate3d(-7px, 6px, 0); }
         }
-        @keyframes orbitC {
-            from { transform: rotate(245deg) translateX(175px) rotate(-245deg); }
-            to { transform: rotate(605deg) translateX(175px) rotate(-605deg); }
+        @keyframes badgeFloatC {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50% { transform: translate3d(10px, -4px, 0); }
         }
         .hero-glass-layer {
             position: absolute;
@@ -128,18 +131,10 @@
         }
         @media (max-width: 1024px) {
             .hero-orbit-badge { min-width: 104px; font-size: 0.66rem; }
-            @keyframes orbitA {
-                from { transform: rotate(0deg) translateX(138px) rotate(0deg); }
-                to { transform: rotate(360deg) translateX(138px) rotate(-360deg); }
-            }
-            @keyframes orbitB {
-                from { transform: rotate(120deg) translateX(128px) rotate(-120deg); }
-                to { transform: rotate(480deg) translateX(128px) rotate(-480deg); }
-            }
-            @keyframes orbitC {
-                from { transform: rotate(245deg) translateX(144px) rotate(-245deg); }
-                to { transform: rotate(605deg) translateX(144px) rotate(-605deg); }
-            }
+            .hero-orbit-layer { inset: -22px; }
+            .badge-attendance { left: 4%; top: -4px; }
+            .badge-wellness { right: -16px; top: 10%; }
+            .badge-progress { left: 15%; bottom: -8px; }
             .glass-card-1, .glass-card-2, .glass-card-3 { display: none; }
         }
     </style>
