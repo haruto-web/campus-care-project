@@ -7,7 +7,11 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
 from django.core.files.storage import FileSystemStorage
+from django.core.cache import cache
 from django.conf import settings
+from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.dateparse import parse_datetime
 from .models import Class, Announcement, Material, Assignment, Attendance, Submission, Grade
 from .forms import ClassForm, AssignmentForm, MaterialForm
 from campus_care.validators import validate_submission_upload, validate_document_upload
@@ -16,6 +20,7 @@ from accounts.utils import log_action, hit_rate_limit
 from datetime import date, datetime, timedelta
 import json
 import os
+import secrets
 
 
 def _teacher_class_or_redirect(request, class_obj, redirect_to='dashboard', message='Permission denied.'):
@@ -28,6 +33,37 @@ def _teacher_submission_or_redirect(request, submission, redirect_to='dashboard'
     if not teacher_owns_submission(request.user, submission):
         return deny_access(request, redirect_to=redirect_to, message=message)
     return None
+
+
+UNDO_GRACE_SECONDS = 30
+
+
+def _undo_key(token):
+    return f'academics:undo:{token}'
+
+
+def _stash_undo_payload(payload, grace_seconds=UNDO_GRACE_SECONDS):
+    token = secrets.token_urlsafe(24)
+    cache.set(_undo_key(token), payload, grace_seconds)
+    return token
+
+
+def _pop_undo_payload(token):
+    key = _undo_key(token)
+    payload = cache.get(key)
+    cache.delete(key)
+    return payload
+
+
+def _parse_dt(value):
+    if not value:
+        return None
+    dt = parse_datetime(value)
+    if dt is None:
+        return None
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt
 
 
 @login_required
@@ -449,10 +485,76 @@ def delete_material(request, material_id):
         return denied
     
     class_id = material.class_obj.id
-    log_action(request, 'MATERIAL_DELETED', 'Material', material.id, material.title, extra_data={'class_id': class_id})
+    undo_token = _stash_undo_payload({
+        'type': 'material_delete',
+        'actor_id': request.user.id,
+        'class_id': class_id,
+        'material': {
+            'title': material.title,
+            'description': material.description,
+            'file': material.file.name if material.file else '',
+            'uploaded_by_id': material.uploaded_by_id,
+            'uploaded_at': material.uploaded_at.isoformat() if material.uploaded_at else '',
+        },
+    })
+    undo_url = reverse('academics:undo_material_delete', kwargs={'token': undo_token})
+    log_action(
+        request,
+        'MATERIAL_DELETED',
+        'Material',
+        material.id,
+        material.title,
+        extra_data={'class_id': class_id, 'undo_window_seconds': UNDO_GRACE_SECONDS},
+    )
     material.delete()
-    messages.success(request, 'Material deleted successfully!')
+    messages.warning(
+        request,
+        format_html(
+            'Material deleted. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            undo_url,
+            UNDO_GRACE_SECONDS,
+        ),
+    )
     return redirect('academics:class_detail', class_id=class_id)
+
+
+@login_required
+def undo_material_delete(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('type') != 'material_delete':
+        messages.error(request, 'Undo link is no longer valid.')
+        return redirect('academics:my_classes')
+    if payload.get('actor_id') != request.user.id:
+        messages.error(request, 'You do not have permission to undo this action.')
+        return redirect('academics:my_classes')
+
+    class_obj = get_object_or_404(Class, id=payload.get('class_id'))
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
+
+    data = payload.get('material', {})
+    restored = Material.objects.create(
+        class_obj=class_obj,
+        title=data.get('title', 'Restored Material'),
+        description=data.get('description', ''),
+        file=data.get('file', ''),
+        uploaded_by_id=data.get('uploaded_by_id') or request.user.id,
+    )
+    uploaded_at = _parse_dt(data.get('uploaded_at'))
+    if uploaded_at:
+        Material.objects.filter(id=restored.id).update(uploaded_at=uploaded_at)
+
+    log_action(
+        request,
+        'MATERIAL_UPLOADED',
+        'Material',
+        restored.id,
+        restored.title,
+        extra_data={'class_id': class_obj.id, 'restored_via_undo': True},
+    )
+    messages.success(request, 'Material restored successfully.')
+    return redirect('academics:class_detail', class_id=class_obj.id)
 
 @login_required
 def my_classes(request):
@@ -823,10 +925,140 @@ def delete_assignment(request, assignment_id):
         return denied
     
     class_id = assignment.class_obj.id
-    log_action(request, 'ASSIGNMENT_DELETED', 'Assignment', assignment.id, assignment.title, extra_data={'class_id': class_id})
+    assignment_payload = {
+        'type': 'assignment_delete',
+        'actor_id': request.user.id,
+        'class_id': class_id,
+        'assignment': {
+            'title': assignment.title,
+            'description': assignment.description,
+            'due_date': assignment.due_date.isoformat() if assignment.due_date else '',
+            'total_points': assignment.total_points,
+            'submission_type': assignment.submission_type,
+        },
+        'submissions': [
+            {
+                'student_id': sub.student_id,
+                'submitted_at': sub.submitted_at.isoformat() if sub.submitted_at else '',
+                'text_content': sub.text_content,
+                'file': sub.file.name if sub.file else '',
+                'score': sub.score,
+                'feedback': sub.feedback,
+                'graded_at': sub.graded_at.isoformat() if sub.graded_at else '',
+            }
+            for sub in assignment.submissions.all().select_related('student')
+        ],
+        'grades': [
+            {
+                'student_id': g.student_id,
+                'score': str(g.score),
+                'max_score': str(g.max_score),
+                'date': g.date.isoformat() if g.date else '',
+            }
+            for g in Grade.objects.filter(assignment=assignment)
+        ],
+    }
+    undo_token = _stash_undo_payload(assignment_payload)
+    undo_url = reverse('academics:undo_assignment_delete', kwargs={'token': undo_token})
+    log_action(
+        request,
+        'ASSIGNMENT_DELETED',
+        'Assignment',
+        assignment.id,
+        assignment.title,
+        extra_data={'class_id': class_id, 'undo_window_seconds': UNDO_GRACE_SECONDS},
+    )
     assignment.delete()
-    messages.success(request, f'Assignment "{assignment.title}" deleted.')
+    messages.warning(
+        request,
+        format_html(
+            'Assignment "{}" deleted. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            assignment.title,
+            undo_url,
+            UNDO_GRACE_SECONDS,
+        ),
+    )
     return redirect('academics:class_detail', class_id=class_id)
+
+
+@login_required
+def undo_assignment_delete(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('type') != 'assignment_delete':
+        messages.error(request, 'Undo link is no longer valid.')
+        return redirect('academics:my_classes')
+    if payload.get('actor_id') != request.user.id:
+        messages.error(request, 'You do not have permission to undo this action.')
+        return redirect('academics:my_classes')
+
+    class_obj = get_object_or_404(Class, id=payload.get('class_id'))
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
+
+    assignment_data = payload.get('assignment', {})
+    restored_assignment = Assignment.objects.create(
+        class_obj=class_obj,
+        title=assignment_data.get('title', 'Restored Assignment'),
+        description=assignment_data.get('description', ''),
+        due_date=_parse_dt(assignment_data.get('due_date')) or timezone.now() + timedelta(days=1),
+        total_points=assignment_data.get('total_points') or 100,
+        submission_type=assignment_data.get('submission_type') or 'file_upload',
+    )
+
+    for sub in payload.get('submissions', []):
+        student_id = sub.get('student_id')
+        if not student_id:
+            continue
+        try:
+            restored_sub = Submission.objects.create(
+                assignment=restored_assignment,
+                student_id=student_id,
+                text_content=sub.get('text_content', ''),
+                file=sub.get('file', ''),
+                score=sub.get('score'),
+                feedback=sub.get('feedback', ''),
+                graded_at=_parse_dt(sub.get('graded_at')),
+            )
+            submitted_at = _parse_dt(sub.get('submitted_at'))
+            if submitted_at:
+                Submission.objects.filter(id=restored_sub.id).update(submitted_at=submitted_at)
+        except Exception:
+            continue
+
+    for g in payload.get('grades', []):
+        student_id = g.get('student_id')
+        if not student_id:
+            continue
+        try:
+            restored_grade = Grade.objects.create(
+                student_id=student_id,
+                class_obj=class_obj,
+                assignment=restored_assignment,
+                score=g.get('score') or '0',
+                max_score=g.get('max_score') or '0',
+            )
+        except Exception:
+            continue
+        try:
+            parsed_date = datetime.fromisoformat(g.get('date')) if g.get('date') else None
+        except ValueError:
+            parsed_date = None
+        if parsed_date:
+            Grade.objects.filter(id=restored_grade.id).update(
+                date=parsed_date.date() if isinstance(parsed_date, datetime) else parsed_date
+            )
+
+    log_action(
+        request,
+        'ASSIGNMENT_CREATED',
+        'Assignment',
+        restored_assignment.id,
+        restored_assignment.title,
+        extra_data={'class_id': class_obj.id, 'restored_via_undo': True},
+    )
+    messages.success(request, f'Assignment "{restored_assignment.title}" restored successfully.')
+    return redirect('academics:class_detail', class_id=class_obj.id)
 
 @login_required
 @require_POST

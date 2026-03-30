@@ -23,6 +23,8 @@ urlpatterns = [
     path('alerts/bulk-intervene/', views.bulk_create_interventions, name='bulk_create_interventions'),
     path('alert/<int:alert_id>/read/', views.mark_alert_read, name='mark_alert_read'),
     path('alert/<int:alert_id>/resolve/', views.resolve_alert, name='resolve_alert'),
+    path('alert/undo/<str:token>/', views.undo_alert_resolve, name='undo_alert_resolve'),
+    path('intervention/undo/<str:token>/', views.undo_intervention_cancel, name='undo_intervention_cancel'),
     
     # Counselor - Reports
     path('reports/', views.reports_view, name='reports'),

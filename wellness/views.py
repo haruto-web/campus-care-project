@@ -5,12 +5,35 @@ from django.db.models import Q, Count, Avg
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.cache import cache
+from django.urls import reverse
+from django.utils.html import format_html
 from datetime import datetime, timedelta
+import secrets
 from .models import TeacherConcern, Intervention, Alert, RiskAssessment, WellnessCheckIn
 from .forms import TeacherConcernForm, InterventionForm
 from accounts.models import User
 from accounts.decorators import deny_access, teacher_teaches_student
 from accounts.utils import log_action, hit_rate_limit
+
+
+UNDO_GRACE_SECONDS = 30
+
+
+def _undo_key(token):
+    return f'wellness:undo:{token}'
+
+
+def _stash_undo_payload(payload, grace_seconds=UNDO_GRACE_SECONDS):
+    token = secrets.token_urlsafe(24)
+    cache.set(_undo_key(token), payload, grace_seconds)
+    return token
+
+
+def _pop_undo_payload(token):
+    key = _undo_key(token)
+    payload = cache.get(key)
+    cache.delete(key)
+    return payload
 
 @login_required
 def create_concern(request, student_id=None):
@@ -260,12 +283,39 @@ def update_intervention(request, intervention_id):
     intervention = get_object_or_404(Intervention, id=intervention_id)
     
     if request.method == 'POST':
+        previous_snapshot = {
+            'student_id': intervention.student_id,
+            'counselor_id': intervention.counselor_id,
+            'intervention_type': intervention.intervention_type,
+            'description': intervention.description,
+            'scheduled_date': intervention.scheduled_date.isoformat() if intervention.scheduled_date else '',
+            'status': intervention.status,
+            'notes': intervention.notes,
+            'outcome': intervention.outcome,
+        }
         form = InterventionForm(request.POST, instance=intervention)
         form.fields['student'].queryset = User.objects.filter(role='student')
         if form.is_valid():
-            form.save()
+            updated = form.save()
             log_action(request, 'INTERVENTION_UPDATED', 'Intervention', intervention.id, intervention.student.get_full_name())
-            messages.success(request, 'Intervention updated successfully!')
+            if previous_snapshot.get('status') != 'cancelled' and updated.status == 'cancelled':
+                undo_token = _stash_undo_payload({
+                    'type': 'intervention_cancel',
+                    'actor_id': request.user.id,
+                    'intervention_id': updated.id,
+                    'snapshot': previous_snapshot,
+                })
+                undo_url = reverse('wellness:undo_intervention_cancel', kwargs={'token': undo_token})
+                messages.warning(
+                    request,
+                    format_html(
+                        'Intervention cancelled. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+                        undo_url,
+                        UNDO_GRACE_SECONDS,
+                    ),
+                )
+            else:
+                messages.success(request, 'Intervention updated successfully!')
             return redirect('wellness:interventions_list')
     else:
         form = InterventionForm(instance=intervention)
@@ -418,15 +468,90 @@ def resolve_alert(request, alert_id):
         return redirect('dashboard')
     
     alert = get_object_or_404(Alert, id=alert_id)
+    previous_state = {
+        'is_read': alert.is_read,
+        'resolved': alert.resolved,
+    }
     alert.resolved = True
     alert.is_read = True
     alert.save()
-    log_action(request, 'ALERT_RESOLVED', 'Alert', alert.id, alert.student.get_full_name(), extra_data={'resolved': True})
+    undo_token = _stash_undo_payload({
+        'type': 'alert_resolve',
+        'actor_id': request.user.id,
+        'alert_id': alert.id,
+        'previous_state': previous_state,
+    })
+    undo_url = reverse('wellness:undo_alert_resolve', kwargs={'token': undo_token})
+    log_action(request, 'ALERT_RESOLVED', 'Alert', alert.id, alert.student.get_full_name(), extra_data={'resolved': True, 'undo_window_seconds': UNDO_GRACE_SECONDS})
     
-    from django.urls import reverse
     params = request.GET.urlencode()
     url = reverse('wellness:alerts_list')
+    messages.warning(
+        request,
+        format_html(
+            'Alert resolved. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            undo_url,
+            UNDO_GRACE_SECONDS,
+        ),
+    )
     return redirect(f'{url}?{params}' if params else url)
+
+
+@login_required
+def undo_alert_resolve(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('type') != 'alert_resolve':
+        messages.error(request, 'Undo link is no longer valid.')
+        return redirect('wellness:alerts_list')
+    if payload.get('actor_id') != request.user.id:
+        messages.error(request, 'You do not have permission to undo this action.')
+        return redirect('wellness:alerts_list')
+    if request.user.role not in ['counselor', 'admin']:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    alert = get_object_or_404(Alert, id=payload.get('alert_id'))
+    prev = payload.get('previous_state', {})
+    alert.is_read = bool(prev.get('is_read', False))
+    alert.resolved = bool(prev.get('resolved', False))
+    alert.save(update_fields=['is_read', 'resolved'])
+    log_action(request, 'ALERT_RESOLVED', 'Alert', alert.id, alert.student.get_full_name(), extra_data={'undo': True})
+    messages.success(request, 'Alert status restored.')
+    return redirect('wellness:alerts_list')
+
+
+@login_required
+def undo_intervention_cancel(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('type') != 'intervention_cancel':
+        messages.error(request, 'Undo link is no longer valid.')
+        return redirect('wellness:interventions_list')
+    if payload.get('actor_id') != request.user.id:
+        messages.error(request, 'You do not have permission to undo this action.')
+        return redirect('wellness:interventions_list')
+    if request.user.role not in ['counselor', 'admin']:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    intervention = get_object_or_404(Intervention, id=payload.get('intervention_id'))
+    snapshot = payload.get('snapshot', {})
+    intervention.student_id = snapshot.get('student_id', intervention.student_id)
+    intervention.counselor_id = snapshot.get('counselor_id', intervention.counselor_id)
+    intervention.intervention_type = snapshot.get('intervention_type', intervention.intervention_type)
+    intervention.description = snapshot.get('description', intervention.description)
+    scheduled_raw = snapshot.get('scheduled_date')
+    if scheduled_raw:
+        parsed = datetime.fromisoformat(scheduled_raw)
+        if timezone.is_naive(parsed):
+            parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+        intervention.scheduled_date = parsed
+    intervention.status = snapshot.get('status', intervention.status)
+    intervention.notes = snapshot.get('notes', intervention.notes)
+    intervention.outcome = snapshot.get('outcome', intervention.outcome)
+    intervention.save()
+    log_action(request, 'INTERVENTION_UPDATED', 'Intervention', intervention.id, intervention.student.get_full_name(), extra_data={'undo': True})
+    messages.success(request, 'Intervention cancellation undone successfully.')
+    return redirect('wellness:interventions_list')
 
 @login_required
 def reports_view(request):

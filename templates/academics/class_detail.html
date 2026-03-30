@@ -286,7 +286,7 @@ function showTab(name) {
 function confirmDeleteAssignment(btn) {
     showConfirmModal({
         title: 'Delete Assignment',
-        body: 'Delete <strong>' + btn.dataset.title + '</strong> and all student submissions? This cannot be undone.',
+        body: 'Delete <strong>' + btn.dataset.title + '</strong> and all student submissions? You can undo for a short time.',
         okLabel: 'Delete',
         type: 'danger',
         onConfirm() { document.getElementById(btn.dataset.form).submit(); }
