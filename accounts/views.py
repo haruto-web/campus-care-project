@@ -68,22 +68,123 @@ def _resolve_ip_location(ip_address):
     except ValueError:
         return None
 
-    if parsed_ip.is_private or parsed_ip.is_loopback or parsed_ip.is_link_local:
+    if (
+        parsed_ip.is_private
+        or parsed_ip.is_loopback
+        or parsed_ip.is_link_local
+        or parsed_ip.is_multicast
+        or parsed_ip.is_reserved
+        or parsed_ip.is_unspecified
+    ):
         return None
 
-    try:
-        with urllib_request.urlopen(
-            f"http://ip-api.com/json/{ip_address}?fields=status,country,regionName,city",
-            timeout=2,
-        ) as response:
-            payload = json.loads(response.read().decode("utf-8", errors="ignore"))
-        if payload.get("status") != "success":
+    cache_key = f'geoip:v2:{ip_address}'
+    cached_location = cache.get(cache_key)
+    if cached_location is not None:
+        return cached_location or None
+
+    def _fetch_json(url):
+        try:
+            req = urllib_request.Request(
+                url,
+                headers={
+                    'Accept': 'application/json',
+                    'User-Agent': 'BrightTrack/1.0 (+security-login-alerts)',
+                },
+            )
+            with urllib_request.urlopen(req, timeout=2.5) as response:
+                raw = response.read().decode("utf-8", errors="ignore")
+            return json.loads(raw)
+        except (urllib_error.URLError, TimeoutError, ValueError, OSError):
             return None
-        parts = [payload.get("city"), payload.get("regionName"), payload.get("country")]
-        location = ", ".join([part for part in parts if part])
-        return location or None
-    except (urllib_error.URLError, TimeoutError, ValueError, OSError):
+
+    def _norm(value):
+        if not value:
+            return ''
+        return str(value).strip()
+
+    candidates = []
+
+    # Provider 1: ip-api.com (fast/structured for regionName)
+    payload = _fetch_json(
+        f'https://ip-api.com/json/{ip_address}?fields=status,country,regionName,city'
+    )
+    if payload and payload.get('status') == 'success':
+        candidates.append({
+            'city': _norm(payload.get('city')),
+            'region': _norm(payload.get('regionName')),
+            'country': _norm(payload.get('country')),
+        })
+
+    # Provider 2: ipapi.co
+    payload = _fetch_json(f'https://ipapi.co/{ip_address}/json/')
+    if payload and not payload.get('error'):
+        candidates.append({
+            'city': _norm(payload.get('city')),
+            'region': _norm(payload.get('region')),
+            'country': _norm(payload.get('country_name')),
+        })
+
+    # Provider 3: ipwho.is
+    payload = _fetch_json(f'https://ipwho.is/{ip_address}')
+    if payload and payload.get('success', False):
+        candidates.append({
+            'city': _norm(payload.get('city')),
+            'region': _norm(payload.get('region')),
+            'country': _norm(payload.get('country')),
+        })
+
+    if not candidates:
+        cache.set(cache_key, '', 3600)
         return None
+
+    # Consensus strategy:
+    # - If at least 2 providers agree on country+region+city, return full precision.
+    # - Else if at least 2 agree on country+region, return region-level precision.
+    # - Else if at least 2 agree on country, return country-only precision.
+    # This prevents overconfident but potentially wrong city labels.
+    from collections import Counter
+
+    city_region_country = Counter(
+        (
+            c.get('city', '').lower(),
+            c.get('region', '').lower(),
+            c.get('country', '').lower(),
+        )
+        for c in candidates
+        if c.get('city') and c.get('region') and c.get('country')
+    )
+    top_crc = city_region_country.most_common(1)
+    if top_crc and top_crc[0][1] >= 2:
+        city, region, country = top_crc[0][0]
+        location = ', '.join([part.title() for part in [city, region, country] if part])
+        cache.set(cache_key, location, 86400)
+        return location
+
+    region_country = Counter(
+        (c.get('region', '').lower(), c.get('country', '').lower())
+        for c in candidates
+        if c.get('region') and c.get('country')
+    )
+    top_rc = region_country.most_common(1)
+    if top_rc and top_rc[0][1] >= 2:
+        region, country = top_rc[0][0]
+        location = ', '.join([part.title() for part in [region, country] if part])
+        cache.set(cache_key, location, 86400)
+        return location
+
+    country_only = Counter(
+        c.get('country', '').lower() for c in candidates if c.get('country')
+    )
+    top_country = country_only.most_common(1)
+    if top_country and top_country[0][1] >= 2:
+        location = top_country[0][0].title()
+        cache.set(cache_key, location, 86400)
+        return location
+
+    # If providers disagree entirely, do not return a potentially wrong location.
+    cache.set(cache_key, '', 3600)
+    return None
 
 
 def _local_media_response(path):
