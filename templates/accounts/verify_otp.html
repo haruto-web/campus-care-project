@@ -6,6 +6,16 @@
     .verify-scene {
         position: relative;
         overflow: hidden;
+        background:
+            radial-gradient(1200px 500px at 12% 8%, rgba(79, 70, 229, 0.14), transparent 60%),
+            radial-gradient(900px 400px at 85% 92%, rgba(20, 184, 166, 0.14), transparent 60%),
+            var(--bt-bg);
+    }
+    .dark .verify-scene {
+        background:
+            radial-gradient(1200px 520px at 12% 8%, rgba(99, 102, 241, 0.26), transparent 62%),
+            radial-gradient(900px 420px at 85% 92%, rgba(45, 212, 191, 0.22), transparent 62%),
+            #0b1020;
     }
     .verify-blob {
         position: absolute;
@@ -38,6 +48,9 @@
         top: 20%;
         right: 22%;
         animation-delay: 2.1s;
+    }
+    .dark .verify-blob {
+        opacity: 0.34;
     }
     @keyframes verifyBlobDrift {
         0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
@@ -92,7 +105,7 @@
         }
     }
 </style>
-<div class="verify-scene min-h-screen flex items-center justify-center py-12 px-4" style="background:var(--bt-bg)">
+<div class="verify-scene min-h-screen flex items-center justify-center py-12 px-4">
     <div class="verify-blob verify-blob-a"></div>
     <div class="verify-blob verify-blob-b"></div>
     <div class="verify-blob verify-blob-c"></div>

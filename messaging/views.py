@@ -15,7 +15,6 @@ from campus_care.validators import validate_document_upload
 from accounts.decorators import role_required
 from accounts.otp_utils import send_transactional_email
 from accounts.utils import log_action, hit_rate_limit
-from accounts.models import AuditLog
 
 # Role-based allowed recipients
 ALLOWED_RECIPIENTS = {
@@ -100,27 +99,6 @@ def _extract_device_info(user_agent):
         'os': os_name,
         'browser': browser,
     }
-
-
-def _message_audit_device_context(report):
-    audit = AuditLog.objects.filter(
-        actor=report.reported_user,
-        action='MESSAGE_SENT',
-        extra_data__message_id=report.message_id,
-    ).order_by('-timestamp').first()
-    if not audit:
-        return None
-
-    meta = audit.extra_data or {}
-    data = {
-        'time': timezone.localtime(report.message.created_at).strftime('%b %d, %Y %I:%M:%S %p'),
-        'ip': audit.ip_address or '',
-        'device_type': meta.get('sender_device_type') or 'Unknown device',
-        'os': meta.get('sender_os') or 'Unknown OS',
-        'browser': meta.get('sender_browser') or 'Unknown browser',
-        'brand': meta.get('sender_device_brand') or '',
-    }
-    return data
 
 
 @login_required
@@ -431,25 +409,6 @@ def resolve_report(request, report_id):
         log_action(request, 'MESSAGE_REPORT_RESOLVED', 'MessageReport', report.id, report.reported_user.get_full_name(), extra_data={'status': status, 'consequence': consequence})
 
         reported_user = report.reported_user
-        device_context = _message_audit_device_context(report)
-        device_lines = []
-        if device_context:
-            device_lines = [
-                'Reported message session details:',
-                f'- Message Time: {device_context["time"]}',
-            ]
-            if device_context.get('ip'):
-                device_lines.append(f'- IP Address: {device_context["ip"]}')
-            if device_context.get('brand'):
-                device_lines.append(f'- Device Brand: {device_context["brand"]}')
-            device_lines.extend([
-                f'- Device Type: {device_context["device_type"]}',
-                f'- Operating System: {device_context["os"]}',
-                f'- Browser: {device_context["browser"]}',
-                '',
-            ])
-        device_block = ('\n'.join(device_lines) + '\n') if device_lines else ''
-
         if consequence == 'suspend':
             suspend_until = timezone.now() + timedelta(weeks=1)
             reported_user.messaging_suspended_until = suspend_until
@@ -464,7 +423,6 @@ def resolve_report(request, report_id):
                     f'Suspension ends: {suspend_until.strftime("%B %d, %Y at %I:%M %p")}\n\n'
                     f'Reason: A message you sent was reported and reviewed by the school counselor.\n'
                     f'Notes: {notes or "No additional notes."}\n\n'
-                    f'{device_block}'
                     f'If you believe this is a mistake, please contact your school counselor.\n\n'
                     f'— BrightTrack School System'
                 ),
@@ -481,7 +439,6 @@ def resolve_report(request, report_id):
                     f'reported by another user and reviewed by the school counselor.\n\n'
                     f'Please be reminded to communicate respectfully and responsibly at all times.\n'
                     f'Notes from counselor: {notes or "No additional notes."}\n\n'
-                    f'{device_block}'
                     f'Further violations may result in suspension of your messaging access.\n\n'
                     f'— BrightTrack School System'
                 ),
@@ -498,7 +455,6 @@ def resolve_report(request, report_id):
                     f'one-on-one session with the school counselor in the guidance office.\n\n'
                     f'Please report to the guidance office at your earliest convenience or as scheduled by your counselor.\n'
                     f'Notes: {notes or "No additional notes."}\n\n'
-                    f'{device_block}'
                     f'This matter requires your immediate attention.\n\n'
                     f'— BrightTrack School System'
                 ),

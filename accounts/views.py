@@ -42,6 +42,95 @@ def _email_datetime_line(dt=None):
     return f"Date & Time: {_format_email_timestamp(dt)}"
 
 
+def _extract_device_info(user_agent):
+    ua = (user_agent or '').strip()
+    ua_l = ua.lower()
+    if not ua:
+        return {
+            'device_type': 'Unknown device',
+            'device_brand': '',
+            'os': 'Unknown OS',
+            'browser': 'Unknown browser',
+        }
+
+    if 'ipad' in ua_l or 'tablet' in ua_l:
+        device_type = 'Tablet'
+    elif 'mobi' in ua_l or 'android' in ua_l or 'iphone' in ua_l:
+        device_type = 'Mobile'
+    else:
+        device_type = 'Desktop'
+
+    if 'windows nt' in ua_l:
+        os_name = 'Windows'
+    elif 'android' in ua_l:
+        os_name = 'Android'
+    elif 'iphone' in ua_l or 'ipad' in ua_l or 'cpu iphone os' in ua_l:
+        os_name = 'iOS'
+    elif 'mac os x' in ua_l and 'iphone' not in ua_l and 'ipad' not in ua_l:
+        os_name = 'macOS'
+    elif 'linux' in ua_l:
+        os_name = 'Linux'
+    else:
+        os_name = 'Unknown OS'
+
+    if 'edg/' in ua_l:
+        browser = 'Microsoft Edge'
+    elif 'opr/' in ua_l or 'opera' in ua_l:
+        browser = 'Opera'
+    elif 'chrome/' in ua_l and 'edg/' not in ua_l and 'opr/' not in ua_l:
+        browser = 'Chrome'
+    elif 'firefox/' in ua_l:
+        browser = 'Firefox'
+    elif 'safari/' in ua_l and 'chrome/' not in ua_l:
+        browser = 'Safari'
+    else:
+        browser = 'Unknown browser'
+
+    brand = ''
+    if 'iphone' in ua_l or 'ipad' in ua_l or 'macintosh' in ua_l:
+        brand = 'Apple'
+    elif 'samsung' in ua_l or 'sm-' in ua_l:
+        brand = 'Samsung'
+    elif 'huawei' in ua_l or 'honor' in ua_l:
+        brand = 'Huawei'
+    elif 'xiaomi' in ua_l or 'mi ' in ua_l or 'redmi' in ua_l:
+        brand = 'Xiaomi'
+    elif 'oppo' in ua_l:
+        brand = 'OPPO'
+    elif 'vivo' in ua_l:
+        brand = 'vivo'
+    elif 'realme' in ua_l:
+        brand = 'realme'
+    elif 'oneplus' in ua_l:
+        brand = 'OnePlus'
+    elif 'pixel' in ua_l:
+        brand = 'Google Pixel'
+
+    return {
+        'device_type': device_type,
+        'device_brand': brand,
+        'os': os_name,
+        'browser': browser,
+    }
+
+
+def _append_request_security_context(email_lines, request, include_location=True):
+    actor_ip = get_client_ip(request)
+    actor_location = _resolve_ip_location(actor_ip) if include_location else None
+    device_info = _extract_device_info(request.META.get('HTTP_USER_AGENT', ''))
+
+    if actor_ip and actor_ip != 'unknown':
+        email_lines.append(f'IP Address: {actor_ip}')
+    if actor_location:
+        email_lines.append(f'Location: {actor_location}')
+    if device_info.get('device_brand'):
+        email_lines.append(f'Device Brand: {device_info["device_brand"]}')
+    email_lines.append(f'Device Type: {device_info["device_type"]}')
+    email_lines.append(f'Operating System: {device_info["os"]}')
+    email_lines.append(f'Browser: {device_info["browser"]}')
+    return email_lines
+
+
 def _get_active_otp_expiry(email):
     otp = OTPCode.objects.filter(contact_value=email, is_used=False).order_by('-created_at').first()
     if not otp:
@@ -554,14 +643,14 @@ def otp_forgot_password_view(request):
         _send_security_email(
             email,
             'BrightTrack Password Reset Requested',
-            [
+            _append_request_security_context([
                 f'Dear {user.get_full_name() or user.email},',
                 '',
                 'A password reset code was requested for your BrightTrack account.',
                 _email_datetime_line(),
                 'If this was you, you can continue using the verification code that was just sent.',
                 'If this was not you, please ignore this message and consider changing your password after logging in.',
-            ],
+            ], request, include_location=True),
         )
         request.session['otp_email'] = email
         request.session['otp_purpose'] = 'reset'
@@ -601,15 +690,14 @@ def otp_reset_password_view(request):
         _send_security_email(
             user.email,
             'BrightTrack Password Changed',
-            [
+            _append_request_security_context([
                 f'Dear {user.get_full_name() or user.email},',
                 '',
                 'Your BrightTrack password was changed successfully.',
                 _email_datetime_line(),
-                f'IP Address: {request.META.get("REMOTE_ADDR", "unknown")}',
                 '',
                 'If this was not you, please contact an administrator immediately.',
-            ],
+            ], request, include_location=True),
         )
 
         for key in ['otp_email', 'otp_verified', 'otp_purpose']:
@@ -759,18 +847,13 @@ def verify_otp_view(request):
                 pass
         log_action(request, 'LOGIN', 'User', user.id, user.get_full_name())
         if user.role in ['teacher', 'counselor', 'admin']:
-            actor_ip = get_client_ip(request)
-            actor_location = _resolve_ip_location(actor_ip)
             email_lines = [
                 f'Dear {user.get_full_name() or user.email},',
                 '',
                 f'A new login to your BrightTrack account was completed as {user.role}.',
                 _email_datetime_line(),
             ]
-            if actor_ip and actor_ip != 'unknown':
-                email_lines.append(f'IP Address: {actor_ip}')
-            if actor_location:
-                email_lines.append(f'Location: {actor_location}')
+            _append_request_security_context(email_lines, request, include_location=True)
             email_lines.extend([
                 '',
                 'If this was not you, please change your password and contact an administrator immediately.',
