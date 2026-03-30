@@ -301,6 +301,7 @@
                             <i class="bi bi-eye" id="eye2"></i>
                         </button>
                     </div>
+                    <p id="pwMatchText" class="mt-2 text-xs font-medium text-slate-500">Match: —</p>
                 </div>
 
                 <button type="submit"
@@ -328,9 +329,11 @@
 
     (function () {
         const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('password2');
         const fill = document.getElementById('pwStrengthFill');
         const text = document.getElementById('pwStrengthText');
-        if (!passwordInput || !fill || !text) return;
+        const matchText = document.getElementById('pwMatchText');
+        if (!passwordInput || !confirmInput || !fill || !text || !matchText) return;
 
         function scorePassword(value) {
             let score = 0;
@@ -368,8 +371,29 @@
             }
         }
 
+        function updateMatchGuide() {
+            const password = passwordInput.value || '';
+            const confirm = confirmInput.value || '';
+
+            if (!confirm) {
+                matchText.textContent = 'Match: —';
+                matchText.className = 'mt-2 text-xs font-medium text-slate-500';
+                return;
+            }
+            if (password === confirm) {
+                matchText.textContent = 'Match: Passwords match';
+                matchText.className = 'mt-2 text-xs font-medium text-green-600 dark:text-green-400';
+            } else {
+                matchText.textContent = 'Match: Passwords do not match';
+                matchText.className = 'mt-2 text-xs font-medium text-red-600 dark:text-red-400';
+            }
+        }
+
         passwordInput.addEventListener('input', updateStrength);
+        passwordInput.addEventListener('input', updateMatchGuide);
+        confirmInput.addEventListener('input', updateMatchGuide);
         updateStrength();
+        updateMatchGuide();
     })();
 </script>
 {% endblock %}

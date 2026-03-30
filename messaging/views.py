@@ -15,6 +15,7 @@ from campus_care.validators import validate_document_upload
 from accounts.decorators import role_required
 from accounts.otp_utils import send_transactional_email
 from accounts.utils import log_action, hit_rate_limit
+from accounts.models import AuditLog
 
 # Role-based allowed recipients
 ALLOWED_RECIPIENTS = {
@@ -23,6 +24,103 @@ ALLOWED_RECIPIENTS = {
     'teacher':  ['counselor', 'admin', 'student'],
     'student':  ['counselor', 'teacher', 'student'],
 }
+
+
+def _extract_device_info(user_agent):
+    ua = (user_agent or '').strip()
+    ua_l = ua.lower()
+    if not ua:
+        return {
+            'device_type': 'Unknown device',
+            'device_brand': '',
+            'os': 'Unknown OS',
+            'browser': 'Unknown browser',
+        }
+
+    # Device type
+    if 'ipad' in ua_l or 'tablet' in ua_l:
+        device_type = 'Tablet'
+    elif 'mobi' in ua_l or 'android' in ua_l or 'iphone' in ua_l:
+        device_type = 'Mobile'
+    else:
+        device_type = 'Desktop'
+
+    # OS (conservative)
+    if 'windows nt' in ua_l:
+        os_name = 'Windows'
+    elif 'android' in ua_l:
+        os_name = 'Android'
+    elif 'iphone' in ua_l or 'ipad' in ua_l or 'cpu iphone os' in ua_l:
+        os_name = 'iOS'
+    elif 'mac os x' in ua_l and 'iphone' not in ua_l and 'ipad' not in ua_l:
+        os_name = 'macOS'
+    elif 'linux' in ua_l:
+        os_name = 'Linux'
+    else:
+        os_name = 'Unknown OS'
+
+    # Browser (conservative)
+    if 'edg/' in ua_l:
+        browser = 'Microsoft Edge'
+    elif 'opr/' in ua_l or 'opera' in ua_l:
+        browser = 'Opera'
+    elif 'chrome/' in ua_l and 'edg/' not in ua_l and 'opr/' not in ua_l:
+        browser = 'Chrome'
+    elif 'firefox/' in ua_l:
+        browser = 'Firefox'
+    elif 'safari/' in ua_l and 'chrome/' not in ua_l:
+        browser = 'Safari'
+    else:
+        browser = 'Unknown browser'
+
+    # Brand/model (only when explicit in UA to avoid wrong info)
+    brand = ''
+    if 'iphone' in ua_l or 'ipad' in ua_l or 'macintosh' in ua_l:
+        brand = 'Apple'
+    elif 'samsung' in ua_l or 'sm-' in ua_l:
+        brand = 'Samsung'
+    elif 'huawei' in ua_l or 'honor' in ua_l:
+        brand = 'Huawei'
+    elif 'xiaomi' in ua_l or 'mi ' in ua_l or 'redmi' in ua_l:
+        brand = 'Xiaomi'
+    elif 'oppo' in ua_l:
+        brand = 'OPPO'
+    elif 'vivo' in ua_l:
+        brand = 'vivo'
+    elif 'realme' in ua_l:
+        brand = 'realme'
+    elif 'oneplus' in ua_l:
+        brand = 'OnePlus'
+    elif 'pixel' in ua_l:
+        brand = 'Google Pixel'
+
+    return {
+        'device_type': device_type,
+        'device_brand': brand,
+        'os': os_name,
+        'browser': browser,
+    }
+
+
+def _message_audit_device_context(report):
+    audit = AuditLog.objects.filter(
+        actor=report.reported_user,
+        action='MESSAGE_SENT',
+        extra_data__message_id=report.message_id,
+    ).order_by('-timestamp').first()
+    if not audit:
+        return None
+
+    meta = audit.extra_data or {}
+    data = {
+        'time': timezone.localtime(report.message.created_at).strftime('%b %d, %Y %I:%M:%S %p'),
+        'ip': audit.ip_address or '',
+        'device_type': meta.get('sender_device_type') or 'Unknown device',
+        'os': meta.get('sender_os') or 'Unknown OS',
+        'browser': meta.get('sender_browser') or 'Unknown browser',
+        'brand': meta.get('sender_device_brand') or '',
+    }
+    return data
 
 
 @login_required
@@ -88,7 +186,21 @@ def conversation(request, conv_id):
                 )
                 messages.warning(request, 'File attachment failed to upload. Message sent without attachment.')
             conv.save()
-            log_action(request, 'MESSAGE_SENT', 'Conversation', conv.id, other.get_full_name(), extra_data={'message_id': msg.id})
+            device_info = _extract_device_info(request.META.get('HTTP_USER_AGENT', ''))
+            log_action(
+                request,
+                'MESSAGE_SENT',
+                'Conversation',
+                conv.id,
+                other.get_full_name(),
+                extra_data={
+                    'message_id': msg.id,
+                    'sender_device_type': device_info['device_type'],
+                    'sender_device_brand': device_info['device_brand'],
+                    'sender_os': device_info['os'],
+                    'sender_browser': device_info['browser'],
+                },
+            )
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 local_dt = timezone.localtime(msg.created_at)
                 return JsonResponse({
@@ -218,7 +330,21 @@ def new_message(request, recipient_id=None):
                 msg = Message.objects.create(conversation=conv, sender=request.user, body=body)
                 messages.warning(request, 'File attachment failed to upload. Message sent without attachment.')
             conv.save()
-            log_action(request, 'MESSAGE_SENT', 'Conversation', conv.id, recipient.get_full_name(), extra_data={'message_id': msg.id})
+            device_info = _extract_device_info(request.META.get('HTTP_USER_AGENT', ''))
+            log_action(
+                request,
+                'MESSAGE_SENT',
+                'Conversation',
+                conv.id,
+                recipient.get_full_name(),
+                extra_data={
+                    'message_id': msg.id,
+                    'sender_device_type': device_info['device_type'],
+                    'sender_device_brand': device_info['device_brand'],
+                    'sender_os': device_info['os'],
+                    'sender_browser': device_info['browser'],
+                },
+            )
 
         return redirect('messaging:conversation', conv_id=conv.id)
 
@@ -305,6 +431,24 @@ def resolve_report(request, report_id):
         log_action(request, 'MESSAGE_REPORT_RESOLVED', 'MessageReport', report.id, report.reported_user.get_full_name(), extra_data={'status': status, 'consequence': consequence})
 
         reported_user = report.reported_user
+        device_context = _message_audit_device_context(report)
+        device_lines = []
+        if device_context:
+            device_lines = [
+                'Reported message session details:',
+                f'- Message Time: {device_context["time"]}',
+            ]
+            if device_context.get('ip'):
+                device_lines.append(f'- IP Address: {device_context["ip"]}')
+            if device_context.get('brand'):
+                device_lines.append(f'- Device Brand: {device_context["brand"]}')
+            device_lines.extend([
+                f'- Device Type: {device_context["device_type"]}',
+                f'- Operating System: {device_context["os"]}',
+                f'- Browser: {device_context["browser"]}',
+                '',
+            ])
+        device_block = ('\n'.join(device_lines) + '\n') if device_lines else ''
 
         if consequence == 'suspend':
             suspend_until = timezone.now() + timedelta(weeks=1)
@@ -320,6 +464,7 @@ def resolve_report(request, report_id):
                     f'Suspension ends: {suspend_until.strftime("%B %d, %Y at %I:%M %p")}\n\n'
                     f'Reason: A message you sent was reported and reviewed by the school counselor.\n'
                     f'Notes: {notes or "No additional notes."}\n\n'
+                    f'{device_block}'
                     f'If you believe this is a mistake, please contact your school counselor.\n\n'
                     f'— BrightTrack School System'
                 ),
@@ -336,6 +481,7 @@ def resolve_report(request, report_id):
                     f'reported by another user and reviewed by the school counselor.\n\n'
                     f'Please be reminded to communicate respectfully and responsibly at all times.\n'
                     f'Notes from counselor: {notes or "No additional notes."}\n\n'
+                    f'{device_block}'
                     f'Further violations may result in suspension of your messaging access.\n\n'
                     f'— BrightTrack School System'
                 ),
@@ -352,6 +498,7 @@ def resolve_report(request, report_id):
                     f'one-on-one session with the school counselor in the guidance office.\n\n'
                     f'Please report to the guidance office at your earliest convenience or as scheduled by your counselor.\n'
                     f'Notes: {notes or "No additional notes."}\n\n'
+                    f'{device_block}'
                     f'This matter requires your immediate attention.\n\n'
                     f'— BrightTrack School System'
                 ),
