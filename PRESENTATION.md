@@ -3,7 +3,7 @@
 **System Name:** BrightTrack Learning Management System
 **Formerly Known As:** Campus Care
 **Live URL:** https://bright-track-project.onrender.com
-**Last Updated:** June 2026
+**Last Updated:** July 2026
 **Status:** Fully Deployed and Operational
 
 ---
@@ -50,7 +50,7 @@ BrightTrack consolidates academic data, attendance records, wellness check-ins, 
 - Real-time communication uses polling (3–5 second intervals) rather than WebSockets; suitable for the current scale but not optimized for very large concurrent user bases
 - AI features depend on the availability of the Google Gemini API
 - OTP delivery depends on the Brevo transactional email service
-- Audit Log feature is partially implemented (login/logout events only)
+- Audit Log covers all major actions; full view is restricted to superadmin tier
 
 ---
 
@@ -94,10 +94,11 @@ BrightTrack consolidates academic data, attendance records, wellness check-ins, 
 - `Material` — class FK, title, file, uploaded_by FK
 
 **accounts**
-- `User` — role (student / teacher / counselor / admin), section, year_level, student_number, profile_picture, id_picture, about_me, subject, gender, profile_completed, admin_role, guardian fields
+- `User` — role (student / teacher / counselor / admin), section, year_level, student_number, profile_picture, id_picture, about_me, subject, gender, profile_completed, admin_role, guardian fields, current_session_key
 - `OTPCode` — contact_value (email), code, created_at, is_used
 - `ApprovedStudent` — pre-approved student registry for OTP registration gating
-- `AuditLog` — actor FK, action, target_type, target_id, ip_address, timestamp
+- `RegistrationRequest` — student_number, email, name, year_level, section, password_hash, status (pending / approved / rejected), approved_by FK, decided_at, rejection_reason
+- `AuditLog` — actor FK, action (30+ types), target_type, target_id, ip_address, previous_hash, entry_hash (HMAC-SHA256), signature_version, timestamp
 
 **messaging**
 - `Conversation` — participants M2M
@@ -131,6 +132,7 @@ BrightTrack consolidates academic data, attendance records, wellness check-ins, 
 | Messaging | Real-time chat (3s polling), file attachments, read receipts, content filtering, student-to-student enabled |
 | Message Reporting | Report inappropriate messages received from any user; submitted to counselor for review |
 | Notifications | Bell dropdown and toast popups for interventions scheduled and teacher concerns raised |
+| Profile Activity Timeline | View last login, recent actions, and current session/device info on profile page |
 
 ### 5.2 Teacher
 
@@ -146,8 +148,9 @@ BrightTrack consolidates academic data, attendance records, wellness check-ins, 
 | Attendance Marking | Mark each student Present, Absent, or Late per class per day |
 | Announcements | Post normal or urgent announcements to a class |
 | Materials | Upload and delete class materials (PDF, DOCX, etc.) |
-| Concern Submission | Submit academic, behavioral, emotional, or attendance concerns for a student |
+| Concern Submission | Submit academic, behavioral, emotional, or attendance concerns for a student with severity level |
 | Student Profile View | View a student's risk level, GPA, attendance rate, and wellness history |
+| Undo Grace Period | 30-second undo window after deleting an assignment or material |
 
 ### 5.3 Counselor
 
@@ -163,6 +166,7 @@ BrightTrack consolidates academic data, attendance records, wellness check-ins, 
 | PDF / DOCX Download | Downloadable reports from the dashboard |
 | Message Reports | Review reported messages from users; take action (warning, suspend messaging, refer to admin, no action) |
 | BT AI Assistant | Eight AI-powered actions: Create Intervention, Auto-Create All, Generate Report, Analyze Behavior, Weekly Summary, Draft Parent Email, Search Student, Ask AI |
+| Undo Grace Period | 30-second undo window after resolving an alert or cancelling an intervention |
 
 ### 5.4 Administrator
 
@@ -175,6 +179,10 @@ BrightTrack consolidates academic data, attendance records, wellness check-ins, 
 | PDF / DOCX Download | Downloadable system reports |
 | Message Reports | View all reported messages and counselor actions; monitor whether reports are pending, reviewed, resolved, or dismissed |
 | BT AI Assistant | Generate system report and free-form AI queries |
+| Student Pre-Approval | CSV upload or manual entry of approved students; edit and suspend approved students |
+| Registration Requests | Approve or reject pending student registrations with email notifications |
+| Audit Log | HMAC-SHA256 hash-chained entries, integrity verification, filtering, CSV/PDF/DOCX export |
+| Admin Role Tiers | superadmin / admin / registrar / data_viewer; Manage Admins page for superadmin |
 | Django Admin | Full model-level access at `/admin/` |
 
 ---
@@ -184,12 +192,15 @@ BrightTrack consolidates academic data, attendance records, wellness check-ins, 
 ### 6.1 Student Registration and Onboarding
 
 ```
-Student visits /otp/
-    → Enters school email → OTP sent via Brevo
-    → Enters 6-digit code (expires in 3 minutes)
-    → If new: sets name and password
-    → Completes profile (picture, student number, grade level, section, ID picture)
-    → System auto-enrolls student in all matching classes
+Student visits /register/
+    → Fills registration form (student number, email, name, year level, section, password)
+    → OTP sent to email → verified → RegistrationRequest created (status: pending)
+    → Admin reviews and approves or rejects → student emailed the decision
+    → On approval: User account created
+    → First login → redirected to profile completion
+    → Completes profile (picture, student number, grade level, section, ID picture, guardian info)
+    → Profile completion can be skipped once (valid for 7 days)
+    → On profile completion → auto-enrolled in all matching classes
     → Redirected to student dashboard
 ```
 
@@ -252,13 +263,17 @@ Teacher opens Class → Assignments → View Submissions
 | Mechanism | Implementation |
 |-----------|---------------|
 | Student Login | OTP email flow — 6-digit code, 3-minute expiry, single-use, rate-limited (3 sends/15 min, 5 attempts/30 min) |
-| Staff Login | Username/email and password via `/login/` |
+| Staff Login | Username/email and password via `/login/` with OTP second factor |
 | Google OAuth | Django Allauth integration |
 | Forgot Password | OTP-based reset flow |
 | Role-Based Access | `@login_required` + `@role_required` decorators on all views |
 | CSRF Protection | CSRF tokens on all forms and AJAX requests |
+| Session Displacement | Single active session enforced per user; displaced sessions receive a 440 response and are signed out |
+| Security Emails | Login alert (staff), password reset request, and password changed emails include IP, location, device, and browser |
+| Geolocation | Multi-provider consensus (ip-api.com, ipapi.co, ipwho.is); location only shown when 2+ providers agree |
 | Content Filtering | Inappropriate word list (Filipino and English) blocks student messages at send time |
 | File Validation | `validate_document_upload()` enforces allowed file types on all uploads |
+| Audit Integrity | HMAC-SHA256 hash-chained AuditLog; entries are non-deletable and tamper-evident |
 | Secret Management | All credentials stored in environment variables; never committed to source code |
 | Production Mode | `DEBUG=False`; WhiteNoise serves static files; Cloudinary serves media |
 
@@ -271,12 +286,15 @@ Teacher opens Class → Assignments → View Submissions
 | Auto-Enrollment | Student completes profile or teacher creates class | Student added to all matching classes |
 | Attendance Alert | Attendance rate drops below 75% | Alert record created; counselor notified |
 | Missing Assignment Alert | Student has 3 or more unsubmitted assignments | Alert record created |
-| Wellness Distress Alert | Low wellness check-in score | Alert record created |
+| Wellness Distress Alert | Low wellness check-in score or AI-detected emotional distress | Alert record created |
 | Teacher Concern Alert | Teacher submits a concern | Alert created; student notified via bell and toast |
+| Failing Subjects Alert | Student fails 3 or more classes | Alert record created |
 | Intervention Notification | Counselor schedules an intervention | Student receives bell notification, toast popup, and Brevo email |
 | Risk Recalculation | Admin or counselor dashboard load | RiskAssessment updated for all students |
+| Undo Grace Period | Delete assignment, delete material, resolve alert, cancel intervention | Action stashed in cache for 30 seconds; undo link shown in message |
 | Notification Polling | Every 5 seconds (all authenticated users) | Unread counts and toast popups updated live |
 | Message Polling | Every 3 seconds (active conversation) | New messages appended without page reload |
+| Session Displacement Check | Every 5 seconds via notification poll | Displaced sessions receive 440 and are redirected to login |
 
 ---
 
@@ -354,18 +372,31 @@ Remain on any page and show the bell dropdown updating with new notifications. T
 
 ---
 
-## XI. Known Issues and Pending Items
+## XI. Recent Changes
+
+| Change | Details |
+|--------|---------|
+| Auth page redesign | Login, register, forgot-password, and OTP verification pages unified to the same visual system with consistent card contrast, blob visibility, and dark mode support |
+| Profile Activity Timeline | Profile page now shows last login entry, recent audit actions, and current session key (last 8 chars) with active session indicator |
+| Geolocation reliability | IP location now uses multi-provider consensus across ip-api.com, ipapi.co, and ipwho.is; location only shown when at least 2 providers agree |
+| Email scope adjustment | Device and location context included only in account security emails (login alert, password reset request, password changed); not used in other notification emails |
+| 30-second undo grace period | Delete assignment, delete material, resolve alert, and cancel intervention all show an undo link valid for 30 seconds; undo actions are also audit-logged |
+| Audit coverage for undo flows | Original action logged at time of action; undo restoration logged separately with `restored_via_undo: true` or `undo: true` in extra_data |
+| Device/session context in messaging audit | Message-related audit log entries include session key context where applicable |
+| README improvements | Architecture diagram, security highlights, setup instructions, deployment steps, and roadmap added |
+
+## XII. Known Issues and Pending Items
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Audit Log | Partial | `log_action()` helper exists; LOGIN/LOGOUT/LOGIN_FAILED are logged. Full AuditLog view and URL are implemented but sidebar link requires `admin_role = superadmin` |
-| `admin_role` Tier Gating | Partial | Field exists on User model; sidebar links for Enroll Students, Upload Students, Create Class, Create User, Create Superuser, and System Logs are gated by `admin_role` value |
+| Audit Log view | Implemented | Full AuditLog view with HMAC integrity verification, filtering, and CSV/PDF/DOCX export; sidebar link gated to `admin_role = superadmin` |
+| `admin_role` Tier Gating | Implemented | Sidebar links for Enroll Students, Upload Students, Create Class, Create User, Create Superuser, and System Logs are gated by `admin_role` value |
 
 ---
 
-## XII. How the AI Works — No Dataset, No Training Required
+## XIII. How the AI Works — No Dataset, No Training Required
 
-### 12.1 The Core Concept
+### 13.1 The Core Concept
 
 BrightTrack does not use a custom-trained machine learning model. There is no dataset of student records that was used to train the AI, and the system was never taught what a "good" or "bad" student looks like through examples. Instead, BrightTrack uses **Google Gemini**, a large language model (LLM) developed by Google, through its public API.
 
@@ -375,7 +406,7 @@ What BrightTrack does instead is **collect real student data from the database, 
 
 ---
 
-### 12.2 How Intervention Recommendations Work
+### 13.2 How Intervention Recommendations Work
 
 When a counselor clicks "Create Intervention" for a student in the BT AI Assistant, the following process occurs:
 
@@ -436,7 +467,7 @@ The system takes Gemini's response and automatically creates an `Intervention` r
 
 ---
 
-### 12.3 How Auto-Create All Interventions Works
+### 13.3 How Auto-Create All Interventions Works
 
 The "Auto-Create All Interventions" action in the BT AI Assistant performs the same process described above, but in a loop across every high-risk student who does not already have a scheduled intervention.
 
@@ -446,7 +477,7 @@ The result is that a counselor can process every high-risk student in the school
 
 ---
 
-### 12.4 How the Risk Score Is Calculated (Without AI)
+### 13.4 How the Risk Score Is Calculated (Without AI)
 
 It is important to clarify that the **risk score itself is not calculated by AI**. The risk assessment is a deterministic formula implemented in Django, not a machine learning prediction. The formula combines four measurable factors:
 
@@ -463,7 +494,7 @@ The AI is only involved **after** the risk level has already been determined by 
 
 ---
 
-### 12.5 Why This Approach Is Valid Without a Dataset
+### 13.5 Why This Approach Is Valid Without a Dataset
 
 A common question is: how can the AI give accurate recommendations if it was never trained on this school's student data?
 
@@ -481,7 +512,7 @@ The key safeguards in BrightTrack that make this reliable are:
 
 ---
 
-### 12.6 Summary of All AI Actions
+### 13.6 Summary of All AI Actions
 
 | Action | Data Sent to Gemini | What Gemini Returns |
 |--------|--------------------|-----------------------|
@@ -497,6 +528,8 @@ The key safeguards in BrightTrack that make this reliable are:
 
 ---
 
-## XIII. Summary
+## XIV. Summary
 
 BrightTrack addresses a real gap in school support systems by combining academic management with proactive wellness monitoring. The system is fully deployed, operationally complete, and built on a modern, maintainable stack. Its key differentiators are the automated risk assessment pipeline, the AI-assisted counselor workflow, the message reporting and moderation system, and the real-time notification infrastructure — all working together to support student well-being at the institutional level.
+
+This week's updates focused on security hardening and UX polish: auth pages were redesigned for visual consistency, geolocation reliability was improved through multi-provider consensus, a 30-second undo grace period was added for risky destructive actions, and the profile page now surfaces a full activity timeline including last login, recent actions, and session context.
