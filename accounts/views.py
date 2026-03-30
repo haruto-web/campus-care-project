@@ -20,7 +20,7 @@ from urllib import error as urllib_error
 from academics.models import Class, Assignment, Submission, Attendance, Grade
 from wellness.models import WellnessCheckIn, RiskAssessment, Alert, Intervention
 from campus_care.validators import validate_image_upload
-from .models import User, OTPCode, RegistrationRequest
+from .models import User, OTPCode, RegistrationRequest, AuditLog
 from .otp_utils import send_otp_email, send_transactional_email
 from .utils import log_action, hit_rate_limit, record_security_spike, run_background_task, get_client_ip
 from .decorators import teacher_owns_class
@@ -1156,8 +1156,20 @@ def profile_view(request):
         messages.success(request, 'Profile updated successfully!')
         return redirect('profile')
     
-    # Add context for students
-    context = {}
+    # Profile activity timeline context (all roles)
+    recent_activity = AuditLog.objects.filter(actor=request.user).order_by('-timestamp')[:8]
+    last_login_entry = AuditLog.objects.filter(
+        actor=request.user,
+        action='LOGIN'
+    ).order_by('-timestamp').first()
+    current_session_key = request.session.session_key or request.user.current_session_key or ''
+    context = {
+        'last_login_entry': last_login_entry,
+        'recent_activity': recent_activity,
+        'current_session_key_short': current_session_key[-8:] if current_session_key else '',
+        'current_session_active': bool(current_session_key) and current_session_key == (request.user.current_session_key or ''),
+        'current_request_ip': get_client_ip(request),
+    }
     if request.user.role == 'student':
         # Get GPA
         latest_assessment = RiskAssessment.objects.filter(student=request.user).order_by('-date').first()

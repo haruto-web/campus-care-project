@@ -132,6 +132,48 @@
                 </a>
             </div>
         </form>
+
+        <div class="mt-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Activity Timeline</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-xs uppercase tracking-wide text-gray-500">Last Login</p>
+                    {% if last_login_entry %}
+                    <p class="text-sm font-semibold text-gray-800 mt-1">{{ last_login_entry.timestamp|date:"M d, Y h:i A" }}</p>
+                    {% else %}
+                    <p class="text-sm text-gray-500 mt-1">No login record yet</p>
+                    {% endif %}
+                </div>
+                <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-xs uppercase tracking-wide text-gray-500">Current Session</p>
+                    <p class="text-sm font-semibold text-gray-800 mt-1">
+                        {% if current_session_key_short %}...{{ current_session_key_short }}{% else %}Unavailable{% endif %}
+                    </p>
+                    <p class="text-xs mt-1 {% if current_session_active %}text-green-600{% else %}text-red-600{% endif %}">
+                        {% if current_session_active %}Active{% else %}Not Active{% endif %}
+                    </p>
+                </div>
+                <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-xs uppercase tracking-wide text-gray-500">Current Device IP</p>
+                    <p class="text-sm font-semibold text-gray-800 mt-1">{{ current_request_ip|default:"Unavailable" }}</p>
+                </div>
+            </div>
+
+            <p class="text-sm font-semibold text-gray-700 mb-3">Recent Actions</p>
+            <div class="space-y-2">
+                {% for entry in recent_activity %}
+                <div class="rounded-lg border border-gray-200 px-4 py-3 flex items-center justify-between gap-4">
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-gray-800">{{ entry.get_action_display }}</p>
+                        <p class="text-xs text-gray-500">{{ entry.timestamp|date:"M d, Y h:i A" }}</p>
+                    </div>
+                    <span class="text-xs text-gray-500 whitespace-nowrap">{{ entry.ip_address|default:"No IP" }}</span>
+                </div>
+                {% empty %}
+                <div class="rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-500">No recent activity found.</div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
