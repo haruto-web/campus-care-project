@@ -42,12 +42,14 @@
                        class="bg-white text-purple-700 px-4 py-2 rounded-lg font-semibold text-sm hover:bg-purple-50 transition">
                         <i class="bi bi-chat-dots mr-1"></i> Ask AI for Help
                     </a>
-                    <a href="{% url 'wellness:bulk_create_interventions' %}" 
-                       data-url="{% url 'wellness:bulk_create_interventions' %}"
-                       onclick="event.preventDefault(); var el=this; showConfirmModal({title:'Auto-Create All Interventions',body:'This will automatically create scheduled interventions for <strong>all {{ students_needing_intervention }} high-risk student(s)</strong> without one. Continue?',okLabel:'Yes, Create All',type:'warning',onConfirm(){window.location.href=el.dataset.url}})"
-                       class="bg-purple-800 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-purple-900 transition">
-                        <i class="bi bi-plus-circle mr-1"></i> Create Intervention Now
-                    </a>
+                    <form method="post" action="{% url 'wellness:bulk_create_interventions' %}" class="inline" id="bulkInterventionForm">
+                        {% csrf_token %}
+                        <button type="button"
+                                onclick="showConfirmModal({title:'Auto-Create All Interventions',body:'This will automatically create scheduled interventions for <strong>all {{ students_needing_intervention }} high-risk student(s)</strong> without one. Continue?',okLabel:'Yes, Create All',type:'warning',onConfirm(){document.getElementById('bulkInterventionForm').submit()}})"
+                                class="bg-purple-800 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-purple-900 transition">
+                            <i class="bi bi-plus-circle mr-1"></i> Create Intervention Now
+                        </button>
+                    </form>
                     <a href="?severity=critical" 
                        class="bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-red-800 transition">
                         <i class="bi bi-filter mr-1"></i> View Critical Only
@@ -179,18 +181,23 @@
                                 {% if not alert.resolved %}
                                 <div class="flex flex-col gap-2 w-full lg:w-auto lg:ml-4 order-last lg:order-none pt-1 lg:pt-0">
                                     {% if not alert.is_read %}
-                                    <a href="{% url 'wellness:mark_alert_read' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}" 
-                                       class="w-full lg:w-auto px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-semibold transition text-center whitespace-nowrap">
-                                        Mark Read
-                                    </a>
+                                    <form method="post" action="{% url 'wellness:mark_alert_read' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}" class="w-full lg:w-auto">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                                class="w-full lg:w-auto px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-semibold transition text-center whitespace-nowrap">
+                                            Mark Read
+                                        </button>
+                                    </form>
                                     {% endif %}
-                                    <a href="{% url 'wellness:resolve_alert' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}"
-                                       data-url="{% url 'wellness:resolve_alert' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}"
-                                       data-name="{{ alert.student.get_full_name }}"
-                                       onclick="event.preventDefault(); var el=this; showConfirmModal({title:'Resolve Alert',body:'Mark this alert as resolved for <strong>'+el.dataset.name+'</strong>? This action will be recorded.',okLabel:'Yes, Resolve',type:'success',onConfirm(){window.location.href=el.dataset.url}})"
-                                       class="w-full lg:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition text-center whitespace-nowrap">
-                                        Resolve
-                                    </a>
+                                    <form method="post" action="{% url 'wellness:resolve_alert' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}" class="w-full lg:w-auto" id="resolveAlertForm-{{ alert.id }}">
+                                        {% csrf_token %}
+                                        <button type="button"
+                                                data-name="{{ alert.student.get_full_name }}"
+                                                onclick="var el=this; showConfirmModal({title:'Resolve Alert',body:'Mark this alert as resolved for <strong>'+el.dataset.name+'</strong>? This action will be recorded.',okLabel:'Yes, Resolve',type:'success',onConfirm(){document.getElementById('resolveAlertForm-{{ alert.id }}').submit()}})"
+                                                class="w-full lg:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition text-center whitespace-nowrap">
+                                            Resolve
+                                        </button>
+                                    </form>
                                 </div>
                                 {% endif %}
                             </div>

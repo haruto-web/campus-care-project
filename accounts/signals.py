@@ -1,5 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.contrib.auth.signals import user_logged_in
 from .models import User
 
 @receiver(post_save, sender=User)
@@ -26,3 +27,16 @@ def create_risk_assessment_for_student(sender, instance, created, **kwargs):
             missing_assignments=0,
             notes='Initial assessment created automatically'
         )
+
+@receiver(user_logged_in)
+def enforce_single_device_session(sender, request, user, **kwargs):
+    """
+    Track the latest active session key so other devices can be expired
+    gracefully by middleware with a user-facing message.
+    """
+    if not request.session.session_key:
+        request.session.save()
+    session_key = request.session.session_key or ''
+    if user.current_session_key != session_key:
+        user.current_session_key = session_key
+        user.save(update_fields=['current_session_key'])

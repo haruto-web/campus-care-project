@@ -175,9 +175,9 @@
         <div class="bt-sidebar-footer">
             <a href="{% url 'profile' %}" class="bt-sidebar-user">
                 {% if user.profile_picture %}
-                <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="bt-sidebar-avatar">
+                <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="bt-sidebar-avatar" onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'">
                 {% else %}
-                <div class="bt-sidebar-avatar">{{ user.first_name|first }}{{ user.last_name|first }}</div>
+                <img src="{% static 'images/logo.png' %}" alt="{{ user.get_full_name }}" class="bt-sidebar-avatar object-contain bg-white p-1">
                 {% endif %}
                 <div class="bt-sidebar-user-info">
                     <div class="bt-sidebar-user-name">{{ user.get_full_name }}</div>
@@ -367,11 +367,16 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             if (icon && localStorage.getItem('theme') === 'dark') icon.className = 'bi bi-sun';
 
             // Remove duplicate page heading when topbar title matches the first content heading.
+            // Only remove if the heading is standalone (no sibling elements in its parent),
+            // to avoid stripping headings that are part of a toolbar row with other controls.
             const normalize = (text) => (text || '').replace(/\s+/g, ' ').trim().toLowerCase();
             const topbarTitle = document.querySelector('.bt-page-title');
             const contentHeading = document.querySelector('.bt-content h1, .bt-content h2');
             if (topbarTitle && contentHeading && normalize(topbarTitle.textContent) && normalize(topbarTitle.textContent) === normalize(contentHeading.textContent)) {
-                contentHeading.remove();
+                const siblings = Array.from(contentHeading.parentElement.children).filter(el => el !== contentHeading);
+                if (siblings.length === 0) {
+                    contentHeading.remove();
+                }
             }
         });
         document.addEventListener('focusin', function (event) {
@@ -392,7 +397,7 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
 
     {% if user.is_authenticated %}
     <!-- Toast container -->
-    <div id="toastContainer" class="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none"></div>
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-[9999] space-y-2 pointer-events-none"></div>
 
     <script>
         /* === Notification Dropdown === */
@@ -495,18 +500,38 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             updateNotifList();
             const nb = document.getElementById('notifBadge');
             if (nb) { nb.textContent = '0'; nb.classList.add('hidden'); }
-        }
+        }
 
         function pollNotifications() {
-            fetch('/notifications/poll/')
-                .then(r => r.json())
-                .then(data => updateNotifUI(data))
+            fetch('/notifications/poll/', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+                .then(r => {
+                    if (r.status === 440) {
+                        return r.json().then(data => {
+                            window.location.href = '{% url "session_expired_notice" %}';
+                            return null;
+                        });
+                    }
+                    return r.json();
+                })
+                .then(data => { if (data) updateNotifUI(data); })
                 .catch(() => { });
         }
 
+        pollNotifications();
+        window.addEventListener('focus', pollNotifications);
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') pollNotifications();
+        });
         setInterval(pollNotifications, 5000);
     </script>
     {% endif %}
 </body>
 
 </html>
+
+

@@ -102,14 +102,6 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label for="{{ form.semester.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Semester/Term *
-                    </label>
-                    {{ form.semester }}
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Which semester or term is this class for?</p>
-                </div>
-                
-                <div>
                     <label for="{{ form.room.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Classroom
                         <span class="text-gray-400 text-xs">(Optional)</span>
@@ -120,12 +112,21 @@
             </div>
             
             <div class="mt-6">
-                <label for="{{ form.schedule.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Class Schedule
                     <span class="text-gray-400 text-xs">(Optional)</span>
                 </label>
-                {{ form.schedule }}
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">When does this class meet? (e.g., MWF 9:00-10:00 AM, Tue/Thu 2:00-3:30 PM)</p>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-4 space-y-4">
+                    {{ form.schedule_blocks }}
+                    <div id="scheduleBlocks" class="space-y-4"></div>
+                    <button type="button" id="addScheduleButton" class="inline-flex items-center gap-2 px-4 py-2 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 transition font-medium">
+                        <i class="bi bi-plus-circle"></i> Add Schedule
+                    </button>
+                    {% if form.schedule_blocks.errors %}
+                    <p class="text-red-500 text-sm mt-2">{{ form.schedule_blocks.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Add separate schedule entries for different day and time combinations.</p>
             </div>
         </div>
 
@@ -180,4 +181,96 @@
         padding-right: 2.5rem;
     }
 </style>
+<script>
+    (function () {
+        const dayChoices = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const blocksContainer = document.getElementById('scheduleBlocks');
+        const hiddenInput = document.getElementById('id_schedule_blocks');
+        const addButton = document.getElementById('addScheduleButton');
+
+        function readBlocks() {
+            try {
+                const parsed = JSON.parse(hiddenInput.value || '[]');
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function writeBlocks() {
+            const blocks = Array.from(blocksContainer.querySelectorAll('[data-schedule-block]')).map((block) => ({
+                days: Array.from(block.querySelectorAll('input[type="checkbox"]:checked')).map((input) => input.value),
+                start_time: block.querySelector('[data-start-time]').value,
+                end_time: block.querySelector('[data-end-time]').value
+            }));
+            hiddenInput.value = JSON.stringify(blocks);
+        }
+
+        function renderBlock(block = {}, index = 0) {
+            const wrapper = document.createElement('div');
+            wrapper.setAttribute('data-schedule-block', 'true');
+            wrapper.className = 'rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-4';
+
+            wrapper.innerHTML = `
+                <div class="flex items-center justify-between gap-3">
+                    <label class="text-sm font-semibold text-gray-700 dark:text-gray-200">Schedule ${index + 1}</label>
+                    <button type="button" class="text-sm text-red-500 hover:text-red-600 ${index === 0 ? 'hidden' : ''}" data-remove-schedule>Remove</button>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">Class Days</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        ${dayChoices.map((day) => `
+                            <label class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-400 transition cursor-pointer">
+                                <input type="checkbox" value="${day}" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${(block.days || []).includes(day) ? 'checked' : ''}>
+                                <span class="text-sm text-gray-700 dark:text-gray-200">${day}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Start Time</label>
+                        <input type="time" value="${block.start_time || ''}" data-start-time class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-gray-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">End Time</label>
+                        <input type="time" value="${block.end_time || ''}" data-end-time class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-gray-100">
+                    </div>
+                </div>
+            `;
+
+            wrapper.querySelector('[data-remove-schedule]').addEventListener('click', function () {
+                wrapper.remove();
+                writeBlocks();
+                rerender();
+            });
+
+            wrapper.querySelectorAll('input').forEach((input) => {
+                input.addEventListener('change', writeBlocks);
+            });
+
+            return wrapper;
+        }
+
+        function rerender() {
+            const blocks = readBlocks();
+            blocksContainer.innerHTML = '';
+            const items = blocks.length ? blocks : [{}];
+            items.forEach((block, index) => {
+                blocksContainer.appendChild(renderBlock(block, index));
+            });
+            writeBlocks();
+        }
+
+        addButton.addEventListener('click', function () {
+            const blocks = readBlocks();
+            blocks.push({});
+            hiddenInput.value = JSON.stringify(blocks);
+            rerender();
+        });
+
+        hiddenInput.form.addEventListener('submit', writeBlocks);
+        rerender();
+    })();
+</script>
 {% endblock %}

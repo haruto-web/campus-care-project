@@ -6,11 +6,65 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
+from django.core.files.storage import FileSystemStorage
+from django.core.cache import cache
+from django.conf import settings
+from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.dateparse import parse_datetime
 from .models import Class, Announcement, Material, Assignment, Attendance, Submission, Grade
 from .forms import ClassForm, AssignmentForm, MaterialForm
 from campus_care.validators import validate_submission_upload, validate_document_upload
+from accounts.decorators import deny_access, teacher_owns_class, teacher_owns_submission
+from accounts.utils import log_action, hit_rate_limit
 from datetime import date, datetime, timedelta
 import json
+import os
+import secrets
+
+
+def _teacher_class_or_redirect(request, class_obj, redirect_to='dashboard', message='Permission denied.'):
+    if not teacher_owns_class(request.user, class_obj):
+        return deny_access(request, redirect_to=redirect_to, message=message)
+    return None
+
+
+def _teacher_submission_or_redirect(request, submission, redirect_to='dashboard', message='Permission denied.'):
+    if not teacher_owns_submission(request.user, submission):
+        return deny_access(request, redirect_to=redirect_to, message=message)
+    return None
+
+
+UNDO_GRACE_SECONDS = 30
+
+
+def _undo_key(token):
+    return f'academics:undo:{token}'
+
+
+def _stash_undo_payload(payload, grace_seconds=UNDO_GRACE_SECONDS):
+    token = secrets.token_urlsafe(24)
+    cache.set(_undo_key(token), payload, grace_seconds)
+    return token
+
+
+def _pop_undo_payload(token):
+    key = _undo_key(token)
+    payload = cache.get(key)
+    cache.delete(key)
+    return payload
+
+
+def _parse_dt(value):
+    if not value:
+        return None
+    dt = parse_datetime(value)
+    if dt is None:
+        return None
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt
+
 
 @login_required
 def class_detail(request, class_id):
@@ -51,7 +105,7 @@ def create_announcement(request, class_id):
     class_obj = get_object_or_404(Class, id=class_id)
     
     # Only teacher can create announcements
-    if request.user.role != 'teacher' or class_obj.teacher != request.user:
+    if not teacher_owns_class(request.user, class_obj):
         messages.error(request, 'Only the class teacher can post announcements.')
         return redirect('academics:class_detail', class_id=class_id)
     
@@ -59,14 +113,18 @@ def create_announcement(request, class_id):
         title = request.POST.get('title')
         content = request.POST.get('content')
         priority = request.POST.get('priority', 'normal')
+        if priority not in dict(Announcement.PRIORITY_CHOICES):
+            messages.error(request, 'Invalid announcement priority.')
+            return render(request, 'academics/create_announcement.html', {'class': class_obj})
         
-        Announcement.objects.create(
+        announcement = Announcement.objects.create(
             class_obj=class_obj,
             author=request.user,
             title=title,
             content=content,
             priority=priority
         )
+        log_action(request, 'USER_UPDATED', 'Announcement', announcement.id, announcement.title)
         messages.success(request, 'Announcement posted successfully!')
         return redirect('academics:class_detail', class_id=class_id)
     
@@ -74,40 +132,8 @@ def create_announcement(request, class_id):
 
 @login_required
 def create_class(request):
-    if request.user.role != 'teacher':
-        messages.error(request, 'Only teachers can create classes.')
-        return redirect('dashboard')
-    
-    if request.method == 'POST':
-        form = ClassForm(request.POST)
-        if form.is_valid():
-            class_obj = form.save(commit=False)
-            class_obj.teacher = request.user
-            
-            # Check if code already exists and generate unique one
-            if Class.objects.filter(code=class_obj.code).exists():
-                messages.error(request, f'Class code "{class_obj.code}" already exists. Please use a different code.')
-                return render(request, 'academics/create_class.html', {'form': form})
-            
-            class_obj.save()
-            
-            # Auto-enroll students with matching section AND year_level
-            if class_obj.section and class_obj.year_level:
-                from accounts.models import User
-                students_with_section = User.objects.filter(
-                    role='student', 
-                    section__iexact=class_obj.section,
-                    year_level=class_obj.year_level
-                )
-                for student in students_with_section:
-                    class_obj.students.add(student)
-            
-            messages.success(request, f'Class {class_obj.name} created successfully!')
-            return redirect('dashboard')
-    else:
-        form = ClassForm()
-    
-    return render(request, 'academics/create_class.html', {'form': form})
+    messages.error(request, 'Class creation is available through the admin only.')
+    return redirect('academics:my_classes')
 
 @login_required
 def manage_students(request, class_id):
@@ -158,16 +184,18 @@ def manage_students(request, class_id):
     return render(request, 'academics/manage_students.html', context)
 
 @login_required
+@require_POST
 def add_student(request, class_id, student_id):
     class_obj = get_object_or_404(Class, id=class_id)
     
-    if request.user.role != 'teacher' or class_obj.teacher != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
     
     from accounts.models import User
     student = get_object_or_404(User, id=student_id, role='student')
     class_obj.students.add(student)
+    log_action(request, 'STUDENT_ENROLLED', 'Class', class_obj.id, class_obj.code, extra_data={'student_id': student.id})
     messages.success(request, f'{student.get_full_name()} added to {class_obj.code}!')
     
     # Preserve filters when redirecting
@@ -178,34 +206,41 @@ def add_student(request, class_id, student_id):
     return redirect(redirect_url)
 
 @login_required
+@require_POST
 def bulk_add_students(request, class_id):
     class_obj = get_object_or_404(Class, id=class_id)
-    if request.user.role != 'teacher' or class_obj.teacher != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
-    if request.method == 'POST':
-        from accounts.models import User
-        student_ids = request.POST.getlist('students')
-        added = []
-        for sid in student_ids:
-            student = get_object_or_404(User, id=sid, role='student')
-            if student not in class_obj.students.all():
-                class_obj.students.add(student)
-                added.append(student.get_full_name())
-        if added:
-            messages.success(request, f'Added: {", ".join(added)}')
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
+    from accounts.models import User
+    student_ids = request.POST.getlist('students')
+    added = []
+    added_ids = []
+    for sid in student_ids:
+        student = get_object_or_404(User, id=sid, role='student')
+        if student not in class_obj.students.all():
+            class_obj.students.add(student)
+            added.append(student.get_full_name())
+            added_ids.append(student.id)
+    if added:
+        log_action(request, 'STUDENT_ENROLLED', 'Class', class_obj.id, class_obj.code, extra_data={'student_ids': added_ids})
+        messages.success(request, f'Added: {", ".join(added)}')
     return redirect('academics:manage_students', class_id=class_id)
 
 @login_required
+@require_POST
 def drop_student(request, class_id, student_id):
     class_obj = get_object_or_404(Class, id=class_id)
     
-    if request.user.role != 'teacher' or class_obj.teacher != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
     
     from accounts.models import User
-    student = get_object_or_404(User, id=student_id)
+    student = get_object_or_404(User, id=student_id, role='student')
+    if not class_obj.students.filter(id=student.id).exists():
+        messages.error(request, 'Student is not enrolled in this class.')
+        return redirect('academics:manage_students', class_id=class_id)
     
     # Remove student from class
     class_obj.students.remove(student)
@@ -215,6 +250,7 @@ def drop_student(request, class_id, student_id):
     Attendance.objects.filter(student=student, class_obj=class_obj).delete()
     Submission.objects.filter(student=student, assignment__class_obj=class_obj).delete()
     
+    log_action(request, 'STUDENT_REMOVED_FROM_CLASS', 'Class', class_obj.id, class_obj.code, extra_data={'student_id': student.id})
     messages.success(request, f'{student.get_full_name()} has been dropped from {class_obj.code}. All related records have been removed.')
     return redirect('academics:manage_students', class_id=class_id)
 
@@ -222,11 +258,14 @@ def drop_student(request, class_id, student_id):
 def create_assignment(request, class_id):
     class_obj = get_object_or_404(Class, id=class_id)
     
-    if request.user.role != 'teacher' or class_obj.teacher != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
     
     if request.method == 'POST':
+        if hit_rate_limit(request, f'academics_create_assignment_{class_id}', limit=15, window_seconds=600):
+            messages.error(request, 'Too many assignment creation attempts. Please wait before trying again.')
+            return redirect('academics:class_detail', class_id=class_id)
         form = AssignmentForm(request.POST)
         if form.is_valid():
             assignment = form.save(commit=False)
@@ -238,6 +277,7 @@ def create_assignment(request, class_id):
                 messages.error(request, 'Due date must be in the future.')
                 return render(request, 'academics/create_assignment.html', {'form': form, 'class': class_obj})
             assignment.save()
+            log_action(request, 'ASSIGNMENT_CREATED', 'Assignment', assignment.id, assignment.title, extra_data={'class_id': class_obj.id})
             messages.success(request, f'Assignment "{assignment.title}" created successfully!')
             return redirect('academics:class_detail', class_id=class_id)
     else:
@@ -249,23 +289,28 @@ def create_assignment(request, class_id):
 def mark_attendance(request, class_id):
     class_obj = get_object_or_404(Class, id=class_id)
     
-    if request.user.role != 'teacher' or class_obj.teacher != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
     
     students = class_obj.students.all()
     today = date.today()
     
     if request.method == 'POST':
+        allowed_statuses = {'present', 'absent', 'late'}
         for student in students:
             status = request.POST.get(f'status_{student.id}')
             if status:
+                if status not in allowed_statuses:
+                    messages.error(request, 'Invalid attendance status.')
+                    return redirect('academics:mark_attendance', class_id=class_id)
                 Attendance.objects.update_or_create(
                     class_obj=class_obj,
                     student=student,
                     date=today,
                     defaults={'status': status}
                 )
+        log_action(request, 'ATTENDANCE_MARKED', 'Class', class_obj.id, class_obj.code, extra_data={'date': str(today), 'student_count': students.count()})
         messages.success(request, 'Attendance marked successfully!')
         return redirect('academics:class_detail', class_id=class_id)
     
@@ -323,9 +368,9 @@ def view_submissions(request, class_id, assignment_id):
 def grade_submission(request, submission_id):
     submission = get_object_or_404(Submission, id=submission_id)
     
-    if request.user.role != 'teacher' or submission.assignment.class_obj.teacher != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    denied = _teacher_submission_or_redirect(request, submission)
+    if denied:
+        return denied
     
     if request.method == 'POST':
         score = request.POST.get('score')
@@ -347,6 +392,14 @@ def grade_submission(request, submission_id):
         from django.utils import timezone
         submission.graded_at = timezone.now()
         submission.save()
+        log_action(
+            request,
+            'SUBMISSION_GRADED',
+            'Submission',
+            submission.id,
+            submission.assignment.title,
+            extra_data={'student_id': submission.student_id, 'score': submission.score},
+        )
         
         # Notify student about grading
         student = submission.student
@@ -370,16 +423,27 @@ def grade_submission(request, submission_id):
 def upload_material(request, class_id):
     class_obj = get_object_or_404(Class, id=class_id)
     
-    if request.user.role != 'teacher' or class_obj.teacher != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
     
     if request.method == 'POST':
+        if hit_rate_limit(request, f'academics_upload_material_{class_id}', limit=15, window_seconds=600):
+            messages.error(request, 'Too many material uploads. Please wait before trying again.')
+            return redirect('academics:class_detail', class_id=class_id)
         form = MaterialForm(request.POST, request.FILES)
         if form.is_valid():
             # Validate file upload
             uploaded_file = request.FILES.get('file')
             if uploaded_file:
+                allowed_material_extensions = {
+                    '.pdf', '.doc', '.docx', '.ppt', '.pptx',
+                    '.xls', '.xlsx', '.txt', '.zip', '.csv',
+                }
+                ext = os.path.splitext(uploaded_file.name)[1].lower()
+                if ext not in allowed_material_extensions:
+                    messages.error(request, 'Unsupported file type for class materials. Use PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, ZIP, or CSV.')
+                    return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
                 try:
                     validate_document_upload(uploaded_file)
                 except ValidationError as e:
@@ -388,7 +452,22 @@ def upload_material(request, class_id):
             material = form.save(commit=False)
             material.class_obj = class_obj
             material.uploaded_by = request.user
-            material.save()
+            try:
+                material.save()
+            except Exception:
+                if uploaded_file:
+                    try:
+                        fallback_storage = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
+                        fallback_name = fallback_storage.save(f"materials/{uploaded_file.name}", uploaded_file)
+                        material.file = fallback_name
+                        material.save()
+                    except Exception:
+                        messages.error(request, 'Material upload failed. Please upload a supported document file and try again.')
+                        return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
+                else:
+                    messages.error(request, 'Material upload failed. Please try again.')
+                    return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
+            log_action(request, 'MATERIAL_UPLOADED', 'Material', material.id, material.title, extra_data={'class_id': class_obj.id})
             messages.success(request, f'Material "{material.title}" uploaded successfully!')
             return redirect('academics:class_detail', class_id=class_id)
     else:
@@ -401,14 +480,81 @@ def upload_material(request, class_id):
 def delete_material(request, material_id):
     material = get_object_or_404(Material, id=material_id)
     
-    if request.user.role != 'teacher' or material.class_obj.teacher != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    denied = _teacher_class_or_redirect(request, material.class_obj)
+    if denied:
+        return denied
     
     class_id = material.class_obj.id
+    undo_token = _stash_undo_payload({
+        'type': 'material_delete',
+        'actor_id': request.user.id,
+        'class_id': class_id,
+        'material': {
+            'title': material.title,
+            'description': material.description,
+            'file': material.file.name if material.file else '',
+            'uploaded_by_id': material.uploaded_by_id,
+            'uploaded_at': material.uploaded_at.isoformat() if material.uploaded_at else '',
+        },
+    })
+    undo_url = reverse('academics:undo_material_delete', kwargs={'token': undo_token})
+    log_action(
+        request,
+        'MATERIAL_DELETED',
+        'Material',
+        material.id,
+        material.title,
+        extra_data={'class_id': class_id, 'undo_window_seconds': UNDO_GRACE_SECONDS},
+    )
     material.delete()
-    messages.success(request, 'Material deleted successfully!')
+    messages.warning(
+        request,
+        format_html(
+            'Material deleted. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            undo_url,
+            UNDO_GRACE_SECONDS,
+        ),
+    )
     return redirect('academics:class_detail', class_id=class_id)
+
+
+@login_required
+def undo_material_delete(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('type') != 'material_delete':
+        messages.error(request, 'Undo link is no longer valid.')
+        return redirect('academics:my_classes')
+    if payload.get('actor_id') != request.user.id:
+        messages.error(request, 'You do not have permission to undo this action.')
+        return redirect('academics:my_classes')
+
+    class_obj = get_object_or_404(Class, id=payload.get('class_id'))
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
+
+    data = payload.get('material', {})
+    restored = Material.objects.create(
+        class_obj=class_obj,
+        title=data.get('title', 'Restored Material'),
+        description=data.get('description', ''),
+        file=data.get('file', ''),
+        uploaded_by_id=data.get('uploaded_by_id') or request.user.id,
+    )
+    uploaded_at = _parse_dt(data.get('uploaded_at'))
+    if uploaded_at:
+        Material.objects.filter(id=restored.id).update(uploaded_at=uploaded_at)
+
+    log_action(
+        request,
+        'MATERIAL_UPLOADED',
+        'Material',
+        restored.id,
+        restored.title,
+        extra_data={'class_id': class_obj.id, 'restored_via_undo': True},
+    )
+    messages.success(request, 'Material restored successfully.')
+    return redirect('academics:class_detail', class_id=class_obj.id)
 
 @login_required
 def my_classes(request):
@@ -589,6 +735,9 @@ def submit_assignment(request, assignment_id):
     }
     
     if request.method == 'POST':
+        if hit_rate_limit(request, f'academics_submit_assignment_{assignment_id}', limit=10, window_seconds=600):
+            messages.error(request, 'Too many submission attempts. Please wait before trying again.')
+            return redirect('academics:submit_assignment', assignment_id=assignment_id)
         file = request.FILES.get('file')
         text_content = request.POST.get('text_content', '').strip()
         sub_type = assignment.submission_type
@@ -771,51 +920,261 @@ def student_attendance(request):
 def delete_assignment(request, assignment_id):
     assignment = get_object_or_404(Assignment, id=assignment_id)
     
-    if request.user.role != 'teacher' or assignment.class_obj.teacher != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    denied = _teacher_class_or_redirect(request, assignment.class_obj)
+    if denied:
+        return denied
     
     class_id = assignment.class_obj.id
+    assignment_payload = {
+        'type': 'assignment_delete',
+        'actor_id': request.user.id,
+        'class_id': class_id,
+        'assignment': {
+            'title': assignment.title,
+            'description': assignment.description,
+            'due_date': assignment.due_date.isoformat() if assignment.due_date else '',
+            'total_points': assignment.total_points,
+            'submission_type': assignment.submission_type,
+        },
+        'submissions': [
+            {
+                'student_id': sub.student_id,
+                'submitted_at': sub.submitted_at.isoformat() if sub.submitted_at else '',
+                'text_content': sub.text_content,
+                'file': sub.file.name if sub.file else '',
+                'score': sub.score,
+                'feedback': sub.feedback,
+                'graded_at': sub.graded_at.isoformat() if sub.graded_at else '',
+            }
+            for sub in assignment.submissions.all().select_related('student')
+        ],
+        'grades': [
+            {
+                'student_id': g.student_id,
+                'score': str(g.score),
+                'max_score': str(g.max_score),
+                'date': g.date.isoformat() if g.date else '',
+            }
+            for g in Grade.objects.filter(assignment=assignment)
+        ],
+    }
+    undo_token = _stash_undo_payload(assignment_payload)
+    undo_url = reverse('academics:undo_assignment_delete', kwargs={'token': undo_token})
+    log_action(
+        request,
+        'ASSIGNMENT_DELETED',
+        'Assignment',
+        assignment.id,
+        assignment.title,
+        extra_data={'class_id': class_id, 'undo_window_seconds': UNDO_GRACE_SECONDS},
+    )
     assignment.delete()
-    messages.success(request, f'Assignment "{assignment.title}" deleted.')
+    messages.warning(
+        request,
+        format_html(
+            'Assignment "{}" deleted. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            assignment.title,
+            undo_url,
+            UNDO_GRACE_SECONDS,
+        ),
+    )
     return redirect('academics:class_detail', class_id=class_id)
 
+
 @login_required
+def undo_assignment_delete(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('type') != 'assignment_delete':
+        messages.error(request, 'Undo link is no longer valid.')
+        return redirect('academics:my_classes')
+    if payload.get('actor_id') != request.user.id:
+        messages.error(request, 'You do not have permission to undo this action.')
+        return redirect('academics:my_classes')
+
+    class_obj = get_object_or_404(Class, id=payload.get('class_id'))
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
+
+    assignment_data = payload.get('assignment', {})
+    restored_assignment = Assignment.objects.create(
+        class_obj=class_obj,
+        title=assignment_data.get('title', 'Restored Assignment'),
+        description=assignment_data.get('description', ''),
+        due_date=_parse_dt(assignment_data.get('due_date')) or timezone.now() + timedelta(days=1),
+        total_points=assignment_data.get('total_points') or 100,
+        submission_type=assignment_data.get('submission_type') or 'file_upload',
+    )
+
+    for sub in payload.get('submissions', []):
+        student_id = sub.get('student_id')
+        if not student_id:
+            continue
+        try:
+            restored_sub = Submission.objects.create(
+                assignment=restored_assignment,
+                student_id=student_id,
+                text_content=sub.get('text_content', ''),
+                file=sub.get('file', ''),
+                score=sub.get('score'),
+                feedback=sub.get('feedback', ''),
+                graded_at=_parse_dt(sub.get('graded_at')),
+            )
+            submitted_at = _parse_dt(sub.get('submitted_at'))
+            if submitted_at:
+                Submission.objects.filter(id=restored_sub.id).update(submitted_at=submitted_at)
+        except Exception:
+            continue
+
+    for g in payload.get('grades', []):
+        student_id = g.get('student_id')
+        if not student_id:
+            continue
+        try:
+            restored_grade = Grade.objects.create(
+                student_id=student_id,
+                class_obj=class_obj,
+                assignment=restored_assignment,
+                score=g.get('score') or '0',
+                max_score=g.get('max_score') or '0',
+            )
+        except Exception:
+            continue
+        try:
+            parsed_date = datetime.fromisoformat(g.get('date')) if g.get('date') else None
+        except ValueError:
+            parsed_date = None
+        if parsed_date:
+            Grade.objects.filter(id=restored_grade.id).update(
+                date=parsed_date.date() if isinstance(parsed_date, datetime) else parsed_date
+            )
+
+    log_action(
+        request,
+        'ASSIGNMENT_CREATED',
+        'Assignment',
+        restored_assignment.id,
+        restored_assignment.title,
+        extra_data={'class_id': class_obj.id, 'restored_via_undo': True},
+    )
+    messages.success(request, f'Assignment "{restored_assignment.title}" restored successfully.')
+    return redirect('academics:class_detail', class_id=class_obj.id)
+
+@login_required
+@require_POST
 def comment_submission(request, submission_id):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST required'}, status=405)
     submission = get_object_or_404(Submission, id=submission_id)
-    if request.user.role != 'teacher' or submission.assignment.class_obj.teacher != request.user:
+    if not teacher_owns_submission(request.user, submission):
         return JsonResponse({'error': 'Permission denied'}, status=403)
     comment = request.POST.get('comment', '').strip()
     submission.feedback = comment
     submission.save(update_fields=['feedback'])
+    log_action(request, 'GRADE_CHANGED', 'Submission', submission.id, submission.assignment.title, extra_data={'comment_updated': True})
     return JsonResponse({'success': True, 'comment': comment})
 
 @login_required
 def edit_class(request, class_id):
     class_obj = get_object_or_404(Class, id=class_id)
     
-    if request.user.role != 'teacher' or class_obj.teacher != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
-    
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
+
+    schedule_blocks = Class.parse_schedule_blocks(class_obj.schedule)
     if request.method == 'POST':
+        raw_schedule_blocks = request.POST.get('schedule_blocks', '[]')
+        valid_days = {choice[0] for choice in Class.DAY_CHOICES}
+        try:
+            submitted_blocks = json.loads(raw_schedule_blocks)
+        except (TypeError, ValueError):
+            submitted_blocks = None
+
+        if not isinstance(submitted_blocks, list):
+            messages.error(request, 'Invalid schedule data.')
+            return render(request, 'academics/edit_class.html', {
+                'class': class_obj,
+                'day_choices': Class.DAY_CHOICES,
+                'schedule_blocks_json': raw_schedule_blocks,
+            })
+
+        normalized_blocks = []
+        for block in submitted_blocks:
+            if not isinstance(block, dict):
+                messages.error(request, 'Invalid schedule entry.')
+                return render(request, 'academics/edit_class.html', {
+                    'class': class_obj,
+                    'day_choices': Class.DAY_CHOICES,
+                    'schedule_blocks_json': raw_schedule_blocks,
+                })
+
+            schedule_days = [day for day in (block.get('days') or []) if day]
+            schedule_start_time = (block.get('start_time') or '').strip()
+            schedule_end_time = (block.get('end_time') or '').strip()
+
+            if not any([schedule_days, schedule_start_time, schedule_end_time]):
+                continue
+
+            if not all([schedule_days, schedule_start_time, schedule_end_time]):
+                messages.error(request, 'Each schedule entry must include class day(s), start time, and end time.')
+                return render(request, 'academics/edit_class.html', {
+                    'class': class_obj,
+                    'day_choices': Class.DAY_CHOICES,
+                    'schedule_blocks_json': raw_schedule_blocks,
+                })
+
+            if any(day not in valid_days for day in schedule_days):
+                messages.error(request, 'Invalid class day selected.')
+                return render(request, 'academics/edit_class.html', {
+                    'class': class_obj,
+                    'day_choices': Class.DAY_CHOICES,
+                    'schedule_blocks_json': raw_schedule_blocks,
+                })
+
+            try:
+                Class._input_to_display_time(schedule_start_time)
+                Class._input_to_display_time(schedule_end_time)
+            except ValueError:
+                messages.error(request, 'Invalid schedule time selected.')
+                return render(request, 'academics/edit_class.html', {
+                    'class': class_obj,
+                    'day_choices': Class.DAY_CHOICES,
+                    'schedule_blocks_json': raw_schedule_blocks,
+                })
+
+            if schedule_start_time >= schedule_end_time:
+                messages.error(request, 'Each schedule entry must end after it starts.')
+                return render(request, 'academics/edit_class.html', {
+                    'class': class_obj,
+                    'day_choices': Class.DAY_CHOICES,
+                    'schedule_blocks_json': raw_schedule_blocks,
+                })
+
+            normalized_blocks.append({
+                'days': schedule_days,
+                'start_time': schedule_start_time,
+                'end_time': schedule_end_time,
+            })
+
         class_obj.name = request.POST.get('name')
         class_obj.description = request.POST.get('description', '')
-        class_obj.schedule = request.POST.get('schedule', '')
+        class_obj.schedule = Class.build_schedule_blocks(normalized_blocks)
         class_obj.room = request.POST.get('room', '')
         class_obj.save()
+        log_action(request, 'USER_UPDATED', 'Class', class_obj.id, class_obj.code)
         messages.success(request, 'Class updated successfully!')
         return redirect('academics:class_detail', class_id=class_id)
-    
-    return render(request, 'academics/edit_class.html', {'class': class_obj})
+
+    return render(request, 'academics/edit_class.html', {
+        'class': class_obj,
+        'day_choices': Class.DAY_CHOICES,
+        'schedule_blocks_json': json.dumps(schedule_blocks),
+    })
 
 @login_required
 @require_POST
 def update_attendance_ajax(request, class_id):
     class_obj = get_object_or_404(Class, id=class_id)
-    if request.user.role != 'teacher' or class_obj.teacher != request.user:
+    if not teacher_owns_class(request.user, class_obj):
         return JsonResponse({'error': 'Permission denied'}, status=403)
     try:
         data = json.loads(request.body)

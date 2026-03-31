@@ -14,6 +14,7 @@ from .content_filter import contains_inappropriate_content, filter_message_conte
 from campus_care.validators import validate_document_upload
 from accounts.decorators import role_required
 from accounts.otp_utils import send_transactional_email
+from accounts.utils import log_action, hit_rate_limit
 
 # Role-based allowed recipients
 ALLOWED_RECIPIENTS = {
@@ -22,6 +23,82 @@ ALLOWED_RECIPIENTS = {
     'teacher':  ['counselor', 'admin', 'student'],
     'student':  ['counselor', 'teacher', 'student'],
 }
+
+
+def _extract_device_info(user_agent):
+    ua = (user_agent or '').strip()
+    ua_l = ua.lower()
+    if not ua:
+        return {
+            'device_type': 'Unknown device',
+            'device_brand': '',
+            'os': 'Unknown OS',
+            'browser': 'Unknown browser',
+        }
+
+    # Device type
+    if 'ipad' in ua_l or 'tablet' in ua_l:
+        device_type = 'Tablet'
+    elif 'mobi' in ua_l or 'android' in ua_l or 'iphone' in ua_l:
+        device_type = 'Mobile'
+    else:
+        device_type = 'Desktop'
+
+    # OS (conservative)
+    if 'windows nt' in ua_l:
+        os_name = 'Windows'
+    elif 'android' in ua_l:
+        os_name = 'Android'
+    elif 'iphone' in ua_l or 'ipad' in ua_l or 'cpu iphone os' in ua_l:
+        os_name = 'iOS'
+    elif 'mac os x' in ua_l and 'iphone' not in ua_l and 'ipad' not in ua_l:
+        os_name = 'macOS'
+    elif 'linux' in ua_l:
+        os_name = 'Linux'
+    else:
+        os_name = 'Unknown OS'
+
+    # Browser (conservative)
+    if 'edg/' in ua_l:
+        browser = 'Microsoft Edge'
+    elif 'opr/' in ua_l or 'opera' in ua_l:
+        browser = 'Opera'
+    elif 'chrome/' in ua_l and 'edg/' not in ua_l and 'opr/' not in ua_l:
+        browser = 'Chrome'
+    elif 'firefox/' in ua_l:
+        browser = 'Firefox'
+    elif 'safari/' in ua_l and 'chrome/' not in ua_l:
+        browser = 'Safari'
+    else:
+        browser = 'Unknown browser'
+
+    # Brand/model (only when explicit in UA to avoid wrong info)
+    brand = ''
+    if 'iphone' in ua_l or 'ipad' in ua_l or 'macintosh' in ua_l:
+        brand = 'Apple'
+    elif 'samsung' in ua_l or 'sm-' in ua_l:
+        brand = 'Samsung'
+    elif 'huawei' in ua_l or 'honor' in ua_l:
+        brand = 'Huawei'
+    elif 'xiaomi' in ua_l or 'mi ' in ua_l or 'redmi' in ua_l:
+        brand = 'Xiaomi'
+    elif 'oppo' in ua_l:
+        brand = 'OPPO'
+    elif 'vivo' in ua_l:
+        brand = 'vivo'
+    elif 'realme' in ua_l:
+        brand = 'realme'
+    elif 'oneplus' in ua_l:
+        brand = 'OnePlus'
+    elif 'pixel' in ua_l:
+        brand = 'Google Pixel'
+
+    return {
+        'device_type': device_type,
+        'device_brand': brand,
+        'os': os_name,
+        'browser': browser,
+    }
 
 
 @login_required
@@ -47,6 +124,9 @@ def conversation(request, conv_id):
     conv.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
 
     if request.method == 'POST':
+        if hit_rate_limit(request, f'messaging_send_{conv_id}', limit=30, window_seconds=300):
+            messages.error(request, 'Too many message attempts. Please wait a few minutes before trying again.')
+            return redirect('messaging:conversation', conv_id=conv.id)
         # Check messaging suspension
         if request.user.is_messaging_suspended():
             messages.error(request, f'Your messaging access is suspended until {request.user.messaging_suspended_until.strftime("%b %d, %Y at %I:%M %p")}.')
@@ -84,6 +164,21 @@ def conversation(request, conv_id):
                 )
                 messages.warning(request, 'File attachment failed to upload. Message sent without attachment.')
             conv.save()
+            device_info = _extract_device_info(request.META.get('HTTP_USER_AGENT', ''))
+            log_action(
+                request,
+                'MESSAGE_SENT',
+                'Conversation',
+                conv.id,
+                other.get_full_name(),
+                extra_data={
+                    'message_id': msg.id,
+                    'sender_device_type': device_info['device_type'],
+                    'sender_device_brand': device_info['device_brand'],
+                    'sender_os': device_info['os'],
+                    'sender_browser': device_info['browser'],
+                },
+            )
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 local_dt = timezone.localtime(msg.created_at)
                 return JsonResponse({
@@ -110,6 +205,8 @@ def poll_messages(request, conv_id):
     conv = get_object_or_404(Conversation, id=conv_id)
     if request.user not in conv.participants.all():
         return JsonResponse({'error': 'denied'}, status=403)
+    if hit_rate_limit(request, f'messaging_poll_{conv_id}', limit=120, window_seconds=60):
+        return JsonResponse({'error': 'Too many requests'}, status=429)
 
     try:
         after_id = int(request.GET.get('after', 0))
@@ -156,6 +253,9 @@ def new_message(request, recipient_id=None):
     year_levels = sorted(set(s.year_level for s in students if s.year_level))
 
     if request.method == 'POST':
+        if hit_rate_limit(request, 'messaging_new_message', limit=20, window_seconds=300):
+            messages.error(request, 'Too many message attempts. Please wait a few minutes before trying again.')
+            return redirect('messaging:inbox')
         recipient_id = request.POST.get('recipient') or recipient_id
         body = request.POST.get('body', '').strip()
         attachment = request.FILES.get('attachment')
@@ -203,11 +303,26 @@ def new_message(request, recipient_id=None):
 
         if body or attachment:
             try:
-                Message.objects.create(conversation=conv, sender=request.user, body=body, attachment=attachment)
+                msg = Message.objects.create(conversation=conv, sender=request.user, body=body, attachment=attachment)
             except Exception:
-                Message.objects.create(conversation=conv, sender=request.user, body=body)
+                msg = Message.objects.create(conversation=conv, sender=request.user, body=body)
                 messages.warning(request, 'File attachment failed to upload. Message sent without attachment.')
             conv.save()
+            device_info = _extract_device_info(request.META.get('HTTP_USER_AGENT', ''))
+            log_action(
+                request,
+                'MESSAGE_SENT',
+                'Conversation',
+                conv.id,
+                recipient.get_full_name(),
+                extra_data={
+                    'message_id': msg.id,
+                    'sender_device_type': device_info['device_type'],
+                    'sender_device_brand': device_info['device_brand'],
+                    'sender_os': device_info['os'],
+                    'sender_browser': device_info['browser'],
+                },
+            )
 
         return redirect('messaging:conversation', conv_id=conv.id)
 
@@ -239,12 +354,16 @@ def report_message(request, msg_id):
         return redirect('messaging:conversation', conv_id=msg.conversation_id)
 
     if request.method == 'POST':
+        if hit_rate_limit(request, 'messaging_report_message', limit=10, window_seconds=600):
+            messages.error(request, 'Too many report submissions. Please wait before trying again.')
+            return redirect('messaging:conversation', conv_id=msg.conversation_id)
         reason = request.POST.get('reason', '').strip()
         details = request.POST.get('details', '').strip()
         if reason not in dict(MessageReport.REASON_CHOICES):
             messages.error(request, 'Invalid reason.')
             return redirect('messaging:report_message', msg_id=msg_id)
-        MessageReport.objects.create(reporter=request.user, message=msg, reason=reason, details=details)
+        report = MessageReport.objects.create(reporter=request.user, message=msg, reason=reason, details=details)
+        log_action(request, 'MESSAGE_REPORTED', 'MessageReport', report.id, msg.sender.get_full_name(), extra_data={'message_id': msg.id, 'reason': reason})
         messages.success(request, 'Report submitted. A counselor will review it.')
         return redirect('messaging:conversation', conv_id=msg.conversation_id)
 
@@ -287,9 +406,9 @@ def resolve_report(request, report_id):
         report.counselor_notes = notes
         report.resolved_by = request.user
         report.save()
+        log_action(request, 'MESSAGE_REPORT_RESOLVED', 'MessageReport', report.id, report.reported_user.get_full_name(), extra_data={'status': status, 'consequence': consequence})
 
         reported_user = report.reported_user
-
         if consequence == 'suspend':
             suspend_until = timezone.now() + timedelta(weeks=1)
             reported_user.messaging_suspended_until = suspend_until

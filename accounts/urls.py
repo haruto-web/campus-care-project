@@ -8,6 +8,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('verify-otp/', views.verify_otp_view, name='verify_otp'),
+    path('session-expired/', views.session_expired_notice_view, name='session_expired_notice'),
     path('forgot-password/', views.otp_forgot_password_view, name='otp_forgot_password'),
     path('reset-password/', views.otp_reset_password_view, name='otp_reset_password'),
     path('student/<int:student_id>/', views.student_profile_view, name='student_profile'),
@@ -17,6 +18,7 @@ urlpatterns = [
     path('complete-profile/', views.complete_profile_view, name='complete_profile'),
     path('students/', views.students_list_view, name='students_list'),
     path('notifications/poll/', views.notifications_poll, name='notifications_poll'),
+    path('session/heartbeat/', views.session_heartbeat_view, name='session_heartbeat'),
 
     # Admin URLs
     path('manage/users/', admin_views.admin_manage_users, name='admin_manage_users'),

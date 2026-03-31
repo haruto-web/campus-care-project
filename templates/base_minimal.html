@@ -63,7 +63,37 @@
                 input.value = input.min;
             }
         });
+
+        {% if user.is_authenticated %}
+        (function () {
+
+            function heartbeat() {
+                fetch('{% url "session_heartbeat" %}', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(function (res) {
+                    if (res.status === 440) {
+                        window.location.href = '{% url "session_expired_notice" %}';
+                        return null;
+                    }
+                })
+                .catch(function () { });
+            }
+
+            heartbeat();
+            window.addEventListener('focus', heartbeat);
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') heartbeat();
+            });
+            setInterval(heartbeat, 4000);
+        })();
+        {% endif %}
     </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
+
+

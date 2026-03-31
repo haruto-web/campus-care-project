@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from datetime import datetime
 
 class Class(models.Model):
     YEAR_LEVEL_CHOICES = [
@@ -7,6 +8,15 @@ class Class(models.Model):
         ('8', 'Grade 8'),
         ('9', 'Grade 9'),
         ('10', 'Grade 10'),
+    ]
+    DAY_CHOICES = [
+        ('Monday', 'Monday'),
+        ('Tuesday', 'Tuesday'),
+        ('Wednesday', 'Wednesday'),
+        ('Thursday', 'Thursday'),
+        ('Friday', 'Friday'),
+        ('Saturday', 'Saturday'),
+        ('Sunday', 'Sunday'),
     ]
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=20, unique=True)
@@ -25,6 +35,81 @@ class Class(models.Model):
     
     def __str__(self):
         return f"{self.code} - {self.name}"
+
+    @classmethod
+    def parse_schedule(cls, schedule):
+        blocks = cls.parse_schedule_blocks(schedule)
+        if not blocks:
+            return [], '', ''
+        first_block = blocks[0]
+        return first_block['days'], first_block['start_time'], first_block['end_time']
+
+    @classmethod
+    def parse_schedule_blocks(cls, schedule):
+        if not schedule:
+            return []
+        parsed_blocks = []
+        for block in [part.strip() for part in schedule.split(';') if part.strip()]:
+            parsed = cls._parse_schedule_block(block)
+            if parsed:
+                parsed_blocks.append(parsed)
+        return parsed_blocks
+
+    @classmethod
+    def _parse_schedule_block(cls, block):
+        if not block or ' | ' not in block:
+            return None
+        day_part, time_range = block.split(' | ', 1)
+        days = [day.strip() for day in day_part.split(',') if day.strip()]
+        valid_days = {choice[0] for choice in cls.DAY_CHOICES}
+        if not days or any(day not in valid_days for day in days):
+            return None
+        if ' - ' not in time_range:
+            return None
+        start_time, end_time = [part.strip() for part in time_range.split(' - ', 1)]
+        if not cls._is_valid_time_display(start_time) or not cls._is_valid_time_display(end_time):
+            return None
+        return {
+            'days': days,
+            'start_time': cls._display_to_input_time(start_time),
+            'end_time': cls._display_to_input_time(end_time),
+        }
+
+    @classmethod
+    def build_schedule(cls, days, start_time, end_time):
+        if not days or not start_time or not end_time:
+            return ''
+        display_days = ', '.join(days)
+        return f'{display_days} | {cls._input_to_display_time(start_time)} - {cls._input_to_display_time(end_time)}'
+
+    @classmethod
+    def build_schedule_blocks(cls, blocks):
+        if not blocks:
+            return ''
+        formatted_blocks = []
+        for block in blocks:
+            days = block.get('days') or []
+            start_time = block.get('start_time')
+            end_time = block.get('end_time')
+            if days and start_time and end_time:
+                formatted_blocks.append(cls.build_schedule(days, start_time, end_time))
+        return '; '.join(formatted_blocks)
+
+    @staticmethod
+    def _is_valid_time_display(value):
+        try:
+            datetime.strptime(value, '%I:%M %p')
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _input_to_display_time(value):
+        return datetime.strptime(value, '%H:%M').strftime('%I:%M %p')
+
+    @staticmethod
+    def _display_to_input_time(value):
+        return datetime.strptime(value, '%I:%M %p').strftime('%H:%M')
 
 class Assignment(models.Model):
     SUBMISSION_TYPE_CHOICES = [

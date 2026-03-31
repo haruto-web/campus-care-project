@@ -2,19 +2,362 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse, FileResponse
 from django.db.models import Count, Avg, Q
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
 from datetime import datetime, timedelta
+from pathlib import Path
+from functools import wraps
+import mimetypes
+import ipaddress
+import json
+from urllib import request as urllib_request
+from urllib import error as urllib_error
 from academics.models import Class, Assignment, Submission, Attendance, Grade
 from wellness.models import WellnessCheckIn, RiskAssessment, Alert, Intervention
 from campus_care.validators import validate_image_upload
-from .models import User, OTPCode, RegistrationRequest
-from .otp_utils import send_otp_email
-from .utils import log_action
+from .models import User, OTPCode, RegistrationRequest, AuditLog
+from .otp_utils import send_otp_email, send_transactional_email
+from .utils import log_action, hit_rate_limit, record_security_spike, run_background_task, get_client_ip
+from .decorators import teacher_owns_class
+
+
+def _send_security_email(to_email, subject, lines):
+    try:
+        send_transactional_email(
+            to_email=to_email,
+            subject=subject,
+            text_content="\n".join(lines),
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Security email send failed: %s', subject)
+
+
+def _auth_safe(template_name=None, error_message='Something went wrong. Please try again.', redirect_name=None):
+    """Catch unexpected auth-flow exceptions and return safe UI instead of 500."""
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapper(request, *args, **kwargs):
+            try:
+                return view_func(request, *args, **kwargs)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).exception('%s failed unexpectedly', view_func.__name__)
+                if error_message:
+                    messages.error(request, error_message)
+                if redirect_name:
+                    return redirect(redirect_name)
+                if template_name:
+                    return render(request, template_name)
+                return redirect('login')
+        return wrapper
+    return decorator
+
+
+def _format_email_timestamp(dt=None):
+    current = timezone.localtime(dt or timezone.now())
+    return current.strftime("%b %d, %Y %I:%M:%S %p")
+
+def _email_datetime_line(dt=None):
+    return f"Date & Time: {_format_email_timestamp(dt)}"
+
+
+def _extract_device_info(user_agent):
+    ua = (user_agent or '').strip()
+    ua_l = ua.lower()
+    if not ua:
+        return {
+            'device_type': 'Unknown device',
+            'device_brand': '',
+            'os': 'Unknown OS',
+            'browser': 'Unknown browser',
+        }
+
+    if 'ipad' in ua_l or 'tablet' in ua_l:
+        device_type = 'Tablet'
+    elif 'mobi' in ua_l or 'android' in ua_l or 'iphone' in ua_l:
+        device_type = 'Mobile'
+    else:
+        device_type = 'Desktop'
+
+    if 'windows nt' in ua_l:
+        os_name = 'Windows'
+    elif 'android' in ua_l:
+        os_name = 'Android'
+    elif 'iphone' in ua_l or 'ipad' in ua_l or 'cpu iphone os' in ua_l:
+        os_name = 'iOS'
+    elif 'mac os x' in ua_l and 'iphone' not in ua_l and 'ipad' not in ua_l:
+        os_name = 'macOS'
+    elif 'linux' in ua_l:
+        os_name = 'Linux'
+    else:
+        os_name = 'Unknown OS'
+
+    if 'edg/' in ua_l:
+        browser = 'Microsoft Edge'
+    elif 'opr/' in ua_l or 'opera' in ua_l:
+        browser = 'Opera'
+    elif 'chrome/' in ua_l and 'edg/' not in ua_l and 'opr/' not in ua_l:
+        browser = 'Chrome'
+    elif 'firefox/' in ua_l:
+        browser = 'Firefox'
+    elif 'safari/' in ua_l and 'chrome/' not in ua_l:
+        browser = 'Safari'
+    else:
+        browser = 'Unknown browser'
+
+    brand = ''
+    if 'iphone' in ua_l or 'ipad' in ua_l or 'macintosh' in ua_l:
+        brand = 'Apple'
+    elif 'samsung' in ua_l or 'sm-' in ua_l:
+        brand = 'Samsung'
+    elif 'huawei' in ua_l or 'honor' in ua_l:
+        brand = 'Huawei'
+    elif 'xiaomi' in ua_l or 'mi ' in ua_l or 'redmi' in ua_l:
+        brand = 'Xiaomi'
+    elif 'oppo' in ua_l:
+        brand = 'OPPO'
+    elif 'vivo' in ua_l:
+        brand = 'vivo'
+    elif 'realme' in ua_l:
+        brand = 'realme'
+    elif 'oneplus' in ua_l:
+        brand = 'OnePlus'
+    elif 'pixel' in ua_l:
+        brand = 'Google Pixel'
+
+    return {
+        'device_type': device_type,
+        'device_brand': brand,
+        'os': os_name,
+        'browser': browser,
+    }
+
+
+def _append_request_security_context(email_lines, request, include_location=True):
+    actor_ip = get_client_ip(request)
+    actor_location = _resolve_ip_location(actor_ip) if include_location else None
+    device_info = _extract_device_info(request.META.get('HTTP_USER_AGENT', ''))
+
+    if actor_ip and actor_ip != 'unknown':
+        email_lines.append(f'IP Address: {actor_ip}')
+    if actor_location:
+        email_lines.append(f'Location: {actor_location}')
+    if device_info.get('device_brand'):
+        email_lines.append(f'Device Brand: {device_info["device_brand"]}')
+    email_lines.append(f'Device Type: {device_info["device_type"]}')
+    email_lines.append(f'Operating System: {device_info["os"]}')
+    email_lines.append(f'Browser: {device_info["browser"]}')
+    return email_lines
+
+
+def _get_active_otp_expiry(email):
+    otp = OTPCode.objects.filter(contact_value=email, is_used=False).order_by('-created_at').first()
+    if not otp:
+        return None
+    return timezone.localtime(otp.created_at + timedelta(minutes=3))
+
+
+def _otp_verify_context(email, purpose, **extra):
+    expires_at = _get_active_otp_expiry(email)
+    context = {
+        'email': email,
+        'purpose': purpose,
+        'otp_expires_at': expires_at.isoformat() if expires_at else '',
+    }
+    context.update(extra)
+    return context
+
+
+def _resolve_ip_location(ip_address):
+    if not ip_address:
+        return None
+    try:
+        parsed_ip = ipaddress.ip_address(ip_address)
+    except ValueError:
+        return None
+
+    if (
+        parsed_ip.is_private
+        or parsed_ip.is_loopback
+        or parsed_ip.is_link_local
+        or parsed_ip.is_multicast
+        or parsed_ip.is_reserved
+        or parsed_ip.is_unspecified
+    ):
+        return None
+
+    cache_key = f'geoip:v2:{ip_address}'
+    cached_location = cache.get(cache_key)
+    if cached_location is not None:
+        return cached_location or None
+
+    def _fetch_json(url):
+        try:
+            req = urllib_request.Request(
+                url,
+                headers={
+                    'Accept': 'application/json',
+                    'User-Agent': 'BrightTrack/1.0 (+security-login-alerts)',
+                },
+            )
+            with urllib_request.urlopen(req, timeout=2.5) as response:
+                raw = response.read().decode("utf-8", errors="ignore")
+            return json.loads(raw)
+        except (urllib_error.URLError, TimeoutError, ValueError, OSError):
+            return None
+
+    def _norm(value):
+        if not value:
+            return ''
+        return str(value).strip()
+
+    candidates = []
+
+    # Provider 1: ip-api.com (fast/structured for regionName)
+    payload = _fetch_json(
+        f'https://ip-api.com/json/{ip_address}?fields=status,country,regionName,city'
+    )
+    if payload and payload.get('status') == 'success':
+        candidates.append({
+            'city': _norm(payload.get('city')),
+            'region': _norm(payload.get('regionName')),
+            'country': _norm(payload.get('country')),
+        })
+
+    # Provider 2: ipapi.co
+    payload = _fetch_json(f'https://ipapi.co/{ip_address}/json/')
+    if payload and not payload.get('error'):
+        candidates.append({
+            'city': _norm(payload.get('city')),
+            'region': _norm(payload.get('region')),
+            'country': _norm(payload.get('country_name')),
+        })
+
+    # Provider 3: ipwho.is
+    payload = _fetch_json(f'https://ipwho.is/{ip_address}')
+    if payload and payload.get('success', False):
+        candidates.append({
+            'city': _norm(payload.get('city')),
+            'region': _norm(payload.get('region')),
+            'country': _norm(payload.get('country')),
+        })
+
+    if not candidates:
+        cache.set(cache_key, '', 3600)
+        return None
+
+    # Consensus strategy:
+    # - If at least 2 providers agree on country+region+city, return full precision.
+    # - Else if at least 2 agree on country+region, return region-level precision.
+    # - Else if at least 2 agree on country, return country-only precision.
+    # This prevents overconfident but potentially wrong city labels.
+    from collections import Counter
+
+    city_region_country = Counter(
+        (
+            c.get('city', '').lower(),
+            c.get('region', '').lower(),
+            c.get('country', '').lower(),
+        )
+        for c in candidates
+        if c.get('city') and c.get('region') and c.get('country')
+    )
+    top_crc = city_region_country.most_common(1)
+    if top_crc and top_crc[0][1] >= 2:
+        city, region, country = top_crc[0][0]
+        location = ', '.join([part.title() for part in [city, region, country] if part])
+        cache.set(cache_key, location, 86400)
+        return location
+
+    region_country = Counter(
+        (c.get('region', '').lower(), c.get('country', '').lower())
+        for c in candidates
+        if c.get('region') and c.get('country')
+    )
+    top_rc = region_country.most_common(1)
+    if top_rc and top_rc[0][1] >= 2:
+        region, country = top_rc[0][0]
+        location = ', '.join([part.title() for part in [region, country] if part])
+        cache.set(cache_key, location, 86400)
+        return location
+
+    country_only = Counter(
+        c.get('country', '').lower() for c in candidates if c.get('country')
+    )
+    top_country = country_only.most_common(1)
+    if top_country and top_country[0][1] >= 2:
+        location = top_country[0][0].title()
+        cache.set(cache_key, location, 86400)
+        return location
+
+    # If providers disagree entirely, do not return a potentially wrong location.
+    cache.set(cache_key, '', 3600)
+    return None
+
+
+def _local_media_response(path):
+    media_root = Path(settings.MEDIA_ROOT).resolve()
+    file_path = (media_root / path).resolve()
+    if media_root not in file_path.parents:
+        raise Http404
+    if not file_path.exists() or not file_path.is_file():
+        raise Http404
+    content_type = mimetypes.guess_type(str(file_path))[0] or 'application/octet-stream'
+    return FileResponse(open(file_path, 'rb'), content_type=content_type)
+
+
+@login_required
+def protected_media_view(request, path):
+    normalized_path = path.replace('\\', '/').lstrip('/')
+
+    if normalized_path.startswith('profiles/'):
+        return _local_media_response(normalized_path)
+
+    if normalized_path.startswith('id_pictures/'):
+        owner = User.objects.filter(id_picture=normalized_path).first()
+        if owner and (request.user.id == owner.id or request.user.role in ['admin', 'counselor']):
+            return _local_media_response(normalized_path)
+        raise Http404
+
+    if normalized_path.startswith('materials/'):
+        from academics.models import Material
+        material = Material.objects.select_related('class_obj', 'class_obj__teacher').filter(file=normalized_path).first()
+        if material and (
+            request.user.role in ['admin', 'counselor']
+            or teacher_owns_class(request.user, material.class_obj)
+            or material.class_obj.students.filter(id=request.user.id).exists()
+        ):
+            return _local_media_response(normalized_path)
+        raise Http404
+
+    if normalized_path.startswith('submissions/'):
+        submission = Submission.objects.select_related('assignment__class_obj', 'student').filter(file=normalized_path).first()
+        if submission and (
+            request.user.role in ['admin', 'counselor']
+            or request.user.id == submission.student_id
+            or teacher_owns_class(request.user, submission.assignment.class_obj)
+        ):
+            return _local_media_response(normalized_path)
+        raise Http404
+
+    if normalized_path.startswith('message_attachments/'):
+        from messaging.models import Message
+        message = Message.objects.filter(attachment=normalized_path).first()
+        if message and (
+            request.user.role == 'admin'
+            or message.conversation.participants.filter(id=request.user.id).exists()
+        ):
+            return _local_media_response(normalized_path)
+        raise Http404
+
+    raise Http404
 
 def landing_view(request):
     if request.user.is_authenticated:
@@ -27,12 +370,25 @@ from django.http import JsonResponse
 @login_required
 def notifications_poll(request):
     """Single endpoint polled by base.html every 5s for all notification counts."""
+    if hit_rate_limit(request, 'notifications_poll', limit=120, window_seconds=60, track_spike=False):
+        return JsonResponse({'error': 'Too many requests'}, status=429)
+
+    # --- Duplicate-login / session-displacement check ---
+    user = request.user
+    current_session_key = (request.session.session_key or '').strip()
+    stored_session_key = (getattr(user, 'current_session_key', '') or '').strip()
+    if stored_session_key and current_session_key and stored_session_key != current_session_key:
+        # This device's session has been displaced by a newer login on another device.
+        return JsonResponse(
+            {'message': 'Your account was logged in on another device. You have been signed out for security.'},
+            status=440,
+        )
+
     from messaging.models import Message
     from academics.models import Announcement, Submission
     from wellness.models import Alert
     from django.db.models import Q
 
-    user = request.user
     data = {}
 
     # Unread messages
@@ -74,6 +430,11 @@ def notifications_poll(request):
     return JsonResponse(data)
 
 
+@login_required
+def session_heartbeat_view(request):
+    return JsonResponse({'ok': True})
+
+
 def fix_site_domain(request):
     """Temporary view to fix Site domain for OAuth - admin only"""
     if not request.user.is_authenticated or not request.user.is_superuser:
@@ -88,93 +449,100 @@ def fix_site_domain(request):
     site.save()
     return HttpResponse(f'Site domain updated: {old} → {hostname}')
 
+@_auth_safe(template_name='accounts/register.html', error_message='Unable to process registration right now. Please try again.')
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
 
-    if request.method == 'POST':
-        from django.contrib.auth.password_validation import validate_password
-        from django.contrib.auth.hashers import make_password
+    try:
+        if request.method == 'POST':
+            from django.contrib.auth.password_validation import validate_password
+            from django.contrib.auth.hashers import make_password
 
-        # Rate limit: 5 attempts per IP per 10 minutes
-        ip = request.META.get('REMOTE_ADDR')
-        rate_key = f'reg_attempts_{ip}'
-        attempts = cache.get(rate_key, 0)
-        if attempts >= 5:
-            messages.error(request, 'Too many registration attempts. Please try again later.')
-            return render(request, 'accounts/register.html')
-        cache.set(rate_key, attempts + 1, 600)
+            # Rate limit: 5 attempts per IP per 10 minutes
+            ip = request.META.get('REMOTE_ADDR')
+            rate_key = f'reg_attempts_{ip}'
+            attempts = cache.get(rate_key, 0)
+            if attempts >= 5:
+                messages.error(request, 'Too many registration attempts. Please try again later.')
+                return render(request, 'accounts/register.html')
+            cache.set(rate_key, attempts + 1, 600)
 
-        student_number = request.POST.get('student_number', '').strip()
-        email = request.POST.get('email', '').strip().lower()
-        first_name = request.POST.get('first_name', '').strip().title()
-        last_name = request.POST.get('last_name', '').strip().title()
-        year_level = request.POST.get('year_level', '').strip()
-        section = request.POST.get('section', '').strip().title()
-        password = request.POST.get('password', '')
-        password2 = request.POST.get('password2', '')
+            student_number = request.POST.get('student_number', '').strip()
+            email = request.POST.get('email', '').strip().lower()
+            first_name = request.POST.get('first_name', '').strip().title()
+            last_name = request.POST.get('last_name', '').strip().title()
+            year_level = request.POST.get('year_level', '').strip()
+            section = request.POST.get('section', '').strip().title()
+            password = request.POST.get('password', '')
+            password2 = request.POST.get('password2', '')
 
-        if not student_number.isdigit() or len(student_number) != 12:
-            return render(request, 'accounts/register.html', {
-                'sn_error': 'Student number must be exactly 12 digits.',
-                'student_number_val': student_number,
-            })
+            if not student_number.isdigit() or len(student_number) != 12:
+                return render(request, 'accounts/register.html', {
+                    'sn_error': 'Student number must be exactly 12 digits.',
+                    'student_number_val': student_number,
+                })
 
-        if not all([first_name, last_name, year_level]):
-            messages.error(request, 'First name, last name, and year level are required.')
-            return render(request, 'accounts/register.html')
+            if not all([first_name, last_name, year_level]):
+                messages.error(request, 'First name, last name, and year level are required.')
+                return render(request, 'accounts/register.html')
 
-        if year_level not in ('7', '8', '9', '10'):
-            messages.error(request, 'Year level must be 7, 8, 9, or 10.')
-            return render(request, 'accounts/register.html')
+            if year_level not in ('7', '8', '9', '10'):
+                messages.error(request, 'Year level must be 7, 8, 9, or 10.')
+                return render(request, 'accounts/register.html')
 
-        if password != password2:
-            messages.error(request, 'Passwords do not match.')
-            return render(request, 'accounts/register.html')
+            if password != password2:
+                messages.error(request, 'Passwords do not match.')
+                return render(request, 'accounts/register.html')
 
-        try:
-            validate_password(password)
-        except DjangoValidationError as e:
-            return render(request, 'accounts/register.html', {'password_errors': e.messages})
+            try:
+                validate_password(password)
+            except DjangoValidationError as e:
+                return render(request, 'accounts/register.html', {'password_errors': e.messages})
 
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'Registration failed. Please check your details or contact your administrator.')
-            return render(request, 'accounts/register.html')
+            if User.objects.filter(email=email).exists():
+                messages.error(request, 'Registration failed. Please check your details or contact your administrator.')
+                return render(request, 'accounts/register.html')
 
-        existing_request = RegistrationRequest.objects.filter(
-            student_number=student_number,
-            email__iexact=email,
-            status=RegistrationRequest.Status.PENDING
-        ).first()
-        if existing_request:
-            messages.error(request, 'A registration request for this student is already pending admin approval.')
-            return render(request, 'accounts/register.html')
+            existing_request = RegistrationRequest.objects.filter(
+                student_number=student_number,
+                email__iexact=email,
+                status=RegistrationRequest.Status.PENDING
+            ).first()
+            if existing_request:
+                messages.error(request, 'A registration request for this student is already pending admin approval.')
+                return render(request, 'accounts/register.html')
 
-        # Send OTP — don't create account yet
-        otp = OTPCode.generate(email)
-        try:
-            send_otp_email(email, otp.code)
-        except Exception:
-            import logging
-            logging.getLogger(__name__).error('OTP email failed during registration')
-            messages.error(request, 'Failed to send verification code. Please try again.')
-            return render(request, 'accounts/register.html')
+            # Send OTP — don't create account yet
+            otp = OTPCode.generate(email)
+            try:
+                send_otp_email(email, otp.code)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).error('OTP email failed during registration')
+                messages.error(request, 'Failed to send verification code. Please try again.')
+                return render(request, 'accounts/register.html')
 
-        request.session['otp_email'] = email
-        request.session['otp_purpose'] = 'register'
-        request.session['reg_data'] = {
-            'student_number': student_number,
-            'first_name': first_name,
-            'last_name': last_name,
-            'year_level': year_level,
-            'section': section,
-            'password_hash': make_password(password),
-        }
-        return redirect('verify_otp')
+            request.session['otp_email'] = email
+            request.session['otp_purpose'] = 'register'
+            request.session['reg_data'] = {
+                'student_number': student_number,
+                'first_name': first_name,
+                'last_name': last_name,
+                'year_level': year_level,
+                'section': section,
+                'password_hash': make_password(password),
+            }
+            return redirect('verify_otp')
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('register_view failed unexpectedly')
+        messages.error(request, 'Unable to process registration right now. Please try again.')
 
     return render(request, 'accounts/register.html')
 
 
+@_auth_safe(template_name='accounts/otp_request.html', error_message='Unable to process OTP request right now. Please try again.')
 def otp_request_view(request):
     """Step 1: Student enters email only — always sends OTP."""
     if request.user.is_authenticated:
@@ -211,6 +579,7 @@ def otp_request_view(request):
     return render(request, 'accounts/otp_request.html')
 
 
+@_auth_safe(template_name='accounts/otp_verify.html', error_message='Unable to verify code right now. Please try again.')
 def otp_verify_view(request):
     """OTP verify — used for login, new registration, and forgot password."""
     email = request.session.get('otp_email')
@@ -252,6 +621,7 @@ def otp_verify_view(request):
     return render(request, 'accounts/otp_verify.html', {'email': email})
 
 
+@_auth_safe(redirect_name='login', error_message='Unable to complete login right now. Please try again.')
 def otp_login_password_view(request):
     """Existing student enters password after OTP verified."""
     if not request.session.get('otp_verified'):
@@ -278,33 +648,59 @@ def otp_login_password_view(request):
     return render(request, 'accounts/otp_login_password.html', {'email': email})
 
 
+@_auth_safe(template_name='accounts/otp_forgot_password.html', error_message='Unable to process forgot password right now. Please try again.')
 def otp_forgot_password_view(request):
-    if request.user.is_authenticated:
-        return redirect('dashboard')
+    try:
+        if request.user.is_authenticated:
+            return redirect('dashboard')
 
-    if request.method == 'POST':
-        email = request.POST.get('email', '').strip().lower()
-        user = User.objects.filter(email=email).first()
-        if not user:
-            messages.error(request, 'No account found with that email.')
-            return render(request, 'accounts/otp_forgot_password.html')
+        if request.method == 'POST':
+            email = request.POST.get('email', '').strip().lower()
+            rate_key = f'forgot_password_send_{email}'
+            send_count = cache.get(rate_key, 0)
+            if send_count >= 3:
+                messages.error(request, 'Too many reset requests. Please wait 15 minutes before trying again.')
+                return render(request, 'accounts/otp_forgot_password.html')
 
-        otp = OTPCode.generate(email)
-        try:
-            send_otp_email(email, otp.code)
-        except Exception:
-            import logging
-            logging.getLogger(__name__).error('OTP email failed during forgot password')
-            messages.error(request, 'Failed to send code. Please try again later.')
-            return render(request, 'accounts/otp_forgot_password.html')
+            user = User.objects.filter(email=email).first()
+            if not user:
+                messages.success(request, 'If an account exists for that email, a reset code will be sent.')
+                return render(request, 'accounts/otp_forgot_password.html')
 
-        request.session['otp_email'] = email
-        request.session['otp_purpose'] = 'reset'
-        return redirect('verify_otp')
+            otp = OTPCode.generate(email)
+            try:
+                send_otp_email(email, otp.code)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).error('OTP email failed during forgot password')
+                messages.error(request, 'Failed to send code. Please try again later.')
+                return render(request, 'accounts/otp_forgot_password.html')
+
+            cache.set(rate_key, send_count + 1, 900)
+            _send_security_email(
+                email,
+                'BrightTrack Password Reset Requested',
+                _append_request_security_context([
+                    f'Dear {user.get_full_name() or user.email},',
+                    '',
+                    'A password reset code was requested for your BrightTrack account.',
+                    _email_datetime_line(),
+                    'If this was you, you can continue using the verification code that was just sent.',
+                    'If this was not you, please ignore this message and consider changing your password after logging in.',
+                ], request, include_location=True),
+            )
+            request.session['otp_email'] = email
+            request.session['otp_purpose'] = 'reset'
+            return redirect('verify_otp')
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('otp_forgot_password_view failed unexpectedly')
+        messages.error(request, 'Unable to process forgot password right now. Please try again.')
 
     return render(request, 'accounts/otp_forgot_password.html')
 
 
+@_auth_safe(template_name='accounts/otp_reset_password.html', error_message='Unable to reset password right now. Please try again.')
 def otp_reset_password_view(request):
     if not request.session.get('otp_verified') or request.session.get('otp_purpose') != 'reset':
         return redirect('login')
@@ -332,6 +728,19 @@ def otp_reset_password_view(request):
             return redirect('login')
         user.set_password(password)
         user.save()
+        log_action(request, 'PASSWORD_RESET', 'User', user.id, user.get_full_name())
+        _send_security_email(
+            user.email,
+            'BrightTrack Password Changed',
+            _append_request_security_context([
+                f'Dear {user.get_full_name() or user.email},',
+                '',
+                'Your BrightTrack password was changed successfully.',
+                _email_datetime_line(),
+                '',
+                'If this was not you, please contact an administrator immediately.',
+            ], request, include_location=True),
+        )
 
         for key in ['otp_email', 'otp_verified', 'otp_purpose']:
             request.session.pop(key, None)
@@ -398,13 +807,24 @@ def otp_register_view(request):
 
     return render(request, 'accounts/otp_register.html', {'email': email})
 
+@_auth_safe(template_name='accounts/login.html', error_message='Unable to process login right now. Please try again.')
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
 
+    if request.method == 'GET' and request.GET.get('session_expired') == '1':
+        messages.warning(request, 'Session expired: this account was logged in on another device.')
+
     if request.method == 'POST':
         email = request.POST.get('email', '').strip().lower()
         password = request.POST.get('password')
+        ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', 'unknown')).split(',')[0].strip()
+        attempt_key = f'login_attempts_{ip}_{email}'
+        attempts = cache.get(attempt_key, 0)
+
+        if attempts >= 5:
+            messages.error(request, 'Too many login attempts. Please wait 10 minutes before trying again.')
+            return render(request, 'accounts/login.html')
 
         try:
             u = User.objects.get(email=email)
@@ -421,17 +841,21 @@ def login_view(request):
                 logging.getLogger(__name__).error('OTP email failed during login')
                 messages.error(request, 'Failed to send verification code. Please try again.')
                 return render(request, 'accounts/login.html')
+            cache.delete(attempt_key)
             request.session['otp_user_id'] = user.id
             request.session['otp_email'] = email
             request.session['otp_purpose'] = 'login'
             return redirect('verify_otp')
         else:
+            cache.set(attempt_key, attempts + 1, 600)
+            record_security_spike(f'failed_login:{ip}', threshold=5, window_seconds=600)
             log_action(request, 'LOGIN_FAILED', 'User', None, email)
             messages.error(request, 'Invalid email or password.')
 
     return render(request, 'accounts/login.html')
 
 
+@_auth_safe(redirect_name='login', error_message='Unable to verify OTP right now. Please try again.')
 def verify_otp_view(request):
     purpose = request.session.get('otp_purpose')
     email = request.session.get('otp_email')
@@ -439,12 +863,78 @@ def verify_otp_view(request):
     if not email or purpose not in ('login', 'register', 'reset'):
         return redirect('login')
 
+    attempt_key = f'otp_attempts_{email}'
+
+    def _is_otp_locked():
+        return cache.get(attempt_key, 0) >= 5
+
+    def _render_verify():
+        return render(
+            request,
+            'accounts/verify_otp.html',
+            _otp_verify_context(email, purpose, otp_locked=_is_otp_locked()),
+        )
+
+    def _complete_login(user):
+        for key in ['otp_user_id', 'otp_email', 'otp_purpose', 'otp_login_verified']:
+            request.session.pop(key, None)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        if not request.session.session_key:
+            request.session.save()
+        active_session_key = request.session.session_key or ''
+        if hasattr(user, 'current_session_key'):
+            try:
+                if (getattr(user, 'current_session_key', '') or '') != active_session_key:
+                    user.current_session_key = active_session_key
+                    user.save(update_fields=['current_session_key'])
+            except Exception:
+                pass
+        log_action(request, 'LOGIN', 'User', user.id, user.get_full_name())
+        if user.role in ['teacher', 'counselor', 'admin']:
+            email_lines = [
+                f'Dear {user.get_full_name() or user.email},',
+                '',
+                f'A new login to your BrightTrack account was completed as {user.role}.',
+                _email_datetime_line(),
+            ]
+            _append_request_security_context(email_lines, request, include_location=True)
+            email_lines.extend([
+                '',
+                'If this was not you, please change your password and contact an administrator immediately.',
+            ])
+            _send_security_email(
+                user.email,
+                'BrightTrack New Login Alert',
+                email_lines,
+            )
+        return redirect('dashboard')
+
     if request.method == 'POST':
-        attempt_key = f'otp_attempts_{email}'
+        if request.POST.get('resend_otp') == '1':
+            if _is_otp_locked():
+                messages.error(request, 'Too many failed attempts. Please wait 30 minutes.')
+                return _render_verify()
+            resend_key = f'otp_resend_{purpose}_{email}'
+            resend_count = cache.get(resend_key, 0)
+            if resend_count >= 3:
+                messages.error(request, 'Too many resend requests. Please wait 15 minutes before trying again.')
+                return _render_verify()
+            try:
+                otp = OTPCode.generate(email)
+                send_otp_email(email, otp.code)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).error('OTP resend failed')
+                messages.error(request, 'Failed to resend code. Please try again.')
+                return _render_verify()
+            cache.set(resend_key, resend_count + 1, 900)
+            messages.success(request, 'A new verification code has been sent.')
+            return _render_verify()
+
         attempts = cache.get(attempt_key, 0)
         if attempts >= 5:
             messages.error(request, 'Too many failed attempts. Please wait 30 minutes.')
-            return render(request, 'accounts/verify_otp.html', {'email': email, 'purpose': purpose})
+            return _render_verify()
 
         code = request.POST.get('code', '').strip()
         otp = OTPCode.objects.filter(
@@ -452,9 +942,13 @@ def verify_otp_view(request):
         ).order_by('-created_at').first()
 
         if not otp or not otp.is_valid():
-            cache.set(attempt_key, attempts + 1, 1800)
-            messages.error(request, 'Invalid or expired code.')
-            return render(request, 'accounts/verify_otp.html', {'email': email, 'purpose': purpose})
+            new_attempts = attempts + 1
+            cache.set(attempt_key, new_attempts, 1800)
+            if new_attempts >= 5:
+                messages.error(request, 'Too many failed attempts. Please wait 30 minutes.')
+            else:
+                messages.error(request, 'Invalid or expired code.')
+            return _render_verify()
 
         otp.is_used = True
         otp.save()
@@ -465,11 +959,7 @@ def verify_otp_view(request):
             if not user_id:
                 return redirect('login')
             user = User.objects.get(id=user_id)
-            for key in ['otp_user_id', 'otp_email', 'otp_purpose']:
-                request.session.pop(key, None)
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            log_action(request, 'LOGIN', 'User', user.id, user.get_full_name())
-            return redirect('dashboard')
+            return _complete_login(user)
 
         elif purpose == 'register':
             from django.db import transaction
@@ -481,7 +971,7 @@ def verify_otp_view(request):
                 if User.objects.filter(email=email).exists():
                     messages.error(request, 'An account with this email already exists.')
                     return redirect('register')
-                RegistrationRequest.objects.update_or_create(
+                registration, _ = RegistrationRequest.objects.update_or_create(
                     student_number=reg['student_number'],
                     email=email,
                     defaults={
@@ -496,6 +986,7 @@ def verify_otp_view(request):
                         'rejection_reason': '',
                     }
                 )
+            log_action(request, 'REGISTRATION_SUBMITTED', 'RegistrationRequest', registration.id, registration.email)
             for key in ['otp_email', 'otp_purpose', 'reg_data']:
                 request.session.pop(key, None)
             messages.success(request, 'Registration submitted. Please wait for admin approval. We will email you once approved or rejected.')
@@ -505,11 +996,23 @@ def verify_otp_view(request):
             request.session['otp_verified'] = True
             return redirect('otp_reset_password')
 
-    return render(request, 'accounts/verify_otp.html', {'email': email, 'purpose': purpose})
+    return _render_verify()
+
+@login_required
+def session_expired_notice_view(request):
+    if request.method == 'POST':
+        logout(request)
+        messages.warning(request, 'Session expired: this account was logged in on another device.')
+        return redirect('login')
+    return render(request, 'accounts/session_expired.html')
 
 @require_POST
+@_auth_safe(redirect_name='landing', error_message='')
 def logout_view(request):
-    log_action(request, 'LOGOUT', 'User', request.user.id, request.user.get_full_name())
+    if request.user.is_authenticated:
+        user_id = request.user.id
+        user_label = request.user.get_full_name() if hasattr(request.user, 'get_full_name') else str(request.user)
+        log_action(request, 'LOGOUT', 'User', user_id, user_label)
     logout(request)
     return redirect('landing')
 
@@ -537,6 +1040,11 @@ def dashboard_view(request):
 
 @login_required
 def student_dashboard(request):
+    cache_key = f'dashboard:student:{request.user.id}'
+    cached_context = cache.get(cache_key)
+    if cached_context:
+        return render(request, 'dashboard/student_dashboard.html', cached_context)
+
     user = request.user
     classes = user.enrolled_classes.all()
     
@@ -584,10 +1092,16 @@ def student_dashboard(request):
         'last_checkin': last_checkin,
         'missing_assignments': missing_assignments,
     }
+    cache.set(cache_key, context, 120)
     return render(request, 'dashboard/student_dashboard.html', context)
 
 @login_required
 def teacher_dashboard(request):
+    cache_key = f'dashboard:teacher:{request.user.id}'
+    cached_context = cache.get(cache_key)
+    if cached_context:
+        return render(request, 'dashboard/teacher_dashboard.html', cached_context)
+
     user = request.user
     classes = Class.objects.filter(teacher=user)
     
@@ -670,10 +1184,16 @@ def teacher_dashboard(request):
         'atrisk_by_section': atrisk_by_section_list,
         'pending_by_section': pending_by_section_list,
     }
+    cache.set(cache_key, context, 120)
     return render(request, 'dashboard/teacher_dashboard.html', context)
 
 @login_required
 def counselor_dashboard(request):
+    cache_key = f'dashboard:counselor:{request.user.id}'
+    cached_context = cache.get(cache_key)
+    if cached_context:
+        return render(request, 'dashboard/counselor_dashboard.html', cached_context)
+
     # Get risk assessments
     high_risk_students = RiskAssessment.objects.filter(
         risk_level='high'
@@ -726,6 +1246,7 @@ def counselor_dashboard(request):
         'highrisk_by_section': highrisk_by_section_list,
         'mediumrisk_by_section': mediumrisk_by_section_list,
     }
+    cache.set(cache_key, context, 120)
     return render(request, 'dashboard/counselor_dashboard.html', context)
 
 @login_required
@@ -733,15 +1254,28 @@ def admin_dashboard(request):
     from django.db.models import Count
     from datetime import timedelta
     from django.core.management import call_command
-    
-    # Auto-calculate risk assessments if none exist or if last calculation was > 1 day ago
-    latest_assessment = RiskAssessment.objects.order_by('-date').first()
-    if not latest_assessment or (timezone.now().date() - latest_assessment.date).days > 0:
+
+    def _refresh_risk_assessments():
         try:
             call_command('calculate_risk')
-        except:
+            cache.set('dashboard:risk_last_refresh', timezone.now().isoformat(), 86400)
+        except Exception:
             pass
-    
+        finally:
+            cache.delete('dashboard:risk_refresh_running')
+
+    # Auto-calculate risk assessments if none exist or if last calculation was > 1 day ago
+    latest_assessment = RiskAssessment.objects.order_by('-date').first()
+    refresh_lock = cache.get('dashboard:risk_refresh_running')
+    if (not latest_assessment or (timezone.now().date() - latest_assessment.date).days > 0) and not refresh_lock:
+        cache.set('dashboard:risk_refresh_running', True, 300)
+        run_background_task(_refresh_risk_assessments)
+
+    cache_key = 'dashboard:admin'
+    cached_context = cache.get(cache_key)
+    if cached_context:
+        return render(request, 'dashboard/admin_dashboard.html', cached_context)
+
     # User statistics
     total_users = User.objects.count()
     total_students = User.objects.filter(role='student').count()
@@ -798,41 +1332,73 @@ def admin_dashboard(request):
         'activity_labels': activity_labels,
         'activity_data': activity_data,
     }
+    cache.set(cache_key, context, 120)
     return render(request, 'dashboard/admin_dashboard.html', context)
 
 @login_required
 def profile_view(request):
     if request.method == 'POST':
-        request.user.first_name = request.POST.get('first_name')
-        request.user.last_name = request.POST.get('last_name')
-        request.user.phone = request.POST.get('phone', '')
+        if hit_rate_limit(request, 'accounts_profile_update', limit=15, window_seconds=600):
+            messages.error(request, 'Too many profile updates. Please wait before trying again.')
+            return redirect('profile')
+        user = User.objects.get(pk=request.user.pk)
+        user.first_name = request.POST.get('first_name')
+        user.last_name = request.POST.get('last_name')
+        user.phone = request.POST.get('phone', '')
+        uploaded_profile_picture = request.FILES.get('profile_picture')
         
-        # Protect email changes — require re-verification
+        # Protect email changes - require re-verification
         new_email = request.POST.get('email', '').strip()
-        if new_email and new_email != request.user.email:
+        if new_email and new_email != user.email:
             messages.warning(request, 'Email changes require verification. Your email was not updated.')
         
-        if request.FILES.get('profile_picture'):
+        update_fields = ['first_name', 'last_name', 'phone']
+
+        if uploaded_profile_picture:
             try:
-                validate_image_upload(request.FILES['profile_picture'])
-                request.user.profile_picture = request.FILES['profile_picture']
+                validate_image_upload(uploaded_profile_picture)
+                user.profile_picture = uploaded_profile_picture
+                update_fields.append('profile_picture')
             except DjangoValidationError as e:
                 messages.warning(request, f'Profile picture rejected: {e.message}')
             except Exception:
                 messages.warning(request, 'Profile picture upload failed. Other changes saved.')
-        
+
         try:
-            request.user.save()
-        except Exception:
-            request.user.profile_picture = None
-            request.user.save()
-            messages.warning(request, 'Profile picture upload failed. Other changes saved.')
+            user.save(update_fields=update_fields)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f'Profile save failed for user {user.pk}: {type(e).__name__}: {e}')
+            if 'profile_picture' in update_fields:
+                update_fields_no_pic = [f for f in update_fields if f != 'profile_picture']
+                user.refresh_from_db()
+                user.first_name = request.POST.get('first_name')
+                user.last_name = request.POST.get('last_name')
+                user.phone = request.POST.get('phone', '')
+                user.save(update_fields=update_fields_no_pic)
+                messages.warning(request, f'Profile picture upload failed ({type(e).__name__}). Other changes saved.')
+            else:
+                messages.error(request, 'Failed to save profile. Please try again.')
             return redirect('profile')
+
+        log_action(request, 'PROFILE_UPDATED', 'User', user.id, user.get_full_name())
         messages.success(request, 'Profile updated successfully!')
         return redirect('profile')
     
-    # Add context for students
-    context = {}
+    # Profile activity timeline context (all roles)
+    recent_activity = AuditLog.objects.filter(actor=request.user).order_by('-timestamp')[:8]
+    last_login_entry = AuditLog.objects.filter(
+        actor=request.user,
+        action='LOGIN'
+    ).order_by('-timestamp').first()
+    current_session_key = request.session.session_key or request.user.current_session_key or ''
+    context = {
+        'last_login_entry': last_login_entry,
+        'recent_activity': recent_activity,
+        'current_session_key_short': current_session_key[-8:] if current_session_key else '',
+        'current_session_active': bool(current_session_key) and current_session_key == (request.user.current_session_key or ''),
+        'current_request_ip': get_client_ip(request),
+    }
     if request.user.role == 'student':
         # Get GPA
         latest_assessment = RiskAssessment.objects.filter(student=request.user).order_by('-date').first()
@@ -861,6 +1427,17 @@ def student_profile_view(request, student_id):
     if request.user.role not in ['teacher', 'counselor', 'admin']:
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
+    if request.user.role == 'teacher' and not request.user.classes_taught.filter(students=student).exists():
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    log_action(
+        request,
+        'STUDENT_PROFILE_VIEWED',
+        'User',
+        student.id,
+        student.get_full_name(),
+        extra_data={'viewer_role': request.user.role},
+    )
     
     # Get enrolled classes
     enrolled_classes = student.enrolled_classes.all()
@@ -1018,9 +1595,14 @@ def complete_profile_view(request):
             request.user.profile_skipped_at = timezone.now()
         request.user.profile_completed = True
         request.user.save(update_fields=['profile_completed', 'profile_skipped_at'])
+        log_action(request, 'PROFILE_COMPLETED', 'User', request.user.id, request.user.get_full_name(), extra_data={'skipped': True})
         return redirect('dashboard')
 
     if request.method == 'POST':
+        if hit_rate_limit(request, 'accounts_complete_profile', limit=10, window_seconds=600):
+            messages.error(request, 'Too many profile submissions. Please wait before trying again.')
+            return redirect('complete_profile')
+
         user = request.user
         user.phone = request.POST.get('phone', '')
         user.date_of_birth = request.POST.get('date_of_birth') if request.POST.get('date_of_birth') else None
@@ -1034,13 +1616,14 @@ def complete_profile_view(request):
             if request.POST.get('year_level'):
                 user.year_level = request.POST.get('year_level')
             if request.FILES.get('id_picture'):
-                try:
-                    user.id_picture = request.FILES['id_picture']
-                except Exception:
-                    messages.warning(request, 'ID picture upload failed. Other changes saved.')
+                user.id_picture = request.FILES['id_picture']
+
         if request.FILES.get('profile_picture'):
             try:
+                validate_image_upload(request.FILES['profile_picture'])
                 user.profile_picture = request.FILES['profile_picture']
+            except DjangoValidationError as e:
+                messages.warning(request, f'Profile picture rejected: {e.message}')
             except Exception:
                 messages.warning(request, 'Profile picture upload failed. Other changes saved.')
 
@@ -1049,10 +1632,21 @@ def complete_profile_view(request):
         try:
             user.save()
         except Exception:
-            user.profile_picture = None
-            user.id_picture = None
-            user.save()
-            messages.warning(request, 'File uploads failed, but profile was saved.')
+            # Save without the uploaded files so profile text data is not lost
+            try:
+                save_fields = ['phone', 'date_of_birth', 'profile_completed', 'profile_skipped_at']
+                if user.role == 'student':
+                    save_fields += ['section', 'address', 'guardian_name', 'guardian_relation', 'guardian_occupation', 'year_level']
+                user_obj = User.objects.get(pk=user.pk)
+                for f in save_fields:
+                    setattr(user_obj, f, getattr(user, f))
+                user_obj.profile_completed = True
+                user_obj.profile_skipped_at = None
+                user_obj.save()
+                user = user_obj
+            except Exception:
+                pass
+            messages.warning(request, 'Profile info saved, but file uploads encountered an issue.')
 
         if user.role == 'student' and user.section and user.year_level:
             section_classes = Class.objects.filter(
@@ -1062,6 +1656,7 @@ def complete_profile_view(request):
             for section_class in section_classes:
                 section_class.students.add(user)
 
+        log_action(request, 'PROFILE_COMPLETED', 'User', user.id, user.get_full_name(), extra_data={'skipped': False})
         messages.success(request, 'Profile completed successfully!')
         return redirect('dashboard')
 

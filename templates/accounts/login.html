@@ -3,11 +3,117 @@
 {% block title %}Login - BrightTrack{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style="background:var(--bt-bg)">
+<style>
+    .login-scene {
+        position: relative;
+        overflow: hidden;
+        background:
+            radial-gradient(1200px 500px at 12% 8%, rgba(79, 70, 229, 0.14), transparent 60%),
+            radial-gradient(900px 400px at 85% 92%, rgba(20, 184, 166, 0.14), transparent 60%),
+            var(--bt-bg);
+    }
+    .dark .login-scene {
+        background:
+            radial-gradient(1200px 520px at 12% 8%, rgba(99, 102, 241, 0.26), transparent 62%),
+            radial-gradient(900px 420px at 85% 92%, rgba(45, 212, 191, 0.22), transparent 62%),
+            #0b1020;
+    }
+    .login-blob {
+        position: absolute;
+        border-radius: 9999px;
+        filter: blur(40px);
+        opacity: 0.22;
+        pointer-events: none;
+        animation: blobDrift 12s ease-in-out infinite;
+    }
+    .login-blob-a {
+        width: 260px;
+        height: 260px;
+        background: #4f46e5;
+        top: 8%;
+        left: 8%;
+        animation-delay: 0s;
+    }
+    .login-blob-b {
+        width: 300px;
+        height: 300px;
+        background: #14b8a6;
+        bottom: 6%;
+        right: 10%;
+        animation-delay: 1.2s;
+    }
+    .login-blob-c {
+        width: 220px;
+        height: 220px;
+        background: #60a5fa;
+        top: 20%;
+        right: 22%;
+        animation-delay: 2.1s;
+    }
+    .dark .login-blob {
+        opacity: 0.34;
+    }
+    @keyframes blobDrift {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(10px, -14px, 0) scale(1.05); }
+    }
+    .login-card {
+        animation: loginCardIn 0.48s ease-out both;
+    }
+    @keyframes loginCardIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .login-logo-float {
+        animation: logoFloat 5.8s ease-in-out infinite;
+    }
+    @keyframes logoFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+    .login-focus-field {
+        transition: box-shadow 0.22s ease, border-color 0.22s ease;
+    }
+    .login-focus-field:focus {
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.16);
+    }
+    .login-shimmer {
+        position: relative;
+        overflow: hidden;
+    }
+    .login-shimmer::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -140%;
+        width: 60%;
+        height: 100%;
+        background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.32) 50%, transparent 100%);
+        transform: skewX(-18deg);
+        transition: left 0.5s ease;
+    }
+    .login-shimmer:hover::after {
+        left: 190%;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .login-blob,
+        .login-card,
+        .login-logo-float {
+            animation: none !important;
+        }
+        .login-shimmer::after {
+            transition: none !important;
+        }
+    }
+</style>
+<div class="login-scene min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="login-blob login-blob-a"></div>
+    <div class="login-blob login-blob-b"></div>
+    <div class="login-blob login-blob-c"></div>
     <div class="max-w-md w-full">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8">
+        <div class="login-card bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8 relative">
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 mb-4">
+                <div class="login-logo-float inline-flex items-center justify-center w-16 h-16 mb-4">
                     <img src="{% static 'images/logo.png' %}" alt="BrightTrack" class="w-16 h-16 object-contain">
                 </div>
                 <h2 class="text-3xl font-bold text-gray-900 dark:text-white">BrightTrack</h2>
@@ -19,7 +125,7 @@
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
                     <input type="email" id="email" name="email" required autofocus
-                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition placeholder-gray-400 dark:placeholder-gray-500"
+                        class="login-focus-field w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition placeholder-gray-400 dark:placeholder-gray-500"
                         placeholder="Enter your email">
                 </div>
                 <div>
@@ -28,7 +134,7 @@
                     </div>
                     <div class="relative">
                         <input type="password" id="password" name="password" required
-                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition pr-12 placeholder-gray-400 dark:placeholder-gray-500"
+                            class="login-focus-field w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition pr-12 placeholder-gray-400 dark:placeholder-gray-500"
                             placeholder="Enter your password">
                         <button type="button" onclick="togglePassword()"
                             class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -40,7 +146,7 @@
                     </div>
                 </div>
                 <button type="submit"
-                    class="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition duration-200 shadow-md shadow-indigo-200 dark:shadow-none">
+                    class="login-shimmer w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition duration-200 shadow-md shadow-indigo-200 dark:shadow-none">
                     Sign In
                 </button>
             </form>

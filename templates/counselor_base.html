@@ -155,7 +155,9 @@
         <div class="top-header">
             <h5>{% block page_title %}Counselor Dashboard{% endblock %}</h5>
             <div class="header-icons">
-                <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ user.get_full_name }}&background=4fd1c5&color=fff{% endif %}" alt="Profile">
+                <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'images/logo.png' %}{% endif %}" alt="Profile"
+                     onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'"
+                     style="{% if user.profile_picture %}object-fit:cover;{% else %}object-fit:contain;background:white;padding:4px;{% endif %}">
             </div>
         </div>
         

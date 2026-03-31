@@ -30,14 +30,14 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     admin_role = models.CharField(max_length=20, choices=ADMIN_ROLE_CHOICES, blank=True, default='')
     phone = models.CharField(max_length=15, blank=True)
-    profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
+    profile_picture = models.FileField(upload_to='profiles/', blank=True, null=True)
     year_level = models.CharField(max_length=2, choices=YEAR_LEVEL_CHOICES, blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
     student_number = models.CharField(max_length=20, blank=True)
     section = models.CharField(max_length=50, blank=True)
     subject = models.CharField(max_length=100, blank=True)
-    id_picture = models.ImageField(upload_to='id_pictures/', blank=True, null=True)
+    id_picture = models.FileField(upload_to='id_pictures/', blank=True, null=True)
     about_me = models.TextField(blank=True)
     profile_completed = models.BooleanField(default=False)
     address = models.TextField(blank=True)
@@ -46,6 +46,7 @@ class User(AbstractUser):
     guardian_occupation = models.CharField(max_length=100, blank=True)
     profile_skipped_at = models.DateTimeField(blank=True, null=True)
     messaging_suspended_until = models.DateTimeField(blank=True, null=True)
+    current_session_key = models.CharField(max_length=40, blank=True, default='')
 
     def is_messaging_suspended(self):
         if self.messaging_suspended_until:
@@ -143,6 +144,10 @@ class AuditLog(models.Model):
         ('LOGIN', 'Login'),
         ('LOGOUT', 'Logout'),
         ('LOGIN_FAILED', 'Login Failed'),
+        ('PROFILE_UPDATED', 'Profile Updated'),
+        ('PROFILE_COMPLETED', 'Profile Completed'),
+        ('REGISTRATION_SUBMITTED', 'Registration Submitted'),
+        ('PASSWORD_RESET', 'Password Reset'),
         ('USER_CREATED', 'User Created'),
         ('USER_DELETED', 'User Deleted'),
         ('USER_UPDATED', 'User Updated'),
@@ -151,13 +156,21 @@ class AuditLog(models.Model):
         ('STUDENT_REMOVED_FROM_CLASS', 'Student Removed from Class'),
         ('ASSIGNMENT_CREATED', 'Assignment Created'),
         ('ASSIGNMENT_DELETED', 'Assignment Deleted'),
+        ('MATERIAL_UPLOADED', 'Material Uploaded'),
+        ('MATERIAL_DELETED', 'Material Deleted'),
+        ('ATTENDANCE_MARKED', 'Attendance Marked'),
         ('SUBMISSION_GRADED', 'Submission Graded'),
         ('GRADE_CHANGED', 'Grade Changed'),
+        ('MESSAGE_SENT', 'Message Sent'),
+        ('MESSAGE_REPORTED', 'Message Reported'),
+        ('MESSAGE_REPORT_RESOLVED', 'Message Report Resolved'),
         ('CONCERN_SUBMITTED', 'Concern Submitted'),
         ('INTERVENTION_CREATED', 'Intervention Created'),
         ('INTERVENTION_UPDATED', 'Intervention Updated'),
         ('ALERT_RESOLVED', 'Alert Resolved'),
         ('REPORT_DOWNLOADED', 'Report Downloaded'),
+        ('STUDENT_PROFILE_VIEWED', 'Student Profile Viewed'),
+        ('AUDIT_LOG_EXPORTED', 'Audit Log Exported'),
         ('AI_USED', 'AI Used'),
         ('ADMIN_ROLE_CHANGED', 'Admin Role Changed'),
         ('MASS_DELETE', 'Mass Delete'),
@@ -173,6 +186,9 @@ class AuditLog(models.Model):
     target_label = models.CharField(max_length=255, blank=True)
     extra_data = models.JSONField(default=dict, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
+    previous_hash = models.CharField(max_length=64, blank=True, default='')
+    entry_hash = models.CharField(max_length=64, blank=True, default='', db_index=True)
+    signature_version = models.CharField(max_length=20, blank=True, default='hmac-sha256-v1')
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -185,3 +201,6 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.actor} — {self.action} @ {self.timestamp:%Y-%m-%d %H:%M}"
+
+    def delete(self, using=None, keep_parents=False):
+        raise PermissionError('Audit log entries cannot be deleted through normal application flows.')
