@@ -623,47 +623,52 @@ def otp_login_password_view(request):
 
 
 def otp_forgot_password_view(request):
-    if request.user.is_authenticated:
-        return redirect('dashboard')
+    try:
+        if request.user.is_authenticated:
+            return redirect('dashboard')
 
-    if request.method == 'POST':
-        email = request.POST.get('email', '').strip().lower()
-        rate_key = f'forgot_password_send_{email}'
-        send_count = cache.get(rate_key, 0)
-        if send_count >= 3:
-            messages.error(request, 'Too many reset requests. Please wait 15 minutes before trying again.')
-            return render(request, 'accounts/otp_forgot_password.html')
+        if request.method == 'POST':
+            email = request.POST.get('email', '').strip().lower()
+            rate_key = f'forgot_password_send_{email}'
+            send_count = cache.get(rate_key, 0)
+            if send_count >= 3:
+                messages.error(request, 'Too many reset requests. Please wait 15 minutes before trying again.')
+                return render(request, 'accounts/otp_forgot_password.html')
 
-        user = User.objects.filter(email=email).first()
-        if not user:
-            messages.success(request, 'If an account exists for that email, a reset code will be sent.')
-            return render(request, 'accounts/otp_forgot_password.html')
+            user = User.objects.filter(email=email).first()
+            if not user:
+                messages.success(request, 'If an account exists for that email, a reset code will be sent.')
+                return render(request, 'accounts/otp_forgot_password.html')
 
-        otp = OTPCode.generate(email)
-        try:
-            send_otp_email(email, otp.code)
-        except Exception:
-            import logging
-            logging.getLogger(__name__).error('OTP email failed during forgot password')
-            messages.error(request, 'Failed to send code. Please try again later.')
-            return render(request, 'accounts/otp_forgot_password.html')
+            otp = OTPCode.generate(email)
+            try:
+                send_otp_email(email, otp.code)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).error('OTP email failed during forgot password')
+                messages.error(request, 'Failed to send code. Please try again later.')
+                return render(request, 'accounts/otp_forgot_password.html')
 
-        cache.set(rate_key, send_count + 1, 900)
-        _send_security_email(
-            email,
-            'BrightTrack Password Reset Requested',
-            _append_request_security_context([
-                f'Dear {user.get_full_name() or user.email},',
-                '',
-                'A password reset code was requested for your BrightTrack account.',
-                _email_datetime_line(),
-                'If this was you, you can continue using the verification code that was just sent.',
-                'If this was not you, please ignore this message and consider changing your password after logging in.',
-            ], request, include_location=True),
-        )
-        request.session['otp_email'] = email
-        request.session['otp_purpose'] = 'reset'
-        return redirect('verify_otp')
+            cache.set(rate_key, send_count + 1, 900)
+            _send_security_email(
+                email,
+                'BrightTrack Password Reset Requested',
+                _append_request_security_context([
+                    f'Dear {user.get_full_name() or user.email},',
+                    '',
+                    'A password reset code was requested for your BrightTrack account.',
+                    _email_datetime_line(),
+                    'If this was you, you can continue using the verification code that was just sent.',
+                    'If this was not you, please ignore this message and consider changing your password after logging in.',
+                ], request, include_location=True),
+            )
+            request.session['otp_email'] = email
+            request.session['otp_purpose'] = 'reset'
+            return redirect('verify_otp')
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('otp_forgot_password_view failed unexpectedly')
+        messages.error(request, 'Unable to process forgot password right now. Please try again.')
 
     return render(request, 'accounts/otp_forgot_password.html')
 
