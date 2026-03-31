@@ -14,7 +14,7 @@ It combines classes, attendance, grades, submissions, messaging, wellness monito
 
 ## Live System
 
-- Production URL: [https://bright-track-project.onrender.com](https://bright-track-project.onrender.com)
+- Production URL: [https://brighttrack.onrender.com](https://brighttrack.onrender.com)
 
 ## Table of Contents
 
@@ -200,8 +200,8 @@ python manage.py runserver
 SECRET_KEY=
 DEBUG=False
 DATABASE_URL=
-ALLOWED_HOSTS=bright-track-project.onrender.com,localhost,127.0.0.1
-RENDER_EXTERNAL_HOSTNAME=bright-track-project.onrender.com
+ALLOWED_HOSTS=brighttrack.onrender.com,localhost,127.0.0.1
+RENDER_EXTERNAL_HOSTNAME=brighttrack.onrender.com
 
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
