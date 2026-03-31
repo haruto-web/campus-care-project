@@ -27,11 +27,15 @@ from .decorators import teacher_owns_class
 
 
 def _send_security_email(to_email, subject, lines):
-    send_transactional_email(
-        to_email=to_email,
-        subject=subject,
-        text_content="\n".join(lines),
-    )
+    try:
+        send_transactional_email(
+            to_email=to_email,
+            subject=subject,
+            text_content="\n".join(lines),
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Security email send failed: %s', subject)
 
 
 def _format_email_timestamp(dt=None):
