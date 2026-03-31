@@ -12,6 +12,7 @@ from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 from datetime import datetime, timedelta
 from pathlib import Path
+from functools import wraps
 import mimetypes
 import ipaddress
 import json
@@ -36,6 +37,27 @@ def _send_security_email(to_email, subject, lines):
     except Exception:
         import logging
         logging.getLogger(__name__).exception('Security email send failed: %s', subject)
+
+
+def _auth_safe(template_name=None, error_message='Something went wrong. Please try again.', redirect_name=None):
+    """Catch unexpected auth-flow exceptions and return safe UI instead of 500."""
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapper(request, *args, **kwargs):
+            try:
+                return view_func(request, *args, **kwargs)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).exception('%s failed unexpectedly', view_func.__name__)
+                if error_message:
+                    messages.error(request, error_message)
+                if redirect_name:
+                    return redirect(redirect_name)
+                if template_name:
+                    return render(request, template_name)
+                return redirect('login')
+        return wrapper
+    return decorator
 
 
 def _format_email_timestamp(dt=None):
@@ -427,6 +449,7 @@ def fix_site_domain(request):
     site.save()
     return HttpResponse(f'Site domain updated: {old} → {hostname}')
 
+@_auth_safe(template_name='accounts/register.html', error_message='Unable to process registration right now. Please try again.')
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
@@ -519,6 +542,7 @@ def register_view(request):
     return render(request, 'accounts/register.html')
 
 
+@_auth_safe(template_name='accounts/otp_request.html', error_message='Unable to process OTP request right now. Please try again.')
 def otp_request_view(request):
     """Step 1: Student enters email only — always sends OTP."""
     if request.user.is_authenticated:
@@ -555,6 +579,7 @@ def otp_request_view(request):
     return render(request, 'accounts/otp_request.html')
 
 
+@_auth_safe(template_name='accounts/otp_verify.html', error_message='Unable to verify code right now. Please try again.')
 def otp_verify_view(request):
     """OTP verify — used for login, new registration, and forgot password."""
     email = request.session.get('otp_email')
@@ -596,6 +621,7 @@ def otp_verify_view(request):
     return render(request, 'accounts/otp_verify.html', {'email': email})
 
 
+@_auth_safe(redirect_name='login', error_message='Unable to complete login right now. Please try again.')
 def otp_login_password_view(request):
     """Existing student enters password after OTP verified."""
     if not request.session.get('otp_verified'):
@@ -622,6 +648,7 @@ def otp_login_password_view(request):
     return render(request, 'accounts/otp_login_password.html', {'email': email})
 
 
+@_auth_safe(template_name='accounts/otp_forgot_password.html', error_message='Unable to process forgot password right now. Please try again.')
 def otp_forgot_password_view(request):
     try:
         if request.user.is_authenticated:
@@ -673,6 +700,7 @@ def otp_forgot_password_view(request):
     return render(request, 'accounts/otp_forgot_password.html')
 
 
+@_auth_safe(template_name='accounts/otp_reset_password.html', error_message='Unable to reset password right now. Please try again.')
 def otp_reset_password_view(request):
     if not request.session.get('otp_verified') or request.session.get('otp_purpose') != 'reset':
         return redirect('login')
@@ -779,6 +807,7 @@ def otp_register_view(request):
 
     return render(request, 'accounts/otp_register.html', {'email': email})
 
+@_auth_safe(template_name='accounts/login.html', error_message='Unable to process login right now. Please try again.')
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
@@ -826,6 +855,7 @@ def login_view(request):
     return render(request, 'accounts/login.html')
 
 
+@_auth_safe(redirect_name='login', error_message='Unable to verify OTP right now. Please try again.')
 def verify_otp_view(request):
     purpose = request.session.get('otp_purpose')
     email = request.session.get('otp_email')
@@ -977,6 +1007,7 @@ def session_expired_notice_view(request):
     return render(request, 'accounts/session_expired.html')
 
 @require_POST
+@_auth_safe(redirect_name='landing', error_message='')
 def logout_view(request):
     if request.user.is_authenticated:
         user_id = request.user.id
