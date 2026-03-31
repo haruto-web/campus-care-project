@@ -431,85 +431,90 @@ def register_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
 
-    if request.method == 'POST':
-        from django.contrib.auth.password_validation import validate_password
-        from django.contrib.auth.hashers import make_password
+    try:
+        if request.method == 'POST':
+            from django.contrib.auth.password_validation import validate_password
+            from django.contrib.auth.hashers import make_password
 
-        # Rate limit: 5 attempts per IP per 10 minutes
-        ip = request.META.get('REMOTE_ADDR')
-        rate_key = f'reg_attempts_{ip}'
-        attempts = cache.get(rate_key, 0)
-        if attempts >= 5:
-            messages.error(request, 'Too many registration attempts. Please try again later.')
-            return render(request, 'accounts/register.html')
-        cache.set(rate_key, attempts + 1, 600)
+            # Rate limit: 5 attempts per IP per 10 minutes
+            ip = request.META.get('REMOTE_ADDR')
+            rate_key = f'reg_attempts_{ip}'
+            attempts = cache.get(rate_key, 0)
+            if attempts >= 5:
+                messages.error(request, 'Too many registration attempts. Please try again later.')
+                return render(request, 'accounts/register.html')
+            cache.set(rate_key, attempts + 1, 600)
 
-        student_number = request.POST.get('student_number', '').strip()
-        email = request.POST.get('email', '').strip().lower()
-        first_name = request.POST.get('first_name', '').strip().title()
-        last_name = request.POST.get('last_name', '').strip().title()
-        year_level = request.POST.get('year_level', '').strip()
-        section = request.POST.get('section', '').strip().title()
-        password = request.POST.get('password', '')
-        password2 = request.POST.get('password2', '')
+            student_number = request.POST.get('student_number', '').strip()
+            email = request.POST.get('email', '').strip().lower()
+            first_name = request.POST.get('first_name', '').strip().title()
+            last_name = request.POST.get('last_name', '').strip().title()
+            year_level = request.POST.get('year_level', '').strip()
+            section = request.POST.get('section', '').strip().title()
+            password = request.POST.get('password', '')
+            password2 = request.POST.get('password2', '')
 
-        if not student_number.isdigit() or len(student_number) != 12:
-            return render(request, 'accounts/register.html', {
-                'sn_error': 'Student number must be exactly 12 digits.',
-                'student_number_val': student_number,
-            })
+            if not student_number.isdigit() or len(student_number) != 12:
+                return render(request, 'accounts/register.html', {
+                    'sn_error': 'Student number must be exactly 12 digits.',
+                    'student_number_val': student_number,
+                })
 
-        if not all([first_name, last_name, year_level]):
-            messages.error(request, 'First name, last name, and year level are required.')
-            return render(request, 'accounts/register.html')
+            if not all([first_name, last_name, year_level]):
+                messages.error(request, 'First name, last name, and year level are required.')
+                return render(request, 'accounts/register.html')
 
-        if year_level not in ('7', '8', '9', '10'):
-            messages.error(request, 'Year level must be 7, 8, 9, or 10.')
-            return render(request, 'accounts/register.html')
+            if year_level not in ('7', '8', '9', '10'):
+                messages.error(request, 'Year level must be 7, 8, 9, or 10.')
+                return render(request, 'accounts/register.html')
 
-        if password != password2:
-            messages.error(request, 'Passwords do not match.')
-            return render(request, 'accounts/register.html')
+            if password != password2:
+                messages.error(request, 'Passwords do not match.')
+                return render(request, 'accounts/register.html')
 
-        try:
-            validate_password(password)
-        except DjangoValidationError as e:
-            return render(request, 'accounts/register.html', {'password_errors': e.messages})
+            try:
+                validate_password(password)
+            except DjangoValidationError as e:
+                return render(request, 'accounts/register.html', {'password_errors': e.messages})
 
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'Registration failed. Please check your details or contact your administrator.')
-            return render(request, 'accounts/register.html')
+            if User.objects.filter(email=email).exists():
+                messages.error(request, 'Registration failed. Please check your details or contact your administrator.')
+                return render(request, 'accounts/register.html')
 
-        existing_request = RegistrationRequest.objects.filter(
-            student_number=student_number,
-            email__iexact=email,
-            status=RegistrationRequest.Status.PENDING
-        ).first()
-        if existing_request:
-            messages.error(request, 'A registration request for this student is already pending admin approval.')
-            return render(request, 'accounts/register.html')
+            existing_request = RegistrationRequest.objects.filter(
+                student_number=student_number,
+                email__iexact=email,
+                status=RegistrationRequest.Status.PENDING
+            ).first()
+            if existing_request:
+                messages.error(request, 'A registration request for this student is already pending admin approval.')
+                return render(request, 'accounts/register.html')
 
-        # Send OTP — don't create account yet
-        otp = OTPCode.generate(email)
-        try:
-            send_otp_email(email, otp.code)
-        except Exception:
-            import logging
-            logging.getLogger(__name__).error('OTP email failed during registration')
-            messages.error(request, 'Failed to send verification code. Please try again.')
-            return render(request, 'accounts/register.html')
+            # Send OTP — don't create account yet
+            otp = OTPCode.generate(email)
+            try:
+                send_otp_email(email, otp.code)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).error('OTP email failed during registration')
+                messages.error(request, 'Failed to send verification code. Please try again.')
+                return render(request, 'accounts/register.html')
 
-        request.session['otp_email'] = email
-        request.session['otp_purpose'] = 'register'
-        request.session['reg_data'] = {
-            'student_number': student_number,
-            'first_name': first_name,
-            'last_name': last_name,
-            'year_level': year_level,
-            'section': section,
-            'password_hash': make_password(password),
-        }
-        return redirect('verify_otp')
+            request.session['otp_email'] = email
+            request.session['otp_purpose'] = 'register'
+            request.session['reg_data'] = {
+                'student_number': student_number,
+                'first_name': first_name,
+                'last_name': last_name,
+                'year_level': year_level,
+                'section': section,
+                'password_hash': make_password(password),
+            }
+            return redirect('verify_otp')
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('register_view failed unexpectedly')
+        messages.error(request, 'Unable to process registration right now. Please try again.')
 
     return render(request, 'accounts/register.html')
 
