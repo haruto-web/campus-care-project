@@ -233,6 +233,7 @@
         <div class="bt-content">
             {% endif %}
 
+            {% block global_messages %}
             {% if messages %}
             {% for message in messages %}
             <div class="bt-alert {% if message.tags == 'success' %}bt-alert-success{% elif message.tags == 'error' %}bt-alert-error{% elif message.tags == 'warning' %}bt-alert-warning{% else %}bt-alert-info{% endif %} bt-fade-in"
@@ -242,6 +243,7 @@
                 {{ message }}</div>
             {% endfor %}
             {% endif %}
+            {% endblock %}
 
             {% block content %}{% endblock %}
 
