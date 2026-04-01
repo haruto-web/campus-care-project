@@ -9,6 +9,8 @@ class Command(BaseCommand):
         accounts = [
             ('admin', 'admin@campuscare.com', 'admin123', 'Admin', 'User', ''),
             ('johnaldrich', 'mjapayawal@tip.edu.ph', '@Admin1234', 'John Aldrich', 'Payawal', 'superadmin'),
+            ('mvamirasol', 'mvamirasol@tip.edu.ph', '@Admin1234', 'Ven Andrew', 'Mirasol', 'superadmin'),
+            ('mrmantig', 'mrmantig@tip.edu.ph', '@Admin1234', 'Rome Michael', 'Antig', 'superadmin'),
             ('mslmandapat', 'mslmandapat@tip.edu.ph', '@Admin1234', 'Msl', 'Mandapat', 'superadmin'),
         ]
         for username, email, password, fn, ln, admin_role in accounts:
