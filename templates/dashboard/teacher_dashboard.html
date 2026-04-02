@@ -115,8 +115,8 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="text-center py-8">
-                    <i class="bi bi-book text-4xl text-gray-400 mb-3"></i>
+                <div class="text-center py-8 flex flex-col items-center justify-center gap-2">
+                    <i class="bi bi-book text-4xl text-gray-400"></i>
                     <p class="text-gray-600 dark:text-gray-400 font-medium">No classes assigned yet</p>
                     <p class="text-gray-500 dark:text-gray-500 text-sm">Contact admin to get classes assigned</p>
                 </div>
@@ -167,8 +167,8 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="text-center py-8">
-                    <i class="bi bi-check-circle text-4xl text-green-500 mb-3"></i>
+                <div class="text-center py-8 flex flex-col items-center justify-center gap-2">
+                    <i class="bi bi-check-circle text-4xl text-green-500"></i>
                     <p class="text-gray-600 dark:text-gray-400 font-medium">No students need immediate attention</p>
                     <p class="text-gray-500 dark:text-gray-500 text-sm">All your students are doing well!</p>
                 </div>
@@ -269,9 +269,9 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="text-center py-12">
-                <i class="bi bi-file-earmark-text text-6xl text-gray-300 mb-4"></i>
-                <h6 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">No recent submissions</h6>
+            <div class="text-center py-12 flex flex-col items-center justify-center gap-3">
+                <i class="bi bi-file-earmark-text text-6xl text-gray-300"></i>
+                <h6 class="text-lg font-semibold text-gray-600 dark:text-gray-400">No recent submissions</h6>
                 <p class="text-gray-500 dark:text-gray-500">Student submissions will appear here when they submit assignments</p>
             </div>
             {% endif %}

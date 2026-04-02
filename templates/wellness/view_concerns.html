@@ -72,10 +72,10 @@
         </div>
     </div>
     {% else %}
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 text-center py-16">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 text-center py-16 flex flex-col items-center justify-center gap-3">
         <i class="bi bi-flag text-gray-300 dark:text-gray-600 text-5xl"></i>
-        <p class="text-gray-500 dark:text-gray-400 mt-4">No concerns submitted yet.</p>
-        <a href="{% url 'wellness:create_concern' %}" class="mt-4 inline-block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+        <p class="text-gray-500 dark:text-gray-400">No concerns submitted yet.</p>
+        <a href="{% url 'wellness:create_concern' %}" class="inline-block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
             <i class="bi bi-plus-circle mr-1"></i> Report First Concern
         </a>
     </div>

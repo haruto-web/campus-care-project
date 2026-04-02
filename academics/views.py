@@ -674,7 +674,7 @@ def my_classes(request):
                         'start_time': block['start_time'],
                         'start_display': start_display,
                         'end_display': end_display,
-                        'classroom': block_classroom or cls.room,
+                        'classroom': block_classroom,
                     })
 
         schedule_days = []
@@ -1291,7 +1291,6 @@ def edit_class(request, class_id):
         class_obj.name = request.POST.get('name')
         class_obj.description = request.POST.get('description', '')
         class_obj.schedule = Class.build_schedule_blocks(normalized_blocks)
-        class_obj.room = request.POST.get('room', '')
         class_obj.save()
         log_action(request, 'USER_UPDATED', 'Class', class_obj.id, class_obj.code)
         messages.success(request, 'Class updated successfully!')

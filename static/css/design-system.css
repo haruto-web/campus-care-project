@@ -499,7 +499,7 @@ select {
   background-position: right 0.75rem center;
   background-repeat: no-repeat;
   background-size: 1.1rem 1.1rem;
-  padding-right: 2.25rem;
+  padding-right: 2.25rem !important;
 }
 
 select::-ms-expand {
@@ -1263,6 +1263,10 @@ select::-ms-expand {
 }
 .dark input::placeholder,
 .dark textarea::placeholder { color: #64748b; }
+/* Lighter chevron arrow so it shows against dark backgrounds */
+.dark select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+}
 
 /* --- Topbar surface --- */
 .dark .bt-topbar { background: #1e293b; border-color: #2d3f55; }

@@ -151,8 +151,8 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="text-center py-12">
-                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3"><i class="bi bi-clipboard-check text-3xl text-blue-400"></i></div>
+            <div class="text-center py-12 flex flex-col items-center justify-center gap-3">
+                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center"><i class="bi bi-clipboard-check text-3xl text-blue-400"></i></div>
                 <p class="text-gray-500 font-medium">No assignments yet</p>
                 {% if user.role == 'teacher' and class.teacher == user %}
                 <a href="{% url 'academics:create_assignment' class.id %}" class="mt-3 inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
@@ -183,8 +183,8 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="text-center py-12">
-                <div class="w-16 h-16 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-3"><i class="bi bi-megaphone text-3xl text-yellow-400"></i></div>
+            <div class="text-center py-12 flex flex-col items-center justify-center gap-3">
+                <div class="w-16 h-16 bg-yellow-50 rounded-full flex items-center justify-center"><i class="bi bi-megaphone text-3xl text-yellow-400"></i></div>
                 <p class="text-gray-500 font-medium">No announcements yet</p>
                 {% if user.role == 'teacher' and class.teacher == user %}
                 <a href="{% url 'academics:create_announcement' class.id %}" class="mt-3 inline-flex items-center gap-2 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition text-sm">
@@ -228,8 +228,8 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="text-center py-12">
-                <div class="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-3"><i class="bi bi-folder2-open text-3xl text-purple-400"></i></div>
+            <div class="text-center py-12 flex flex-col items-center justify-center gap-3">
+                <div class="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center"><i class="bi bi-folder2-open text-3xl text-purple-400"></i></div>
                 <p class="text-gray-500 font-medium">No materials uploaded yet</p>
                 {% if user.role == 'teacher' and class.teacher == user %}
                 <a href="{% url 'academics:upload_material' class.id %}" class="mt-3 inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition text-sm">
@@ -255,8 +255,8 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="text-center py-12">
-                <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3"><i class="bi bi-people text-3xl text-green-400"></i></div>
+            <div class="text-center py-12 flex flex-col items-center justify-center gap-3">
+                <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center"><i class="bi bi-people text-3xl text-green-400"></i></div>
                 <p class="text-gray-500 font-medium">No students enrolled yet</p>
                 {% if user.role == 'teacher' and class.teacher == user %}
                 <a href="{% url 'academics:manage_students' class.id %}" class="mt-3 inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">

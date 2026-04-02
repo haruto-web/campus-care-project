@@ -75,19 +75,6 @@
                     {% endif %}
                 </div>
 
-                <div class="mb-6">
-                    <label for="{{ form.room.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
-                        Room
-                    </label>
-                    <input type="text" name="room" id="{{ form.room.id_for_label }}" 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                           placeholder="e.g., Room 301"
-                           value="{{ form.room.value|default:'' }}">
-                    {% if form.room.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.room.errors.0 }}</p>
-                    {% endif %}
-                </div>
-
                 <div class="mb-8">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         Schedule

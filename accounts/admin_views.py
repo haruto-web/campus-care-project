@@ -17,6 +17,7 @@ from academics.models import Class
 from academics.forms import ClassForm
 from accounts.utils import log_action, verify_audit_entry
 import csv
+import json
 import io
 import logging
 import html
@@ -301,45 +302,61 @@ def _apply_audit_log_filters(request):
     }
 
 
+def _format_extra_data(extra_data):
+    """Return extra_data as a clean, human-readable string for exports."""
+    if not extra_data:
+        return ''
+    if isinstance(extra_data, dict):
+        try:
+            return json.dumps(extra_data, ensure_ascii=False)
+        except Exception:
+            pass
+    return str(extra_data)
+
+
 def _audit_log_export_rows(logs):
+    """9-column rows used for CSV export (full detail, no truncation)."""
     rows = []
     for log in logs:
-        if log.integrity_ok is True:
-            integrity_label = 'Unaltered'
-        else:
-            integrity_label = 'Not Verified'
+        integrity_label = 'Unaltered' if log.integrity_ok is True else 'Not Verified'
         actor_label = log.actor.get_full_name() if log.actor else 'System'
+        # Build a single readable target string
+        target_parts = []
+        if log.target_label:
+            target_parts.append(log.target_label)
+        if log.target_type:
+            target_parts.append(f'({log.target_type})')
+        if log.target_id:
+            target_parts.append(f'ID:{log.target_id}')
+        target_str = ' '.join(target_parts) if target_parts else ''
         rows.append([
             timezone.localtime(log.timestamp).strftime('%Y-%m-%d %H:%M:%S'),
             actor_label,
             log.get_action_display(),
-            log.target_type,
-            log.target_id or '',
-            log.target_label,
+            target_str,
             log.ip_address or '',
             integrity_label,
-            log.extra_data,
+            _format_extra_data(log.extra_data),
         ])
     return rows
 
 
 def _audit_log_visual_rows(logs):
+    """7-column rows used for PDF and DOC exports."""
     rows = []
     for log in logs:
         integrity_label = 'Unaltered' if log.integrity_ok is True else 'Not Verified'
         actor_label = log.actor.get_full_name() if log.actor else 'System'
-        target_label = log.target_label or '—'
+        target_label = log.target_label or ''
         if log.target_type:
-            target_label = f'{target_label} ({log.target_type})'
-        details = '—'
-        if log.extra_data:
-            details = str(log.extra_data)
+            target_label = f'{target_label} ({log.target_type})' if target_label else log.target_type
+        details = _format_extra_data(log.extra_data) or ''
         rows.append([
             timezone.localtime(log.timestamp).strftime('%b %d, %Y %I:%M %p'),
             actor_label,
             log.get_action_display(),
             target_label,
-            log.ip_address or '—',
+            log.ip_address or '',
             integrity_label,
             details,
         ])
@@ -357,22 +374,25 @@ def _truncate_text(value, length):
 
 
 def _build_simple_pdf_table(headers, rows):
-    page_w, page_h = 842, 595  # A4 landscape
-    left_margin = 20
-    top_y = page_h - 28
-    row_h = 20
-    col_widths = [128, 140, 105, 210, 88, 88, 43]  # fits 7 columns
+    # Use A3 landscape (1190 x 842) for more column space
+    page_w, page_h = 1190, 842
+    left_margin = 24
+    top_y = page_h - 36
+    row_h = 22
+    # Widths tuned to page_w - 2*left_margin = 1142 total
+    # Timestamp | Actor | Action | Target | IP | Integrity | Details
+    col_widths = [140, 165, 130, 240, 110, 90, 267]
 
     draw_rows = []
     for row in rows:
         draw_rows.append([
-            _truncate_text(row[0], 20),
-            _truncate_text(row[1], 24),
-            _truncate_text(row[2], 18),
-            _truncate_text(row[3], 38),
-            _truncate_text(row[4], 16),
-            _truncate_text(row[5], 14),
-            _truncate_text(row[6], 8),
+            _truncate_text(row[0], 22),   # full timestamp fits
+            _truncate_text(row[1], 28),   # full name
+            _truncate_text(row[2], 22),   # action label
+            _truncate_text(row[3], 44),   # target label + type
+            _truncate_text(row[4], 18),   # IP address
+            _truncate_text(row[5], 14),   # integrity
+            _truncate_text(row[6], 50),   # details (JSON)
         ])
 
     lines_per_page = max(10, int((page_h - 65) / row_h) - 1)  # header + rows
@@ -1361,12 +1381,12 @@ def admin_audit_log(request):
         rows = _audit_log_export_rows(logs)
         visual_headers = ['TIMESTAMP', 'ACTOR', 'ACTION', 'TARGET', 'IP', 'INTEGRITY', 'DETAILS']
         visual_rows = _audit_log_visual_rows(logs)
-        headers = ['Timestamp', 'Actor', 'Action', 'Target Type', 'Target ID', 'Target Label', 'IP Address', 'Integrity', 'Details']
+        csv_headers = ['Timestamp', 'Actor', 'Action', 'Target', 'IP Address', 'Integrity', 'Details']
 
         if export_format == 'csv':
             buffer = io.StringIO()
             writer = csv.writer(buffer)
-            writer.writerow(headers)
+            writer.writerow(csv_headers)
             writer.writerows(rows)
             response = HttpResponse(buffer.getvalue(), content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="audit-log.csv"'
@@ -1374,16 +1394,42 @@ def admin_audit_log(request):
             return response
 
         if export_format == 'docs':
+            export_time = timezone.localtime(timezone.now()).strftime('%B %d, %Y %I:%M %p')
+            # Column width hints (percentages) matching visual_headers order
+            col_pcts = ['13%', '14%', '12%', '24%', '11%', '10%', '16%']
+            header_cells = ''.join(
+                f'<th style="text-align:left;padding:7px 9px;border:1px solid #d1d5db;'
+                f'background:#f3f4f6;font-size:11px;font-weight:700;white-space:nowrap;width:{col_pcts[i]}">'
+                f'{h}</th>'
+                for i, h in enumerate(visual_headers)
+            )
             table_rows = ''.join(
-                '<tr>' + ''.join(f'<td style="padding:8px;border:1px solid #e5e7eb;font-size:12px;">{html.escape(str(cell))}</td>' for cell in row) + '</tr>'
+                '<tr>' + ''.join(
+                    f'<td style="padding:6px 9px;border:1px solid #e5e7eb;font-size:11px;'
+                    f'vertical-align:top;word-wrap:break-word;max-width:0;">'
+                    f'{html.escape(str(cell) if cell else "")}</td>'
+                    for cell in row
+                ) + '</tr>'
                 for row in visual_rows
             )
             content = (
-                '<html><head><meta charset="utf-8"></head><body>'
-                '<h2 style="font-family:Arial,sans-serif;margin-bottom:12px;">Audit Log Export</h2>'
-                '<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;">'
-                '<tr style="background:#f3f4f6;">' + ''.join(f'<th style="text-align:left;padding:8px;border:1px solid #e5e7eb;font-size:12px;">{h}</th>' for h in visual_headers) + '</tr>'
-                f'{table_rows}</table></body></html>'
+                '<html xmlns:o="urn:schemas-microsoft-com:office:office" '
+                'xmlns:w="urn:schemas-microsoft-com:office:word" '
+                'xmlns="http://www.w3.org/TR/REC-html40">'
+                '<head><meta charset="utf-8">'
+                '<style>'
+                'body{font-family:Arial,sans-serif;font-size:11px;margin:20px;}'
+                'table{border-collapse:collapse;width:100%;table-layout:fixed;}'
+                'th,td{overflow-wrap:break-word;word-break:break-word;}'
+                'h2{font-size:15px;margin-bottom:4px;}'
+                '.meta{font-size:10px;color:#6b7280;margin-bottom:12px;}'
+                '</style></head><body>'
+                '<h2>BrightTrack &mdash; Audit Log Export</h2>'
+                f'<p class="meta">Exported on {export_time} &nbsp;|&nbsp; {len(visual_rows)} record(s)</p>'
+                '<table>'
+                f'<thead><tr>{header_cells}</tr></thead>'
+                f'<tbody>{table_rows}</tbody>'
+                '</table></body></html>'
             )
             response = HttpResponse(content, content_type='application/msword')
             response['Content-Disposition'] = 'attachment; filename="audit-log.doc"'
