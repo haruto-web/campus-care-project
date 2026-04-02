@@ -384,9 +384,10 @@ def notifications_poll(request):
             status=440,
         )
 
-    from messaging.models import Message
+    from messaging.models import Message, MessageReport
     from academics.models import Announcement, Submission
-    from wellness.models import Alert
+    from wellness.models import Alert, Intervention
+    from accounts.models import RegistrationRequest
     from django.db.models import Q
 
     data = {}
@@ -419,6 +420,21 @@ def notifications_poll(request):
     else:
         data['alerts'] = 0
 
+    if user.role == 'counselor':
+        data['interventions'] = Intervention.objects.filter(status='scheduled').count()
+    else:
+        data['interventions'] = 0
+
+    if user.role in ['counselor', 'admin']:
+        data['message_reports'] = MessageReport.objects.filter(status='pending').count()
+    else:
+        data['message_reports'] = 0
+
+    if user.role == 'admin' and getattr(user, 'admin_role', '') in ['superadmin', 'admin', 'registrar']:
+        data['registrations'] = RegistrationRequest.objects.filter(status=RegistrationRequest.Status.PENDING).count()
+    else:
+        data['registrations'] = 0
+
     # Unread student notifications (intervention / concern)
     if user.role == 'student':
         from wellness.models import Notification as StudentNotif
@@ -426,7 +442,16 @@ def notifications_poll(request):
     else:
         data['notifications'] = 0
 
-    data['total'] = data['messages'] + data['announcements'] + data['grades'] + data['alerts'] + data['notifications']
+    data['total'] = (
+        data['messages']
+        + data['announcements']
+        + data['grades']
+        + data['alerts']
+        + data['notifications']
+        + data['interventions']
+        + data['message_reports']
+        + data['registrations']
+    )
     return JsonResponse(data)
 
 

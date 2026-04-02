@@ -92,10 +92,12 @@
             <a href="{% url 'wellness:alerts_list' %}"
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'alerts_list' %}active{% endif %}">
                 <i class="bi bi-bell"></i><span>Alerts</span>
+                <span class="bt-sidebar-badge hidden" id="sidebarAlertsBadge">0</span>
             </a>
             <a href="{% url 'wellness:interventions_list' %}"
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'interventions_list' %}active{% endif %}">
                 <i class="bi bi-journal-medical"></i><span>Interventions</span>
+                <span class="bt-sidebar-badge hidden" id="sidebarInterventionsBadge">0</span>
             </a>
             <a href="{% url 'wellness:reports' %}"
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
@@ -104,6 +106,7 @@
             <a href="{% url 'messaging:message_reports' %}"
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'message_reports' %}active{% endif %}">
                 <i class="bi bi-flag"></i><span>Message Reports</span>
+                <span class="bt-sidebar-badge hidden" id="sidebarReportsBadge">0</span>
             </a>
             <div class="bt-sidebar-section">AI Tools</div>
             <a href="{% url 'ai_assistant:counselor_chat_view' %}"
@@ -129,6 +132,7 @@
             <a href="{% url 'admin_upload_students' %}"
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_upload_students' %}active{% endif %}">
                 <i class="bi bi-upload"></i><span>Upload Students</span>
+                <span class="bt-sidebar-badge hidden" id="sidebarRegistrationsBadge">0</span>
             </a>
             {% endif %}
             {% if user.admin_role == 'superadmin' or user.admin_role == 'admin' %}
@@ -159,6 +163,7 @@
             <a href="{% url 'messaging:admin_message_reports' %}"
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'admin_message_reports' %}active{% endif %}">
                 <i class="bi bi-flag"></i><span>Message Reports</span>
+                <span class="bt-sidebar-badge hidden" id="sidebarReportsBadge">0</span>
             </a>
             {% endif %}
 
@@ -167,7 +172,7 @@
             <a href="{% url 'messaging:inbox' %}"
                 class="bt-sidebar-link {% if request.resolver_match.url_name == 'inbox' %}active{% endif %}">
                 <i class="bi bi-chat-dots"></i><span>Messages</span>
-                {% if unread_messages_count %}<span class="bt-sidebar-badge" id="sidebarMsgBadge">{{ unread_messages_count }}</span>{% endif %}
+                <span class="bt-sidebar-badge {% if not unread_messages_count %}hidden{% endif %}" id="sidebarMsgBadge">{{ unread_messages_count|default:0 }}</span>
             </a>
         </nav>
 
@@ -357,6 +362,51 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             });
         }
 
+        function enhanceResponsiveTables() {
+            document.querySelectorAll('.bt-content table').forEach(table => {
+                if (table.classList.contains('bt-no-mobile-stack')) return;
+                if (!table.querySelector('thead th') || !table.querySelector('tbody tr')) return;
+
+                table.classList.add('bt-table', 'bt-responsive-table');
+
+                const wrapper = table.closest('.overflow-x-auto, .table-responsive');
+                if (wrapper) {
+                    wrapper.classList.add('bt-table-wrap');
+                }
+
+                const headers = Array.from(table.querySelectorAll('thead th')).map(th =>
+                    (th.textContent || '').replace(/\s+/g, ' ').trim()
+                );
+
+                table.querySelectorAll('tbody tr').forEach(row => {
+                    const cells = Array.from(row.children);
+                    cells.forEach((cell, index) => {
+                        if (!cell.matches('td, th')) return;
+                        if (cell.hasAttribute('colspan')) return;
+                        if (!cell.dataset.label && headers[index]) {
+                            cell.dataset.label = headers[index];
+                        }
+                    });
+                });
+            });
+        }
+
+        function enhanceEmptyStates() {
+            document.querySelectorAll('.bt-content .text-center').forEach(block => {
+                const text = (block.textContent || '').replace(/\s+/g, ' ').trim();
+                if (!/\bNo\b/i.test(text)) return;
+                if (!block.querySelector('i, svg')) return;
+                block.classList.add('bt-empty');
+                const title = block.querySelector('h1, h2, h3, h4, h5, h6, .font-medium, .font-semibold');
+                if (title) title.classList.add('bt-empty-title');
+                const paragraphs = block.querySelectorAll('p');
+                if (paragraphs.length > 0) {
+                    const subtitle = paragraphs[paragraphs.length - 1];
+                    subtitle.classList.add('bt-empty-subtitle');
+                }
+            });
+        }
+
         /* === Theme === */
         function toggleTheme() {
             const isDark = document.documentElement.classList.toggle('dark');
@@ -367,6 +417,8 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
         document.addEventListener('DOMContentLoaded', function () {
             enforceCurrentDateTimeInputs();
             removeDuplicateFlashMessages();
+            enhanceResponsiveTables();
+            enhanceEmptyStates();
             const icon = document.getElementById('themeIcon');
             if (icon && localStorage.getItem('theme') === 'dark') icon.className = 'bi bi-sun';
 
@@ -433,20 +485,71 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
         /* === Notification Polling === */
         const NOTIF_KEY = 'notifItems_{{ user.id }}';
         let notifItems = JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]');
-        let prevCounts = { messages: {{ unread_messages_count }}, announcements: 0, grades: 0, alerts: 0, notifications: 0};
+        let prevCounts = {
+            messages: {{ unread_messages_count }},
+            announcements: 0,
+            grades: 0,
+            alerts: 0,
+            notifications: 0,
+            interventions: 0,
+            message_reports: 0,
+            registrations: 0
+        };
         let isFirstLoad = true;
+        let liveNotifTotal = 0;
+        let hasPolledNotifications = false;
 
         updateNotifList();
-        const nb0 = document.getElementById('notifBadge');
-        if (nb0 && notifItems.length > 0) { nb0.textContent = notifItems.length; nb0.classList.remove('hidden'); }
+
+        function setBadgeValue(id, value) {
+            const badge = document.getElementById(id);
+            if (!badge) return;
+            const count = Number(value || 0);
+            badge.textContent = count;
+            if (count > 0) {
+                badge.classList.remove('hidden');
+                badge.style.display = '';
+            } else {
+                badge.classList.add('hidden');
+                badge.style.display = 'none';
+            }
+        }
+
+        function updateTopNotifBadge() {
+            const badge = document.getElementById('notifBadge');
+            if (!badge) return;
+            if (liveNotifTotal > 0) {
+                badge.textContent = liveNotifTotal;
+                badge.classList.remove('hidden');
+            } else {
+                badge.textContent = '0';
+                badge.classList.add('hidden');
+            }
+        }
 
         function updateNotifUI(data) {
-            // Update sidebar message badge
-            const smb = document.getElementById('sidebarMsgBadge');
-            if (smb) { smb.textContent = data.messages; smb.style.display = data.messages === 0 ? 'none' : ''; }
+            liveNotifTotal = Number(data.total || 0);
+            updateTopNotifBadge();
+            setBadgeValue('sidebarMsgBadge', data.messages);
+            setBadgeValue('sidebarAlertsBadge', data.alerts);
+            setBadgeValue('sidebarInterventionsBadge', data.interventions);
+            setBadgeValue('sidebarReportsBadge', data.message_reports);
+            setBadgeValue('sidebarRegistrationsBadge', data.registrations);
+            if (notifItems.length === 0) {
+                updateNotifList();
+            }
 
             if (isFirstLoad) {
-                prevCounts = { messages: data.messages, announcements: data.announcements, grades: data.grades, alerts: data.alerts };
+                prevCounts = {
+                    messages: data.messages,
+                    announcements: data.announcements,
+                    grades: data.grades,
+                    alerts: data.alerts,
+                    notifications: data.notifications,
+                    interventions: data.interventions,
+                    message_reports: data.message_reports,
+                    registrations: data.registrations
+                };
                 isFirstLoad = false;
                 return;
             }
@@ -467,13 +570,34 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
                 showToast('New student alert', 'bg-red-600');
                 addNotifItem('<i class="bi bi-exclamation-triangle mr-2 text-red-500"></i> Student alert', '/wellness/alerts/');
             }
+            if (data.interventions > prevCounts.interventions) {
+                showToast('A new intervention needs attention', 'bg-emerald-600');
+                addNotifItem('<i class="bi bi-journal-medical mr-2 text-emerald-500"></i> Intervention update', '{% url "wellness:interventions_list" %}');
+            }
+            if (data.message_reports > prevCounts.message_reports) {
+                showToast('New message report submitted', 'bg-amber-600');
+                addNotifItem('<i class="bi bi-flag mr-2 text-amber-500"></i> Message report', '{% if user.role == "admin" %}{% url "messaging:admin_message_reports" %}{% else %}{% url "messaging:message_reports" %}{% endif %}');
+            }
+            if (data.registrations > prevCounts.registrations) {
+                showToast('New registration request pending', 'bg-cyan-600');
+                addNotifItem('<i class="bi bi-person-plus mr-2 text-cyan-500"></i> Registration pending', '{% url "admin_upload_students" %}');
+            }
             if (data.notifications > prevCounts.notifications) {
                 showToast('You have a new notification', 'bg-teal-600');
                 addNotifItem('<i class="bi bi-bell mr-2 text-teal-500"></i> New notification', '/wellness/checkin/');
                 fetch('/wellness/notifications/mark-read/', {method:'POST', headers:{'X-CSRFToken': '{{ csrf_token }}'}});
             }
 
-            prevCounts = { messages: data.messages, announcements: data.announcements, grades: data.grades, alerts: data.alerts, notifications: data.notifications };
+            prevCounts = {
+                messages: data.messages,
+                announcements: data.announcements,
+                grades: data.grades,
+                alerts: data.alerts,
+                notifications: data.notifications,
+                interventions: data.interventions,
+                message_reports: data.message_reports,
+                registrations: data.registrations
+            };
         }
 
         function addNotifItem(html, url) {
@@ -482,15 +606,16 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             if (notifItems.length > 20) notifItems.pop();
             localStorage.setItem(NOTIF_KEY, JSON.stringify(notifItems));
             updateNotifList();
-            const nb = document.getElementById('notifBadge');
-            if (nb) { nb.textContent = notifItems.length; nb.classList.remove('hidden'); }
+            updateTopNotifBadge();
         }
 
         function updateNotifList() {
             const list = document.getElementById('notifList');
             if (!list) return;
             if (notifItems.length === 0) {
-                list.innerHTML = '<p class="text-sm text-gray-400 text-center py-8">No new notifications</p>';
+                list.innerHTML = hasPolledNotifications
+                    ? '<p class="text-sm text-gray-400 text-center py-8">No new notifications</p>'
+                    : '<div class="bt-loading-shell"><span class="bt-loading-dot"></span><span class="bt-loading-dot"></span><span class="bt-loading-dot"></span><span>Checking notifications...</span></div>';
                 return;
             }
             list.innerHTML = notifItems.map(n =>
@@ -505,9 +630,8 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             notifItems = [];
             localStorage.removeItem(NOTIF_KEY);
             updateNotifList();
-            const nb = document.getElementById('notifBadge');
-            if (nb) { nb.textContent = '0'; nb.classList.add('hidden'); }
-        }
+            updateTopNotifBadge();
+        }
 
         function pollNotifications() {
             fetch('/notifications/poll/', {
@@ -525,7 +649,12 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
                     }
                     return r.json();
                 })
-                .then(data => { if (data) updateNotifUI(data); })
+                .then(data => {
+                    if (data) {
+                        hasPolledNotifications = true;
+                        updateNotifUI(data);
+                    }
+                })
                 .catch(() => { });
         }
 
