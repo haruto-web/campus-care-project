@@ -237,9 +237,10 @@
     </div>
     {% else %}
     <!-- Empty State -->
-    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-12 text-center">
-        <div class="mb-6">
-            <i class="bi bi-book text-8xl text-blue-400"></i>
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl px-6 py-12 sm:px-10 text-center">
+        <div class="max-w-2xl mx-auto flex flex-col items-center">
+        <div class="w-20 h-20 rounded-full bg-white/70 border border-blue-100 flex items-center justify-center shadow-sm mb-6">
+            <i class="bi bi-book text-5xl text-blue-400"></i>
         </div>
         <h3 class="text-2xl font-bold text-gray-800 mb-4">
             {% if user.role == 'teacher' %}
@@ -248,7 +249,7 @@
                 No Classes Enrolled
             {% endif %}
         </h3>
-        <p class="text-gray-600 mb-8 max-w-md mx-auto">
+        <p class="text-gray-600 mb-8 max-w-xl mx-auto leading-relaxed">
             {% if user.role == 'teacher' %}
                 Classes are created by the administrator. Your assigned classes will appear here once they are added.
             {% else %}
@@ -256,15 +257,25 @@
             {% endif %}
         </p>
         {% if user.role != 'teacher' %}
-        <div class="bg-white rounded-lg p-6 max-w-md mx-auto">
-            <h4 class="font-semibold text-gray-800 mb-2">What to do next:</h4>
-            <ul class="text-left text-gray-600 space-y-2">
-                <li class="flex items-center"><i class="bi bi-check-circle text-green-600 mr-2"></i> Contact your teacher</li>
-                <li class="flex items-center"><i class="bi bi-check-circle text-green-600 mr-2"></i> Visit the school office</li>
-                <li class="flex items-center"><i class="bi bi-check-circle text-green-600 mr-2"></i> Check with your counselor</li>
+        <div class="w-full max-w-md rounded-2xl bg-white border border-blue-100 shadow-sm p-6 text-left">
+            <h4 class="font-semibold text-gray-800 text-center mb-4">What to do next:</h4>
+            <ul class="space-y-3">
+                <li class="flex items-center gap-3 text-gray-600">
+                    <span class="w-10 h-10 rounded-full border-2 border-emerald-200 bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i class="bi bi-check-circle-fill"></i></span>
+                    <span>Contact your teacher</span>
+                </li>
+                <li class="flex items-center gap-3 text-gray-600">
+                    <span class="w-10 h-10 rounded-full border-2 border-emerald-200 bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i class="bi bi-check-circle-fill"></i></span>
+                    <span>Visit the school office</span>
+                </li>
+                <li class="flex items-center gap-3 text-gray-600">
+                    <span class="w-10 h-10 rounded-full border-2 border-emerald-200 bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i class="bi bi-check-circle-fill"></i></span>
+                    <span>Check with your counselor</span>
+                </li>
             </ul>
         </div>
         {% endif %}
+        </div>
     </div>
     {% endif %}
 </div>
