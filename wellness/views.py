@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.urls import reverse
 from django.utils.html import format_html
 from datetime import datetime, timedelta
+import calendar
 import secrets
 from .models import TeacherConcern, Intervention, Alert, RiskAssessment, WellnessCheckIn
 from .forms import TeacherConcernForm, InterventionForm
@@ -266,11 +267,59 @@ def interventions_list(request):
     
     if year_level_filter:
         interventions = interventions.filter(student__year_level=year_level_filter)
+
+    calendar_month_raw = request.GET.get('calendar_month', '')
+    today = timezone.localdate()
+    try:
+        if calendar_month_raw:
+            calendar_month_date = datetime.strptime(calendar_month_raw, '%Y-%m').date()
+            calendar_month_date = calendar_month_date.replace(day=1)
+        else:
+            calendar_month_date = today.replace(day=1)
+    except ValueError:
+        calendar_month_date = today.replace(day=1)
+
+    month_start = calendar_month_date
+    _, month_last_day = calendar.monthrange(month_start.year, month_start.month)
+    month_end = month_start.replace(day=month_last_day)
+
+    month_interventions = interventions.filter(
+        scheduled_date__date__gte=month_start,
+        scheduled_date__date__lte=month_end,
+    ).order_by('scheduled_date')
+
+    events_by_date = {}
+    for intervention in month_interventions:
+        event_date = timezone.localtime(intervention.scheduled_date).date()
+        events_by_date.setdefault(event_date, []).append(intervention)
+
+    month_grid = []
+    for week in calendar.Calendar(firstweekday=0).monthdatescalendar(month_start.year, month_start.month):
+        week_cells = []
+        for day in week:
+            day_events = events_by_date.get(day, [])
+            week_cells.append({
+                'date': day,
+                'in_month': day.month == month_start.month,
+                'is_today': day == today,
+                'events': day_events[:3],
+                'extra_count': max(len(day_events) - 3, 0),
+            })
+        month_grid.append(week_cells)
+
+    prev_month = (month_start.replace(day=1) - timedelta(days=1)).replace(day=1)
+    next_month = (month_end + timedelta(days=1)).replace(day=1)
     
     context = {
         'interventions': interventions,
         'status_filter': status_filter,
         'year_level_filter': year_level_filter,
+        'calendar_month': month_start,
+        'calendar_weeks': month_grid,
+        'calendar_month_param': month_start.strftime('%Y-%m'),
+        'prev_calendar_month': prev_month.strftime('%Y-%m'),
+        'next_calendar_month': next_month.strftime('%Y-%m'),
+        'calendar_day_names': list(calendar.day_abbr),
     }
     return render(request, 'wellness/interventions_list.html', context)
 

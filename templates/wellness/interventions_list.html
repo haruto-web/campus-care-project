@@ -47,6 +47,79 @@
         </form>
     </div>
     <!-- Results Section -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Calendar View</h3>
+                    <p class="text-gray-600 text-sm mt-1">Monthly overview of scheduled meetings and intervention activity.</p>
+                </div>
+                <div class="flex items-center gap-2 self-start lg:self-auto">
+                    <a href="?status={{ status_filter }}&year_level={{ year_level_filter }}&calendar_month={{ prev_calendar_month }}"
+                       class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                    <div class="px-4 py-2 rounded-lg bg-purple-50 text-purple-800 font-semibold min-w-[170px] text-center">
+                        {{ calendar_month|date:"F Y" }}
+                    </div>
+                    <a href="?status={{ status_filter }}&year_level={{ year_level_filter }}&calendar_month={{ next_calendar_month }}"
+                       class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 md:p-6">
+            <div class="hidden sm:grid grid-cols-7 gap-2 mb-2">
+                {% for day_name in calendar_day_names %}
+                <div class="text-center text-xs font-semibold uppercase tracking-wide text-gray-500 py-2">
+                    {{ day_name }}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="space-y-2">
+                {% for week in calendar_weeks %}
+                <div class="grid grid-cols-1 sm:grid-cols-7 gap-2">
+                    {% for cell in week %}
+                    <div class="rounded-xl border {% if cell.is_today %}border-indigo-400 ring-2 ring-indigo-100{% else %}border-gray-200{% endif %} {% if cell.in_month %}bg-white{% else %}bg-gray-50{% endif %} min-h-[140px] p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <span class="sm:hidden block text-[11px] uppercase tracking-wide text-gray-400">{{ cell.date|date:"D" }}</span>
+                                <span class="text-sm font-semibold {% if cell.in_month %}text-gray-800{% else %}text-gray-400{% endif %}">
+                                    {{ cell.date|date:"j" }}
+                                </span>
+                            </div>
+                            {% if cell.events %}
+                            <span class="text-[11px] font-semibold px-2 py-1 rounded-full bg-indigo-100 text-indigo-800">
+                                {{ cell.events|length }} item{{ cell.events|length|pluralize }}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="space-y-2">
+                            {% for event in cell.events %}
+                            <a href="{% url 'wellness:update_intervention' event.id %}"
+                               class="block rounded-lg px-2.5 py-2 text-xs border {% if event.status == 'scheduled' %}bg-indigo-50 border-indigo-100 text-indigo-900{% elif event.status == 'completed' %}bg-green-50 border-green-100 text-green-900{% else %}bg-gray-100 border-gray-200 text-gray-700{% endif %} hover:shadow-sm transition">
+                                <div class="font-semibold truncate">{{ event.student.get_full_name }}</div>
+                                <div class="mt-1 opacity-80">{{ event.scheduled_date|date:"g:i A" }} • {{ event.get_intervention_type_display }}</div>
+                            </a>
+                            {% endfor %}
+                            {% if cell.extra_count %}
+                            <div class="text-[11px] font-medium text-gray-500 px-1">
+                                +{{ cell.extra_count }} more
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
     <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-800">Meeting Schedule</h3>

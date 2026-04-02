@@ -18,6 +18,7 @@ from campus_care.validators import validate_submission_upload, validate_document
 from accounts.decorators import deny_access, teacher_owns_class, teacher_owns_submission
 from accounts.utils import log_action, hit_rate_limit
 from datetime import date, datetime, timedelta
+import calendar
 import json
 import os
 import secrets
@@ -658,6 +659,32 @@ def undo_material_delete(request, token):
 
 @login_required
 def my_classes(request):
+    def build_schedule_calendar(class_queryset):
+        ordered_days = [choice[0] for choice in Class.DAY_CHOICES]
+        day_buckets = {day: [] for day in ordered_days}
+
+        for cls in class_queryset:
+            for block in Class.parse_schedule_blocks(cls.schedule):
+                start_display = Class._input_to_display_time(block['start_time'])
+                end_display = Class._input_to_display_time(block['end_time'])
+                for day in block['days']:
+                    day_buckets.setdefault(day, []).append({
+                        'class': cls,
+                        'start_time': block['start_time'],
+                        'start_display': start_display,
+                        'end_display': end_display,
+                    })
+
+        schedule_days = []
+        for day in ordered_days:
+            entries = sorted(day_buckets.get(day, []), key=lambda item: item['start_time'])
+            schedule_days.append({
+                'day': day,
+                'short_day': day[:3],
+                'entries': entries,
+            })
+        return schedule_days
+
     if request.user.role == 'teacher':
         classes = Class.objects.filter(teacher=request.user)
         
@@ -677,11 +704,13 @@ def my_classes(request):
             'classes': classes,
             'year_level_filter': year_level_filter,
             'section_filter': section_filter,
+            'schedule_calendar_days': build_schedule_calendar(classes),
         }
     elif request.user.role == 'student':
         classes = request.user.enrolled_classes.all()
         context = {
             'classes': classes,
+            'schedule_calendar_days': build_schedule_calendar(classes),
         }
     else:
         messages.error(request, 'Permission denied.')

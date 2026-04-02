@@ -87,7 +87,56 @@
         </form>
     </div>
     {% endif %}
-    
+
+    {% if classes %}
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i class="bi bi-calendar3 text-indigo-600 mr-2"></i> Weekly Schedule Calendar
+                </h3>
+                <p class="text-sm text-gray-500">A cleaner weekly view of your class schedule.</p>
+            </div>
+            <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
+                {{ classes.count }} scheduled class{{ classes.count|pluralize }}
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {% for day in schedule_calendar_days %}
+            <div class="rounded-xl border border-gray-200 bg-gray-50/70 overflow-hidden">
+                <div class="px-4 py-3 bg-white border-b border-gray-200">
+                    <h4 class="font-semibold text-gray-800">{{ day.day }}</h4>
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">{{ day.short_day }}</p>
+                </div>
+                <div class="p-4 space-y-3 min-h-[180px]">
+                    {% if day.entries %}
+                        {% for entry in day.entries %}
+                        <a href="{% url 'academics:class_detail' entry.class.id %}" class="block rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-3 hover:bg-indigo-100 transition">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-gray-800 truncate">{{ entry.class.name }}</p>
+                                    <p class="text-xs text-gray-500">{{ entry.class.code }}{% if entry.class.room %} • {{ entry.class.room }}{% endif %}</p>
+                                </div>
+                                <span class="shrink-0 text-[11px] font-semibold text-indigo-700 bg-white border border-indigo-200 rounded-full px-2 py-1">
+                                    {{ entry.start_display }}
+                                </span>
+                            </div>
+                            <p class="mt-2 text-sm text-indigo-800">{{ entry.start_display }} - {{ entry.end_display }}</p>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                    <div class="h-full flex items-center justify-center text-center text-sm text-gray-400">
+                        No classes scheduled
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     {% if classes %}
     <!-- Classes Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
