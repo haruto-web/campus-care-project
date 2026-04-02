@@ -137,7 +137,8 @@
             const blocks = Array.from(blocksContainer.querySelectorAll('[data-schedule-block]')).map((block) => ({
                 days: Array.from(block.querySelectorAll('input[type="checkbox"]:checked')).map((input) => input.value),
                 start_time: block.querySelector('[data-start-time]').value,
-                end_time: block.querySelector('[data-end-time]').value
+                end_time: block.querySelector('[data-end-time]').value,
+                classroom: block.querySelector('[data-classroom]').value
             }));
             hiddenInput.value = JSON.stringify(blocks);
         }
@@ -172,6 +173,10 @@
                         <label class="block text-xs font-semibold text-gray-600 mb-1">End Time</label>
                         <input type="time" value="${block.end_time || ''}" data-end-time class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                     </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Classroom (Optional)</label>
+                    <input type="text" value="${block.classroom || ''}" data-classroom placeholder="e.g., Room 301" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                 </div>
             `;
 

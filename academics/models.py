@@ -59,7 +59,12 @@ class Class(models.Model):
     def _parse_schedule_block(cls, block):
         if not block or ' | ' not in block:
             return None
-        day_part, time_range = block.split(' | ', 1)
+        block_parts = [part.strip() for part in block.split(' | ') if part.strip()]
+        if len(block_parts) < 2:
+            return None
+        day_part = block_parts[0]
+        time_range = block_parts[1]
+        classroom = block_parts[2] if len(block_parts) > 2 else ''
         days = [day.strip() for day in day_part.split(',') if day.strip()]
         valid_days = {choice[0] for choice in cls.DAY_CHOICES}
         if not days or any(day not in valid_days for day in days):
@@ -73,14 +78,19 @@ class Class(models.Model):
             'days': days,
             'start_time': cls._display_to_input_time(start_time),
             'end_time': cls._display_to_input_time(end_time),
+            'classroom': classroom,
         }
 
     @classmethod
-    def build_schedule(cls, days, start_time, end_time):
+    def build_schedule(cls, days, start_time, end_time, classroom=''):
         if not days or not start_time or not end_time:
             return ''
         display_days = ', '.join(days)
-        return f'{display_days} | {cls._input_to_display_time(start_time)} - {cls._input_to_display_time(end_time)}'
+        schedule_text = f'{display_days} | {cls._input_to_display_time(start_time)} - {cls._input_to_display_time(end_time)}'
+        classroom = (classroom or '').strip()
+        if classroom:
+            schedule_text = f'{schedule_text} | {classroom}'
+        return schedule_text
 
     @classmethod
     def build_schedule_blocks(cls, blocks):
@@ -91,8 +101,9 @@ class Class(models.Model):
             days = block.get('days') or []
             start_time = block.get('start_time')
             end_time = block.get('end_time')
+            classroom = (block.get('classroom') or '').strip()
             if days and start_time and end_time:
-                formatted_blocks.append(cls.build_schedule(days, start_time, end_time))
+                formatted_blocks.append(cls.build_schedule(days, start_time, end_time, classroom))
         return '; '.join(formatted_blocks)
 
     @staticmethod

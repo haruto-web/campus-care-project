@@ -51,6 +51,7 @@ class ClassForm(forms.ModelForm):
             days = [day for day in (block.get('days') or []) if day]
             start_time = (block.get('start_time') or '').strip()
             end_time = (block.get('end_time') or '').strip()
+            classroom = (block.get('classroom') or '').strip()
 
             if not any([days, start_time, end_time]):
                 continue
@@ -78,6 +79,7 @@ class ClassForm(forms.ModelForm):
                 'days': days,
                 'start_time': start_time,
                 'end_time': end_time,
+                'classroom': classroom,
             })
 
         cleaned_data['schedule'] = Class.build_schedule_blocks(normalized_blocks)

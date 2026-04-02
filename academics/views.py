@@ -667,12 +667,14 @@ def my_classes(request):
             for block in Class.parse_schedule_blocks(cls.schedule):
                 start_display = Class._input_to_display_time(block['start_time'])
                 end_display = Class._input_to_display_time(block['end_time'])
+                block_classroom = (block.get('classroom') or '').strip()
                 for day in block['days']:
                     day_buckets.setdefault(day, []).append({
                         'class': cls,
                         'start_time': block['start_time'],
                         'start_display': start_display,
                         'end_display': end_display,
+                        'classroom': block_classroom or cls.room,
                     })
 
         schedule_days = []
@@ -1239,6 +1241,7 @@ def edit_class(request, class_id):
             schedule_days = [day for day in (block.get('days') or []) if day]
             schedule_start_time = (block.get('start_time') or '').strip()
             schedule_end_time = (block.get('end_time') or '').strip()
+            schedule_classroom = (block.get('classroom') or '').strip()
 
             if not any([schedule_days, schedule_start_time, schedule_end_time]):
                 continue
@@ -1282,6 +1285,7 @@ def edit_class(request, class_id):
                 'days': schedule_days,
                 'start_time': schedule_start_time,
                 'end_time': schedule_end_time,
+                'classroom': schedule_classroom,
             })
 
         class_obj.name = request.POST.get('name')
