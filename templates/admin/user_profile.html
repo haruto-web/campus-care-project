@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ viewed_user.get_full_name }} - BrightTrack{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+    <div class="flex items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ viewed_user.get_full_name }}</h2>
+            <p class="text-gray-500 dark:text-gray-400">User profile details</p>
+        </div>
+        <a href="{% url 'admin_teachers_list' %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 p-6">
+        <div class="flex flex-col md:flex-row gap-6 items-start">
+            <div class="flex-shrink-0">
+                {% if viewed_user.profile_picture %}
+                <img src="{{ viewed_user.profile_picture.url }}" alt="Profile" class="w-28 h-28 rounded-full object-cover border-4 border-indigo-100"
+                     onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'">
+                {% else %}
+                <img src="{% static 'images/logo.png' %}" alt="Profile" class="w-28 h-28 rounded-full object-cover border-4 border-indigo-100">
+                {% endif %}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Role</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ viewed_user.role|title }}</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Username</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">@{{ viewed_user.username }}</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Email</p>
+                    <p class="font-semibold text-gray-900 dark:text-white break-all">{{ viewed_user.email }}</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Phone</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ viewed_user.phone|default:"—" }}</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Year Level</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{% if viewed_user.year_level %}Grade {{ viewed_user.year_level }}{% else %}—{% endif %}</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Section</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ viewed_user.section|default:"—" }}</p>
+                </div>
+                <div class="sm:col-span-2">
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Address</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ viewed_user.address|default:"—" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if viewed_user.role == 'teacher' %}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Classes Teaching</h3>
+        </div>
+        <div class="p-6">
+            {% if classes_taught %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for cls in classes_taught %}
+                <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ cls.code }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ cls.name }}</p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        {% if cls.year_level %}Grade {{ cls.year_level }}{% endif %}{% if cls.year_level and cls.section %} • {% endif %}{{ cls.section|default:"" }}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 dark:text-gray-400">No classes assigned.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if viewed_user.role == 'student' %}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Enrolled Classes</h3>
+        </div>
+        <div class="p-6">
+            {% if enrolled_classes %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for cls in enrolled_classes %}
+                <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ cls.code }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ cls.name }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 dark:text-gray-400">No enrolled classes.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

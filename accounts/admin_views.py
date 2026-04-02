@@ -585,9 +585,12 @@ def admin_manage_users(request):
 
 @login_required
 @admin_required
-@require_POST
 def admin_delete_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
+    if request.method != 'POST':
+        target = 'admin_teachers_list' if user.role == 'teacher' else 'admin_manage_users'
+        messages.warning(request, 'User removal must be submitted from the management page.')
+        return redirect(target)
     
     if user.role == 'admin':
         messages.error(request, 'Cannot delete admin accounts.')
@@ -685,6 +688,21 @@ def admin_teacher_dashboard(request, teacher_id):
         'at_risk_count': len(at_risk_students),
     }
     return render(request, 'admin/teacher_dashboard_view.html', context)
+
+
+@login_required
+@admin_required
+def admin_user_profile(request, user_id):
+    viewed_user = get_object_or_404(User, id=user_id)
+    classes_taught = Class.objects.filter(teacher=viewed_user).order_by('code') if viewed_user.role == 'teacher' else Class.objects.none()
+    enrolled_classes = viewed_user.enrolled_classes.all().order_by('code') if viewed_user.role == 'student' else Class.objects.none()
+
+    context = {
+        'viewed_user': viewed_user,
+        'classes_taught': classes_taught,
+        'enrolled_classes': enrolled_classes,
+    }
+    return render(request, 'admin/user_profile.html', context)
 
 @login_required
 @admin_required
