@@ -28,4 +28,5 @@ class Command(BaseCommand):
             if admin_role:
                 u.admin_role = admin_role
             u.save()
-            self.stdout.write(self.style.SUCCESS(f'{'Created' if created else 'Updated'}: {email}'))
+            status = 'Created' if created else 'Updated'
+            self.stdout.write(self.style.SUCCESS(f'{status}: {email}'))

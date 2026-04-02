@@ -172,7 +172,7 @@
 function confirmDelete(userId, userName, userRole) {
     showConfirmModal({
         title: 'Remove User Account',
-        body: `You are about to permanently delete <strong>${userName}</strong> (${userRole}).<br><br>This will remove their account and <strong>all associated data</strong> including submissions, grades, and messages. This cannot be undone.`,
+        body: `You are about to remove <strong>${userName}</strong> (${userRole}).<br><br>The account will be disabled immediately so the user can no longer sign in. You can undo this shortly after removal if needed.`,
         okLabel: 'Yes, Remove',
         type: 'danger',
         onConfirm() {

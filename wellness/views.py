@@ -297,7 +297,10 @@ def update_intervention(request, intervention_id):
         form.fields['student'].queryset = User.objects.filter(role='student')
         if form.is_valid():
             updated = form.save()
-            log_action(request, 'INTERVENTION_UPDATED', 'Intervention', intervention.id, intervention.student.get_full_name())
+            if previous_snapshot.get('status') != 'cancelled' and updated.status == 'cancelled':
+                log_action(request, 'INTERVENTION_CANCELLED', 'Intervention', intervention.id, intervention.student.get_full_name())
+            else:
+                log_action(request, 'INTERVENTION_UPDATED', 'Intervention', intervention.id, intervention.student.get_full_name())
             if previous_snapshot.get('status') != 'cancelled' and updated.status == 'cancelled':
                 undo_token = _stash_undo_payload({
                     'type': 'intervention_cancel',
@@ -515,7 +518,7 @@ def undo_alert_resolve(request, token):
     alert.is_read = bool(prev.get('is_read', False))
     alert.resolved = bool(prev.get('resolved', False))
     alert.save(update_fields=['is_read', 'resolved'])
-    log_action(request, 'ALERT_RESOLVED', 'Alert', alert.id, alert.student.get_full_name(), extra_data={'undo': True})
+    log_action(request, 'ALERT_RESTORED', 'Alert', alert.id, alert.student.get_full_name(), extra_data={'undo': True})
     messages.success(request, 'Alert status restored.')
     return redirect('wellness:alerts_list')
 
@@ -549,7 +552,7 @@ def undo_intervention_cancel(request, token):
     intervention.notes = snapshot.get('notes', intervention.notes)
     intervention.outcome = snapshot.get('outcome', intervention.outcome)
     intervention.save()
-    log_action(request, 'INTERVENTION_UPDATED', 'Intervention', intervention.id, intervention.student.get_full_name(), extra_data={'undo': True})
+    log_action(request, 'INTERVENTION_RESTORED', 'Intervention', intervention.id, intervention.student.get_full_name(), extra_data={'undo': True})
     messages.success(request, 'Intervention cancellation undone successfully.')
     return redirect('wellness:interventions_list')
 

@@ -40,7 +40,7 @@
                                         {% csrf_token %}
                                         <button type="submit"
                                                 class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
-                                                onclick="return confirm('Are you sure you want to drop {{ student.get_full_name }} from this class? This action will remove all their grades and attendance records for this class.')">
+                                                onclick="return confirm('Are you sure you want to drop {{ student.get_full_name }} from this class? This action will remove their class records, but you can undo it shortly after if needed.')">
                                             <i class="bi bi-person-dash"></i> Drop
                                         </button>
                                     </form>

@@ -241,18 +241,118 @@ def drop_student(request, class_id, student_id):
     if not class_obj.students.filter(id=student.id).exists():
         messages.error(request, 'Student is not enrolled in this class.')
         return redirect('academics:manage_students', class_id=class_id)
-    
-    # Remove student from class
+
+    grades_payload = [
+        {
+            'assignment_id': grade.assignment_id,
+            'score': str(grade.score),
+            'max_score': str(grade.max_score),
+            'date': grade.date.isoformat() if grade.date else '',
+        }
+        for grade in Grade.objects.filter(student=student, class_obj=class_obj)
+    ]
+    attendance_payload = [
+        {
+            'date': record.date.isoformat(),
+            'status': record.status,
+            'notes': record.notes,
+        }
+        for record in Attendance.objects.filter(student=student, class_obj=class_obj)
+    ]
+    submissions_payload = [
+        {
+            'assignment_id': submission.assignment_id,
+            'submitted_at': submission.submitted_at.isoformat() if submission.submitted_at else '',
+            'text_content': submission.text_content,
+            'file': submission.file.name if submission.file else '',
+            'score': submission.score,
+            'feedback': submission.feedback,
+            'graded_at': submission.graded_at.isoformat() if submission.graded_at else '',
+        }
+        for submission in Submission.objects.filter(student=student, assignment__class_obj=class_obj)
+    ]
+
+    token = _stash_undo_payload({
+        'kind': 'undo_drop_student',
+        'class_id': class_obj.id,
+        'student_id': student.id,
+        'grades': grades_payload,
+        'attendance': attendance_payload,
+        'submissions': submissions_payload,
+    })
+
     class_obj.students.remove(student)
-    
-    # Delete related records (grades, attendance, submissions)
     Grade.objects.filter(student=student, class_obj=class_obj).delete()
     Attendance.objects.filter(student=student, class_obj=class_obj).delete()
     Submission.objects.filter(student=student, assignment__class_obj=class_obj).delete()
-    
+
     log_action(request, 'STUDENT_REMOVED_FROM_CLASS', 'Class', class_obj.id, class_obj.code, extra_data={'student_id': student.id})
-    messages.success(request, f'{student.get_full_name()} has been dropped from {class_obj.code}. All related records have been removed.')
+    messages.success(
+        request,
+        format_html(
+            '{} has been dropped from {}. All related records were removed. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            student.get_full_name(),
+            class_obj.code,
+            reverse('academics:undo_drop_student', args=[token]),
+            UNDO_GRACE_SECONDS,
+        )
+    )
     return redirect('academics:manage_students', class_id=class_id)
+
+
+@login_required
+def undo_drop_student(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('kind') != 'undo_drop_student':
+        messages.error(request, 'Undo link expired or is invalid.')
+        return redirect('dashboard')
+
+    class_obj = get_object_or_404(Class, id=payload['class_id'])
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
+
+    from accounts.models import User
+    student = get_object_or_404(User, id=payload['student_id'], role='student')
+
+    class_obj.students.add(student)
+
+    for item in payload.get('grades', []):
+        grade = Grade.objects.create(
+            student=student,
+            class_obj=class_obj,
+            assignment_id=item['assignment_id'],
+            score=item['score'],
+            max_score=item['max_score'],
+        )
+        if item.get('date'):
+            Grade.objects.filter(pk=grade.pk).update(date=item['date'])
+
+    for item in payload.get('attendance', []):
+        Attendance.objects.create(
+            class_obj=class_obj,
+            student=student,
+            date=item['date'],
+            status=item['status'],
+            notes=item['notes'],
+        )
+
+    for item in payload.get('submissions', []):
+        submission = Submission.objects.create(
+            assignment_id=item['assignment_id'],
+            student=student,
+            text_content=item['text_content'],
+            file=item['file'],
+            score=item['score'],
+            feedback=item['feedback'],
+            graded_at=_parse_dt(item['graded_at']) if item.get('graded_at') else None,
+        )
+        if item.get('submitted_at'):
+            Submission.objects.filter(pk=submission.pk).update(submitted_at=_parse_dt(item['submitted_at']))
+
+    log_action(request, 'STUDENT_RESTORED_TO_CLASS', 'Class', class_obj.id, class_obj.code, extra_data={'student_id': student.id, 'undo_drop': True})
+    messages.success(request, f'{student.get_full_name()} has been restored to {class_obj.code}.')
+    return redirect('academics:manage_students', class_id=class_obj.id)
 
 @login_required
 def create_assignment(request, class_id):
@@ -547,7 +647,7 @@ def undo_material_delete(request, token):
 
     log_action(
         request,
-        'MATERIAL_UPLOADED',
+        'MATERIAL_RESTORED',
         'Material',
         restored.id,
         restored.title,
@@ -1051,7 +1151,7 @@ def undo_assignment_delete(request, token):
 
     log_action(
         request,
-        'ASSIGNMENT_CREATED',
+        'ASSIGNMENT_RESTORED',
         'Assignment',
         restored_assignment.id,
         restored_assignment.title,

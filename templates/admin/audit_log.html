@@ -106,7 +106,9 @@
                                 {% if log.action == 'LOGIN' %}bg-green-100 text-green-800
                                 {% elif log.action == 'LOGOUT' %}bg-gray-100 text-gray-700
                                 {% elif log.action == 'LOGIN_FAILED' %}bg-red-100 text-red-800
-                                {% elif log.action == 'USER_DELETED' or log.action == 'MASS_DELETE' %}bg-red-200 text-red-900
+                                {% elif log.action == 'USER_DELETED' or log.action == 'MASS_DELETE' or log.action == 'CLASS_DELETED' or log.action == 'ASSIGNMENT_DELETED' or log.action == 'MATERIAL_DELETED' or log.action == 'INTERVENTION_CANCELLED' or log.action == 'REGISTRATION_REJECTED' %}bg-red-200 text-red-900
+                                {% elif log.action == 'USER_RESTORED' or log.action == 'CLASS_RESTORED' or log.action == 'ASSIGNMENT_RESTORED' or log.action == 'MATERIAL_RESTORED' or log.action == 'ALERT_RESTORED' or log.action == 'INTERVENTION_RESTORED' or log.action == 'REGISTRATION_RESTORED' or log.action == 'MESSAGING_SUSPENSION_RESTORED' or log.action == 'STUDENT_RESTORED_TO_CLASS' or log.action == 'APPROVED_STUDENT_STATUS_RESTORED' %}bg-emerald-100 text-emerald-800
+                                {% elif log.action == 'MESSAGING_SUSPENSION_LIFTED' or log.action == 'APPROVED_STUDENT_STATUS_CHANGED' or log.action == 'ALERT_RESOLVED' %}bg-orange-100 text-orange-800
                                 {% elif log.action == 'ADMIN_ROLE_CHANGED' %}bg-purple-100 text-purple-800
                                 {% elif log.action == 'SUBMISSION_GRADED' or log.action == 'GRADE_CHANGED' %}bg-blue-100 text-blue-800
                                 {% elif log.action == 'REPORT_DOWNLOADED' %}bg-indigo-100 text-indigo-800

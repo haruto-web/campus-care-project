@@ -16,7 +16,7 @@
                 <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ cls.name }}</h2>
                 {% if cls.code %}<span class="text-xs font-mono text-gray-500 dark:text-gray-400">{{ cls.code }}</span>{% endif %}
             </div>
-            <form method="post" action="{% url 'admin_delete_class' cls.id %}" onsubmit="return confirm('Delete this class? This cannot be undone.')">
+            <form method="post" action="{% url 'admin_delete_class' cls.id %}" onsubmit="return confirm('Delete this class? You can undo it shortly after if needed.')">
                 {% csrf_token %}
                 <button type="submit" class="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition font-medium">Delete Class</button>
             </form>

@@ -16,6 +16,7 @@ urlpatterns = [
     path('class/<int:class_id>/students/add/<int:student_id>/', views.add_student, name='add_student'),
     path('class/<int:class_id>/students/bulk-add/', views.bulk_add_students, name='bulk_add_students'),
     path('class/<int:class_id>/students/drop/<int:student_id>/', views.drop_student, name='drop_student'),
+    path('class/students/undo-drop/<str:token>/', views.undo_drop_student, name='undo_drop_student'),
     path('class/<int:class_id>/assignment/create/', views.create_assignment, name='create_assignment'),
     path('class/<int:class_id>/attendance/', views.mark_attendance, name='mark_attendance'),
     path('class/<int:class_id>/attendance/update/', views.update_attendance_ajax, name='update_attendance_ajax'),

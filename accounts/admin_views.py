@@ -4,8 +4,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
+from django.core.cache import cache
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from django.utils.html import format_html
 from django.db import transaction
 from django.db.models import Count, Q
 from accounts.models import User, AuditLog, ApprovedStudent, RegistrationRequest
@@ -17,8 +20,227 @@ import csv
 import io
 import logging
 import html
+import secrets
 
 logger = logging.getLogger('brighttrack.audit')
+UNDO_GRACE_SECONDS = 30
+
+
+def _undo_key(token):
+    return f'admin:undo:{token}'
+
+
+def _stash_undo_payload(payload, grace_seconds=UNDO_GRACE_SECONDS):
+    token = secrets.token_urlsafe(24)
+    cache.set(_undo_key(token), payload, grace_seconds)
+    return token
+
+
+def _pop_undo_payload(token):
+    key = _undo_key(token)
+    payload = cache.get(key)
+    cache.delete(key)
+    return payload
+
+
+def _class_redirect_target(payload):
+    return redirect(payload.get('redirect_to') or 'admin_all_classes')
+
+
+def _serialize_class_for_undo(cls):
+    return {
+        'class': {
+            'name': cls.name,
+            'code': cls.code,
+            'description': cls.description,
+            'teacher_id': cls.teacher_id,
+            'semester': cls.semester,
+            'schedule': cls.schedule,
+            'room': cls.room,
+            'section': cls.section,
+            'year_level': cls.year_level,
+            'created_at': cls.created_at.isoformat() if cls.created_at else '',
+        },
+        'student_ids': list(cls.students.values_list('id', flat=True)),
+        'announcements': [
+            {
+                'title': item.title,
+                'content': item.content,
+                'priority': item.priority,
+                'is_school_wide': item.is_school_wide,
+                'author_id': item.author_id,
+                'created_at': item.created_at.isoformat() if item.created_at else '',
+                'read_by_ids': list(item.read_by.values_list('id', flat=True)),
+            }
+            for item in cls.announcements.all()
+        ],
+        'materials': [
+            {
+                'title': item.title,
+                'description': item.description,
+                'file': item.file.name if item.file else '',
+                'uploaded_by_id': item.uploaded_by_id,
+                'uploaded_at': item.uploaded_at.isoformat() if item.uploaded_at else '',
+            }
+            for item in cls.materials.all()
+        ],
+        'assignments': [
+            {
+                'old_id': item.id,
+                'title': item.title,
+                'description': item.description,
+                'due_date': item.due_date.isoformat() if item.due_date else '',
+                'total_points': item.total_points,
+                'submission_type': item.submission_type,
+                'created_at': item.created_at.isoformat() if item.created_at else '',
+            }
+            for item in cls.assignments.all()
+        ],
+        'submissions': [
+            {
+                'assignment_old_id': submission.assignment_id,
+                'student_id': submission.student_id,
+                'submitted_at': submission.submitted_at.isoformat() if submission.submitted_at else '',
+                'text_content': submission.text_content,
+                'file': submission.file.name if submission.file else '',
+                'score': submission.score,
+                'feedback': submission.feedback,
+                'graded_at': submission.graded_at.isoformat() if submission.graded_at else '',
+            }
+            for assignment in cls.assignments.all().prefetch_related('submissions')
+            for submission in assignment.submissions.all()
+        ],
+        'attendance': [
+            {
+                'student_id': item.student_id,
+                'date': item.date.isoformat(),
+                'status': item.status,
+                'notes': item.notes,
+            }
+            for item in cls.attendance_records.all()
+        ],
+        'grades': [
+            {
+                'student_id': item.student_id,
+                'assignment_old_id': item.assignment_id,
+                'score': str(item.score),
+                'max_score': str(item.max_score),
+                'date': item.date.isoformat() if item.date else '',
+            }
+            for item in cls.grades.all()
+        ],
+    }
+
+
+def _restore_class_from_payload(payload):
+    class_data = payload['class']
+    cls = Class.objects.create(
+        name=class_data['name'],
+        code=class_data['code'],
+        description=class_data['description'],
+        teacher_id=class_data['teacher_id'],
+        semester=class_data['semester'],
+        schedule=class_data['schedule'],
+        room=class_data['room'],
+        section=class_data['section'],
+        year_level=class_data['year_level'],
+    )
+
+    created_at = parse_datetime(class_data.get('created_at') or '')
+    if created_at:
+        Class.objects.filter(pk=cls.pk).update(created_at=created_at)
+
+    if payload.get('student_ids'):
+        cls.students.set(User.objects.filter(id__in=payload['student_ids']))
+
+    assignment_map = {}
+    from academics.models import Announcement, Assignment, Attendance, Grade, Material, Submission
+
+    for item in payload.get('assignments', []):
+        assignment = Assignment.objects.create(
+            class_obj=cls,
+            title=item['title'],
+            description=item['description'],
+            due_date=parse_datetime(item['due_date']),
+            total_points=item['total_points'],
+            submission_type=item['submission_type'],
+        )
+        assignment_map[item['old_id']] = assignment.id
+        created_at = parse_datetime(item.get('created_at') or '')
+        if created_at:
+            Assignment.objects.filter(pk=assignment.pk).update(created_at=created_at)
+
+    for item in payload.get('announcements', []):
+        author = User.objects.filter(id=item['author_id']).first()
+        if not author:
+            continue
+        announcement = Announcement.objects.create(
+            class_obj=cls,
+            author=author,
+            title=item['title'],
+            content=item['content'],
+            priority=item['priority'],
+            is_school_wide=item['is_school_wide'],
+        )
+        created_at = parse_datetime(item.get('created_at') or '')
+        if created_at:
+            Announcement.objects.filter(pk=announcement.pk).update(created_at=created_at)
+        if item.get('read_by_ids'):
+            announcement.read_by.set(User.objects.filter(id__in=item['read_by_ids']))
+
+    for item in payload.get('materials', []):
+        uploader = User.objects.filter(id=item['uploaded_by_id']).first()
+        if not uploader:
+            continue
+        material = Material.objects.create(
+            class_obj=cls,
+            title=item['title'],
+            description=item['description'],
+            file=item['file'],
+            uploaded_by=uploader,
+        )
+        uploaded_at = parse_datetime(item.get('uploaded_at') or '')
+        if uploaded_at:
+            Material.objects.filter(pk=material.pk).update(uploaded_at=uploaded_at)
+
+    for item in payload.get('attendance', []):
+        Attendance.objects.create(
+            class_obj=cls,
+            student_id=item['student_id'],
+            date=item['date'],
+            status=item['status'],
+            notes=item['notes'],
+        )
+
+    for item in payload.get('grades', []):
+        grade = Grade.objects.create(
+            student_id=item['student_id'],
+            class_obj=cls,
+            assignment_id=assignment_map.get(item['assignment_old_id']) if item['assignment_old_id'] else None,
+            score=item['score'],
+            max_score=item['max_score'],
+        )
+        if item.get('date'):
+            Grade.objects.filter(pk=grade.pk).update(date=item['date'])
+
+    for item in payload.get('submissions', []):
+        assignment_id = assignment_map.get(item['assignment_old_id'])
+        if not assignment_id:
+            continue
+        submission = Submission.objects.create(
+            assignment_id=assignment_id,
+            student_id=item['student_id'],
+            text_content=item['text_content'],
+            file=item['file'],
+            score=item['score'],
+            feedback=item['feedback'],
+            graded_at=parse_datetime(item['graded_at']) if item.get('graded_at') else None,
+        )
+        submitted_at = parse_datetime(item.get('submitted_at') or '')
+        if submitted_at:
+            Submission.objects.filter(pk=submission.pk).update(submitted_at=submitted_at)
+
+    return cls
 
 
 def _registration_tab_redirect():
@@ -346,7 +568,7 @@ def admin_manage_users(request):
     if section_filter:
         users = users.filter(section__icontains=section_filter)
     
-    users = users.order_by('role', 'last_name', 'first_name')
+    users = users.filter(is_active=True).order_by('role', 'last_name', 'first_name')
     
     context = {
         'users': users,
@@ -354,10 +576,10 @@ def admin_manage_users(request):
         'search_query': search_query,
         'year_level_filter': year_level_filter,
         'section_filter': section_filter,
-        'total_count': User.objects.count(),
-        'student_count': User.objects.filter(role='student').count(),
-        'teacher_count': User.objects.filter(role='teacher').count(),
-        'counselor_count': User.objects.filter(role='counselor').count(),
+        'total_count': User.objects.filter(is_active=True).count(),
+        'student_count': User.objects.filter(is_active=True, role='student').count(),
+        'teacher_count': User.objects.filter(is_active=True, role='teacher').count(),
+        'counselor_count': User.objects.filter(is_active=True, role='counselor').count(),
     }
     return render(request, 'admin/manage_users.html', context)
 
@@ -370,24 +592,59 @@ def admin_delete_user(request, user_id):
     if user.role == 'admin':
         messages.error(request, 'Cannot delete admin accounts.')
         return redirect('admin_teachers_list')
+    if not user.is_active:
+        messages.error(request, 'This account is already removed.')
+        return redirect('admin_teachers_list' if user.role == 'teacher' else 'admin_manage_users')
     
     user_name = user.get_full_name()
     user_role = user.role
-    logger.warning(f'User {user_name} (role={user_role}, id={user_id}) deleted by admin {request.user.username}')
-    log_action(request, 'USER_DELETED', 'User', user.id, user_name, extra_data={'role': user_role})
-    user.delete()
-    
-    messages.success(request, f'{user_role.capitalize()} {user_name} has been removed successfully.')
+    user.is_active = False
+    user.current_session_key = ''
+    user.save(update_fields=['is_active', 'current_session_key'])
+    token = _stash_undo_payload({
+        'kind': 'undo_user_delete',
+        'user_id': user.id,
+        'user_role': user_role,
+    })
+
+    logger.warning(f'User {user_name} (role={user_role}, id={user_id}) deactivated by admin {request.user.username}')
+    log_action(request, 'USER_DELETED', 'User', user.id, user_name, extra_data={'role': user_role, 'soft_deleted': True})
+    messages.success(
+        request,
+        format_html(
+            '{} {} has been removed. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            user_role.capitalize(),
+            user_name,
+            reverse('admin_undo_delete_user', args=[token]),
+            UNDO_GRACE_SECONDS,
+        )
+    )
     
     if user_role == 'teacher':
         return redirect('admin_teachers_list')
     else:
         return redirect('admin_manage_users')
 
+
+@login_required
+@admin_required
+def admin_undo_delete_user(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('kind') != 'undo_user_delete':
+        messages.error(request, 'Undo link expired or is invalid.')
+        return redirect('admin_manage_users')
+
+    user = get_object_or_404(User, id=payload['user_id'])
+    user.is_active = True
+    user.save(update_fields=['is_active'])
+    log_action(request, 'USER_RESTORED', 'User', user.id, user.get_full_name(), extra_data={'undo_user_delete': True})
+    messages.success(request, f'{user.get_full_name()} has been restored.')
+    return redirect('admin_teachers_list' if payload.get('user_role') == 'teacher' else 'admin_manage_users')
+
 @login_required
 @admin_required
 def admin_teachers_list(request):
-    teachers = User.objects.filter(role='teacher').annotate(
+    teachers = User.objects.filter(role='teacher', is_active=True).annotate(
         classes_count=Count('classes_taught')
     ).order_by('last_name', 'first_name')
     
@@ -686,11 +943,43 @@ def admin_upload_students(request):
 def admin_suspend_approved_student(request, student_id):
     from accounts.models import ApprovedStudent
     student = get_object_or_404(ApprovedStudent, id=student_id)
+    previous_state = student.is_suspended
     student.is_suspended = not student.is_suspended
     student.save()
-    log_action(request, 'USER_UPDATED', 'ApprovedStudent', student.id, f'{student.first_name} {student.last_name}', extra_data={'is_suspended': student.is_suspended})
+    token = _stash_undo_payload({
+        'kind': 'undo_approved_student_suspend',
+        'student_id': student.id,
+        'previous_state': previous_state,
+    })
+    log_action(request, 'APPROVED_STUDENT_STATUS_CHANGED', 'ApprovedStudent', student.id, f'{student.first_name} {student.last_name}', extra_data={'is_suspended': student.is_suspended})
     action = 'suspended' if student.is_suspended else 'unsuspended'
-    messages.success(request, f'{student.first_name} {student.last_name} has been {action}.')
+    messages.success(
+        request,
+        format_html(
+            '{} {} has been {}. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            student.first_name,
+            student.last_name,
+            action,
+            reverse('admin_undo_suspend_approved_student', args=[token]),
+            UNDO_GRACE_SECONDS,
+        )
+    )
+    return redirect('admin_upload_students')
+
+
+@login_required
+@admin_required
+def admin_undo_suspend_approved_student(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('kind') != 'undo_approved_student_suspend':
+        messages.error(request, 'Undo link expired or is invalid.')
+        return redirect('admin_upload_students')
+
+    student = get_object_or_404(ApprovedStudent, id=payload['student_id'])
+    student.is_suspended = payload['previous_state']
+    student.save(update_fields=['is_suspended'])
+    log_action(request, 'APPROVED_STUDENT_STATUS_RESTORED', 'ApprovedStudent', student.id, f'{student.first_name} {student.last_name}', extra_data={'undo_suspend_toggle': True, 'is_suspended': student.is_suspended})
+    messages.success(request, f'{student.first_name} {student.last_name} has been restored to the previous suspension state.')
     return redirect('admin_upload_students')
 
 
@@ -822,7 +1111,11 @@ def admin_reject_registration(request, request_id):
     registration.decided_at = timezone.now()
     registration.rejection_reason = reason[:255]
     registration.save(update_fields=['status', 'approved_by', 'decided_at', 'rejection_reason', 'updated_at'])
-    log_action(request, 'USER_UPDATED', 'RegistrationRequest', registration.id, registration.email, extra_data={'status': registration.status})
+    token = _stash_undo_payload({
+        'kind': 'undo_reject_registration',
+        'registration_id': registration.id,
+    })
+    log_action(request, 'REGISTRATION_REJECTED', 'RegistrationRequest', registration.id, registration.email, extra_data={'status': registration.status})
 
     from accounts.otp_utils import send_transactional_email
     send_transactional_email(
@@ -836,7 +1129,39 @@ def admin_reject_registration(request, request_id):
             "BrightTrack School System"
         ),
     )
-    messages.success(request, f'Registration rejected for {registration.first_name} {registration.last_name}.')
+    messages.success(
+        request,
+        format_html(
+            'Registration rejected for {} {}. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            registration.first_name,
+            registration.last_name,
+            reverse('admin_undo_reject_registration', args=[token]),
+            UNDO_GRACE_SECONDS,
+        )
+    )
+    return _registration_tab_redirect()
+
+
+@login_required
+@admin_required
+def admin_undo_reject_registration(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('kind') != 'undo_reject_registration':
+        messages.error(request, 'Undo link expired or is invalid.')
+        return _registration_tab_redirect()
+
+    registration = get_object_or_404(RegistrationRequest, id=payload['registration_id'])
+    if registration.status != RegistrationRequest.Status.REJECTED:
+        messages.error(request, 'Only rejected registrations can be restored to pending.')
+        return _registration_tab_redirect()
+
+    registration.status = RegistrationRequest.Status.PENDING
+    registration.approved_by = None
+    registration.decided_at = None
+    registration.rejection_reason = ''
+    registration.save(update_fields=['status', 'approved_by', 'decided_at', 'rejection_reason', 'updated_at'])
+    log_action(request, 'REGISTRATION_RESTORED', 'RegistrationRequest', registration.id, registration.email, extra_data={'undo_registration_rejection': True, 'status': registration.status})
+    messages.success(request, f'Registration for {registration.first_name} {registration.last_name} is pending again.')
     return _registration_tab_redirect()
 
 
@@ -845,9 +1170,18 @@ def admin_reject_registration(request, request_id):
 @require_POST
 def admin_lift_messaging_suspension(request, user_id):
     user = get_object_or_404(User, id=user_id)
+    previous_until = user.messaging_suspended_until
+    if not previous_until:
+        messages.error(request, 'This user does not have an active messaging suspension.')
+        return redirect('admin_manage_users')
     user.messaging_suspended_until = None
     user.save(update_fields=['messaging_suspended_until'])
-    log_action(request, 'USER_UPDATED', 'User', user.id, user.get_full_name(), extra_data={'messaging_suspension_lifted': True})
+    token = _stash_undo_payload({
+        'kind': 'undo_lift_messaging_suspension',
+        'user_id': user.id,
+        'previous_until': previous_until.isoformat(),
+    })
+    log_action(request, 'MESSAGING_SUSPENSION_LIFTED', 'User', user.id, user.get_full_name(), extra_data={'messaging_suspension_lifted': True})
     from accounts.otp_utils import send_transactional_email
     send_transactional_email(
         to_email=user.email,
@@ -859,7 +1193,36 @@ def admin_lift_messaging_suspension(request, user_id):
             f'— BrightTrack School System'
         ),
     )
-    messages.success(request, f'Messaging suspension lifted for {user.get_full_name()}. Email sent.')
+    messages.success(
+        request,
+        format_html(
+            'Messaging suspension lifted for {}. Email sent. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            user.get_full_name(),
+            reverse('admin_undo_lift_messaging_suspension', args=[token]),
+            UNDO_GRACE_SECONDS,
+        )
+    )
+    return redirect('admin_manage_users')
+
+
+@login_required
+@admin_required
+def admin_undo_lift_messaging_suspension(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('kind') != 'undo_lift_messaging_suspension':
+        messages.error(request, 'Undo link expired or is invalid.')
+        return redirect('admin_manage_users')
+
+    user = get_object_or_404(User, id=payload['user_id'])
+    restored_until = parse_datetime(payload.get('previous_until') or '')
+    if not restored_until:
+        messages.error(request, 'Previous suspension state could not be restored.')
+        return redirect('admin_manage_users')
+
+    user.messaging_suspended_until = restored_until
+    user.save(update_fields=['messaging_suspended_until'])
+    log_action(request, 'MESSAGING_SUSPENSION_RESTORED', 'User', user.id, user.get_full_name(), extra_data={'undo_lift_messaging_suspension': True})
+    messages.success(request, f'Messaging suspension restored for {user.get_full_name()}.')
     return redirect('admin_manage_users')
 
 
@@ -884,10 +1247,42 @@ def admin_view_class(request, class_id):
 def admin_delete_class(request, class_id):
     cls = get_object_or_404(Class, id=class_id)
     name = cls.name
-    log_action(request, 'USER_UPDATED', 'Class', cls.id, name, extra_data={'deleted': True})
+    payload = _serialize_class_for_undo(cls)
+    payload.update({
+        'kind': 'undo_delete_class',
+        'redirect_to': 'admin_all_classes',
+    })
+    token = _stash_undo_payload(payload)
+    log_action(request, 'CLASS_DELETED', 'Class', cls.id, name, extra_data={'deleted': True})
     cls.delete()
-    messages.success(request, f'Class "{name}" deleted successfully.')
+    messages.success(
+        request,
+        format_html(
+            'Class "{}" deleted. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            name,
+            reverse('admin_undo_delete_class', args=[token]),
+            UNDO_GRACE_SECONDS,
+        )
+    )
     return redirect('admin_all_classes')
+
+
+@login_required
+@admin_required
+def admin_undo_delete_class(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('kind') != 'undo_delete_class':
+        messages.error(request, 'Undo link expired or is invalid.')
+        return redirect('admin_all_classes')
+
+    if Class.objects.filter(code=payload['class']['code']).exists():
+        messages.error(request, 'Cannot restore this class because the class code is already in use.')
+        return redirect('admin_all_classes')
+
+    cls = _restore_class_from_payload(payload)
+    log_action(request, 'CLASS_RESTORED', 'Class', cls.id, cls.name, extra_data={'undo_class_delete': True})
+    messages.success(request, f'Class "{cls.name}" has been restored.')
+    return _class_redirect_target(payload)
 
 
 @login_required
