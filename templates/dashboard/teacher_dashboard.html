@@ -9,22 +9,22 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <a href="{% url 'academics:my_classes' %}"
             class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
-            <h3 class="text-3xl font-bold text-blue-600">{{ classes.count }}</h3>
+            <h3 class="text-3xl font-bold text-blue-600" data-dashboard-stat="my_classes">{{ classes.count }}</h3>
             <p class="text-gray-600 dark:text-gray-400">My Classes</p>
         </a>
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center hover:shadow-lg transition-shadow cursor-pointer"
             onclick="toggleStudentsBySection()">
-            <h3 class="text-3xl font-bold text-green-600">{{ total_students }}</h3>
+            <h3 class="text-3xl font-bold text-green-600" data-dashboard-stat="total_students">{{ total_students }}</h3>
             <p class="text-gray-600 dark:text-gray-400">Total Students</p>
         </div>
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center hover:shadow-lg transition-shadow cursor-pointer"
             onclick="toggleAtRiskBySection()">
-            <h3 class="text-3xl font-bold text-red-600">{{ at_risk_count }}</h3>
+            <h3 class="text-3xl font-bold text-red-600" data-dashboard-stat="at_risk_count">{{ at_risk_count }}</h3>
             <p class="text-gray-600 dark:text-gray-400">At-Risk Students</p>
         </div>
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center hover:shadow-lg transition-shadow cursor-pointer"
             onclick="togglePendingBySection()">
-            <h3 class="text-3xl font-bold text-yellow-600">{{ pending_grades }}</h3>
+            <h3 class="text-3xl font-bold text-yellow-600" data-dashboard-stat="pending_grades">{{ pending_grades }}</h3>
             <p class="text-gray-600 dark:text-gray-400">Pending Grades</p>
         </div>
     </div>
@@ -282,6 +282,23 @@
 
 {% block extra_js %}
 <script>
+    function refreshDashboardStats() {
+        fetch("{% url 'dashboard_stats' %}", { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => {
+                if (!data) return;
+                Object.entries(data).forEach(([key, value]) => {
+                    document.querySelectorAll(`[data-dashboard-stat="${key}"]`).forEach(el => {
+                        el.textContent = value;
+                    });
+                });
+            })
+            .catch(() => {});
+    }
+
+    setInterval(refreshDashboardStats, 5000);
+    window.addEventListener('focus', refreshDashboardStats);
+
     function toggleStudentsBySection() {
         const panel = document.getElementById('students-breakdown');
         const otherPanels = ['atrisk-breakdown', 'pending-breakdown'];

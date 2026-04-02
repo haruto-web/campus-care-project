@@ -1038,6 +1038,69 @@ def dashboard_view(request):
     else:
         return admin_dashboard(request)
 
+
+@login_required
+def dashboard_stats_view(request):
+    user = request.user
+
+    if user.role == 'student':
+        classes = user.enrolled_classes.all()
+        announcements_count = Announcement.objects.filter(
+            Q(class_obj__in=classes) | Q(class_obj__isnull=True)
+        ).exclude(read_by=user).count()
+        pending_tasks = Assignment.objects.filter(
+            class_obj__in=classes,
+            due_date__gte=timezone.now()
+        ).count()
+        return JsonResponse({
+            'my_classes': classes.count(),
+            'pending_tasks': pending_tasks,
+            'announcements': announcements_count,
+        })
+
+    if user.role == 'teacher':
+        classes = Class.objects.filter(teacher=user)
+        students = set()
+        for cls in classes:
+            students.update(cls.students.all())
+
+        at_risk_count = 0
+        for student in students:
+            latest_assessment = RiskAssessment.objects.filter(student=student).order_by('-date').first()
+            if latest_assessment and latest_assessment.risk_level == 'high':
+                at_risk_count += 1
+
+        pending_grades = Submission.objects.filter(
+            assignment__class_obj__in=classes,
+            score__isnull=True
+        ).count()
+
+        return JsonResponse({
+            'my_classes': classes.count(),
+            'total_students': len(students),
+            'at_risk_count': at_risk_count,
+            'pending_grades': pending_grades,
+        })
+
+    if user.role == 'counselor':
+        return JsonResponse({
+            'high_risk_count': RiskAssessment.objects.filter(risk_level='high').count(),
+            'medium_risk_count': RiskAssessment.objects.filter(risk_level='medium').count(),
+            'pending_interventions': Intervention.objects.filter(status='scheduled').count(),
+            'unread_alerts': Alert.objects.filter(is_read=False).count(),
+        })
+
+    if user.role == 'admin':
+        return JsonResponse({
+            'total_students': User.objects.filter(role='student', is_active=True).count(),
+            'total_teachers': User.objects.filter(role='teacher', is_active=True).count(),
+            'total_counselors': User.objects.filter(role='counselor', is_active=True).count(),
+            'total_classes': Class.objects.count(),
+            'high_risk_count': RiskAssessment.objects.filter(risk_level='high').values('student').distinct().count(),
+        })
+
+    return JsonResponse({}, status=403)
+
 @login_required
 def student_dashboard(request):
     cache_key = f'dashboard:student:{request.user.id}'

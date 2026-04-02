@@ -48,7 +48,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Students</p>
-                    <p class="text-3xl font-bold text-blue-600">{{ total_students }}</p>
+                    <p class="text-3xl font-bold text-blue-600" data-dashboard-stat="total_students">{{ total_students }}</p>
                 </div>
                 <div class="bg-blue-100 p-3 rounded-full">
                     <i class="bi bi-people text-blue-600 text-xl"></i>
@@ -62,7 +62,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Teachers</p>
-                    <p class="text-3xl font-bold text-green-600">{{ total_teachers }}</p>
+                    <p class="text-3xl font-bold text-green-600" data-dashboard-stat="total_teachers">{{ total_teachers }}</p>
                 </div>
                 <div class="bg-green-100 p-3 rounded-full">
                     <i class="bi bi-person-workspace text-green-600 text-xl"></i>
@@ -76,7 +76,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Counselors</p>
-                    <p class="text-3xl font-bold text-teal-600">{{ total_counselors }}</p>
+                    <p class="text-3xl font-bold text-teal-600" data-dashboard-stat="total_counselors">{{ total_counselors }}</p>
                 </div>
                 <div class="bg-teal-100 p-3 rounded-full">
                     <i class="bi bi-person-heart text-teal-600 text-xl"></i>
@@ -90,7 +90,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Classes</p>
-                    <p class="text-3xl font-bold text-purple-600">{{ total_classes }}</p>
+                    <p class="text-3xl font-bold text-purple-600" data-dashboard-stat="total_classes">{{ total_classes }}</p>
                 </div>
                 <div class="bg-purple-100 p-3 rounded-full">
                     <i class="bi bi-book text-purple-600 text-xl"></i>
@@ -104,7 +104,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Students Need Help</p>
-                    <p class="text-3xl font-bold text-red-600">{{ high_risk_count }}</p>
+                    <p class="text-3xl font-bold text-red-600" data-dashboard-stat="high_risk_count">{{ high_risk_count }}</p>
                 </div>
                 <div class="bg-red-100 p-3 rounded-full">
                     <i class="bi bi-exclamation-triangle text-red-600 text-xl"></i>
@@ -253,6 +253,23 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    function refreshDashboardStats() {
+        fetch("{% url 'dashboard_stats' %}", { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => {
+                if (!data) return;
+                Object.entries(data).forEach(([key, value]) => {
+                    document.querySelectorAll(`[data-dashboard-stat="${key}"]`).forEach(el => {
+                        el.textContent = value;
+                    });
+                });
+            })
+            .catch(() => {});
+    }
+
+    setInterval(refreshDashboardStats, 5000);
+    window.addEventListener('focus', refreshDashboardStats);
+
     // User Distribution Pie Chart
     const userCtx = document.getElementById('userChart').getContext('2d');
     new Chart(userCtx, {

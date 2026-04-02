@@ -85,19 +85,19 @@
             <!-- Stats Grid -->
             <div class="grid grid-cols-2 gap-3 mb-4">
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 text-center">
-                    <h3 class="text-2xl font-bold text-red-600">{{ high_risk_count }}</h3>
+                    <h3 class="text-2xl font-bold text-red-600" data-dashboard-stat="high_risk_count">{{ high_risk_count }}</h3>
                     <p class="text-gray-600 text-sm">High Risk</p>
                 </div>
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 text-center">
-                    <h3 class="text-2xl font-bold text-yellow-600">{{ medium_risk_count }}</h3>
+                    <h3 class="text-2xl font-bold text-yellow-600" data-dashboard-stat="medium_risk_count">{{ medium_risk_count }}</h3>
                     <p class="text-gray-600 text-sm">Medium Risk</p>
                 </div>
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 text-center">
-                    <h3 class="text-2xl font-bold text-blue-600">{{ pending_interventions }}</h3>
+                    <h3 class="text-2xl font-bold text-blue-600" data-dashboard-stat="pending_interventions">{{ pending_interventions }}</h3>
                     <p class="text-gray-600 text-sm">Pending</p>
                 </div>
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 text-center">
-                    <h3 class="text-2xl font-bold text-purple-600">{{ unread_alerts }}</h3>
+                    <h3 class="text-2xl font-bold text-purple-600" data-dashboard-stat="unread_alerts">{{ unread_alerts }}</h3>
                     <p class="text-gray-600 text-sm">Alerts</p>
                 </div>
             </div>
@@ -241,22 +241,22 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <a href="{% url 'wellness:at_risk_students' %}?risk_level=high"
                 class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block">
-                <h3 class="text-3xl font-bold text-red-600">{{ high_risk_count }}</h3>
+                    <h3 class="text-3xl font-bold text-red-600" data-dashboard-stat="high_risk_count">{{ high_risk_count }}</h3>
                 <p class="text-gray-600">High Risk</p>
             </a>
             <a href="{% url 'wellness:at_risk_students' %}?risk_level=medium"
                 class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block">
-                <h3 class="text-3xl font-bold text-yellow-600">{{ medium_risk_count }}</h3>
+                    <h3 class="text-3xl font-bold text-yellow-600" data-dashboard-stat="medium_risk_count">{{ medium_risk_count }}</h3>
                 <p class="text-gray-600">Medium Risk</p>
             </a>
             <a href="{% url 'wellness:interventions_list' %}"
                 class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block">
-                <h3 class="text-3xl font-bold text-blue-600">{{ pending_interventions }}</h3>
+                    <h3 class="text-3xl font-bold text-blue-600" data-dashboard-stat="pending_interventions">{{ pending_interventions }}</h3>
                 <p class="text-gray-600">Pending</p>
             </a>
             <a href="{% url 'wellness:alerts_list' %}"
                 class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block">
-                <h3 class="text-3xl font-bold text-purple-600">{{ unread_alerts }}</h3>
+                    <h3 class="text-3xl font-bold text-purple-600" data-dashboard-stat="unread_alerts">{{ unread_alerts }}</h3>
                 <p class="text-gray-600">Alerts</p>
             </a>
         </div>
@@ -565,6 +565,23 @@
 
 {% block extra_js %}
 <script>
+    function refreshDashboardStats() {
+        fetch("{% url 'dashboard_stats' %}", { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => {
+                if (!data) return;
+                Object.entries(data).forEach(([key, value]) => {
+                    document.querySelectorAll(`[data-dashboard-stat="${key}"]`).forEach(el => {
+                        el.textContent = value;
+                    });
+                });
+            })
+            .catch(() => {});
+    }
+
+    setInterval(refreshDashboardStats, 5000);
+    window.addEventListener('focus', refreshDashboardStats);
+
     // Mobile section switching
     function showMobileSection(section) {
         // Hide all mobile sections
