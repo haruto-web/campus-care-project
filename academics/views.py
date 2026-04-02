@@ -82,6 +82,31 @@ def _undo_inline_form(request, action_url, button_label='Undo'):
     )
 
 
+def _first_schedule_overlap_error(blocks):
+    for i in range(len(blocks)):
+        first = blocks[i]
+        first_days = set(first.get('days') or [])
+        first_start = first.get('start_time', '')
+        first_end = first.get('end_time', '')
+        for j in range(i + 1, len(blocks)):
+            second = blocks[j]
+            second_days = set(second.get('days') or [])
+            second_start = second.get('start_time', '')
+            second_end = second.get('end_time', '')
+
+            if not (first_days & second_days):
+                continue
+
+            if first_start < second_end and first_end > second_start:
+                shared_days = sorted(first_days & second_days)
+                shared_days_text = ', '.join(shared_days)
+                return (
+                    f'Conflict warning: Schedule {i + 1} overlaps with Schedule {j + 1} '
+                    f'on {shared_days_text}. Please adjust the times.'
+                )
+    return None
+
+
 @login_required
 def class_detail(request, class_id):
     class_obj = get_object_or_404(Class, id=class_id)
@@ -840,6 +865,12 @@ def student_assignments(request):
     
     my_classes = request.user.enrolled_classes.all()
     all_assignments = Assignment.objects.filter(class_obj__in=my_classes)
+    submitted_ids = set(
+        Submission.objects.filter(
+            student=request.user,
+            assignment__class_obj__in=my_classes
+        ).values_list('assignment_id', flat=True)
+    )
     
     now = timezone.now()
     upcoming_assignments = []
@@ -857,6 +888,99 @@ def student_assignments(request):
             overdue_assignments.append(assignment)
         else:
             upcoming_assignments.append(assignment)
+
+    due_soon_deadline = now + timedelta(hours=24)
+    due_soon_assignments = [
+        assignment for assignment in upcoming_assignments
+        if assignment.id not in submitted_ids and assignment.due_date <= due_soon_deadline
+    ]
+
+    # Missed work recovery plan (prioritized, student-focused)
+    recovery_plan = []
+    overdue_sorted = sorted(
+        overdue_assignments,
+        key=lambda assignment: assignment.due_date
+    )
+    for assignment in overdue_sorted:
+        days_late = max((now - assignment.due_date).days, 1)
+        recovery_plan.append({
+            'assignment': assignment,
+            'status': 'overdue',
+            'priority_label': 'High',
+            'urgency_text': f'{days_late} day{"s" if days_late != 1 else ""} overdue',
+        })
+
+    upcoming_sorted = sorted(
+        [assignment for assignment in upcoming_assignments if assignment.id not in submitted_ids],
+        key=lambda assignment: assignment.due_date
+    )
+    for assignment in upcoming_sorted[:3]:
+        hours_left = max(int((assignment.due_date - now).total_seconds() // 3600), 0)
+        recovery_plan.append({
+            'assignment': assignment,
+            'status': 'upcoming',
+            'priority_label': 'Medium',
+            'urgency_text': f'Due in {hours_left}h' if hours_left < 48 else f'Due on {assignment.due_date.strftime("%b %d, %I:%M %p")}',
+        })
+
+    recovery_plan = recovery_plan[:6]
+
+    # Assignment calendar (monthly view)
+    calendar_month_raw = request.GET.get('calendar_month', '')
+    today = timezone.localdate()
+    try:
+        if calendar_month_raw:
+            calendar_month_date = datetime.strptime(calendar_month_raw, '%Y-%m').date()
+            calendar_month_date = calendar_month_date.replace(day=1)
+        else:
+            calendar_month_date = today.replace(day=1)
+    except ValueError:
+        calendar_month_date = today.replace(day=1)
+
+    month_start = calendar_month_date
+    _, month_last_day = calendar.monthrange(month_start.year, month_start.month)
+    month_end = month_start.replace(day=month_last_day)
+
+    month_assignments = all_assignments.filter(
+        due_date__date__gte=month_start,
+        due_date__date__lte=month_end,
+    ).order_by('due_date')
+
+    calendar_filter = request.GET.get('calendar_filter', 'all')
+    if calendar_filter not in {'all', 'upcoming', 'overdue', 'submitted'}:
+        calendar_filter = 'all'
+
+    events_by_date = {}
+    for assignment in month_assignments:
+        event_date = timezone.localtime(assignment.due_date).date()
+        submission = assignment.id in submitted_ids
+        is_submitted = bool(submission)
+        is_overdue = assignment.due_date < now and not is_submitted
+        status = 'submitted' if is_submitted else ('overdue' if is_overdue else 'upcoming')
+        if calendar_filter != 'all' and status != calendar_filter:
+            continue
+        events_by_date.setdefault(event_date, []).append({
+            'assignment': assignment,
+            'status': status,
+            'time_label': timezone.localtime(assignment.due_date).strftime('%I:%M %p').lstrip('0'),
+        })
+
+    month_grid = []
+    for week in calendar.Calendar(firstweekday=0).monthdatescalendar(month_start.year, month_start.month):
+        week_cells = []
+        for day in week:
+            day_events = events_by_date.get(day, [])
+            week_cells.append({
+                'date': day,
+                'in_month': day.month == month_start.month,
+                'is_today': day == today,
+                'events': day_events[:3],
+                'extra_count': max(len(day_events) - 3, 0),
+            })
+        month_grid.append(week_cells)
+
+    prev_month = (month_start.replace(day=1) - timedelta(days=1)).replace(day=1)
+    next_month = (month_end + timedelta(days=1)).replace(day=1)
     
     context = {
         'upcoming_assignments': upcoming_assignments,
@@ -865,6 +989,17 @@ def student_assignments(request):
         'upcoming_count': len(upcoming_assignments),
         'overdue_count': len(overdue_assignments),
         'completed_count': len(completed_assignments),
+        'due_soon_assignments': due_soon_assignments,
+        'due_soon_count': len(due_soon_assignments),
+        'recovery_plan': recovery_plan,
+        'recovery_plan_count': len(recovery_plan),
+        'assignment_calendar_filter': calendar_filter,
+        'assignment_calendar_month': month_start,
+        'assignment_calendar_weeks': month_grid,
+        'assignment_calendar_month_param': month_start.strftime('%Y-%m'),
+        'assignment_prev_calendar_month': prev_month.strftime('%Y-%m'),
+        'assignment_next_calendar_month': next_month.strftime('%Y-%m'),
+        'assignment_calendar_day_names': list(calendar.day_abbr),
     }
     return render(request, 'academics/student_assignments.html', context)
 
@@ -1311,6 +1446,15 @@ def edit_class(request, class_id):
                 'start_time': schedule_start_time,
                 'end_time': schedule_end_time,
                 'classroom': schedule_classroom,
+            })
+
+        overlap_error = _first_schedule_overlap_error(normalized_blocks)
+        if overlap_error:
+            messages.error(request, overlap_error)
+            return render(request, 'academics/edit_class.html', {
+                'class': class_obj,
+                'day_choices': Class.DAY_CHOICES,
+                'schedule_blocks_json': raw_schedule_blocks,
             })
 
         class_obj.name = request.POST.get('name')

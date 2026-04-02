@@ -184,6 +184,41 @@
 
         <!-- Right Column - Quick Info -->
         <div class="space-y-6">
+            <!-- Due This Week -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                <div class="bg-amber-50 dark:bg-amber-900/20 px-6 py-4 border-b border-amber-100 dark:border-amber-800">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
+                            <i class="bi bi-calendar-week text-amber-600 mr-2"></i>
+                            Due This Week
+                        </h3>
+                        <span class="text-sm text-amber-700 dark:text-amber-400 font-medium">{{ due_this_week_count }}</span>
+                    </div>
+                </div>
+                <div class="p-6">
+                    {% if due_this_week_assignments %}
+                    <div class="space-y-3">
+                        {% for assignment in due_this_week_assignments %}
+                        <a href="{% url 'academics:submit_assignment' assignment.id %}" class="block p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 transition">
+                            <p class="font-medium text-gray-900 dark:text-white truncate">{{ assignment.title }}</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">{{ assignment.class_obj.code }} - {{ assignment.due_date|date:"M j, g:i A" }}</p>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'academics:student_assignments' %}" class="text-amber-700 hover:text-amber-900 dark:text-amber-400 text-sm font-medium">
+                            Open assignments →
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-6 flex flex-col items-center justify-center gap-2">
+                        <i class="bi bi-check-circle text-green-500 text-3xl"></i>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">No due items this week</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- My Classes -->
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                 <div class="bg-green-50 dark:bg-green-900/20 px-6 py-4 border-b border-green-100 dark:border-green-800">

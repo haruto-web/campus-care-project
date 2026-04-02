@@ -82,9 +82,37 @@ class ClassForm(forms.ModelForm):
                 'classroom': classroom,
             })
 
+        overlap_error = self._first_schedule_overlap_error(normalized_blocks)
+        if overlap_error:
+            self.add_error('schedule_blocks', overlap_error)
+
         cleaned_data['schedule'] = Class.build_schedule_blocks(normalized_blocks)
         cleaned_data['schedule_blocks'] = json.dumps(normalized_blocks)
         return cleaned_data
+
+    def _first_schedule_overlap_error(self, blocks):
+        for i in range(len(blocks)):
+            first = blocks[i]
+            first_days = set(first.get('days') or [])
+            first_start = first.get('start_time', '')
+            first_end = first.get('end_time', '')
+            for j in range(i + 1, len(blocks)):
+                second = blocks[j]
+                second_days = set(second.get('days') or [])
+                second_start = second.get('start_time', '')
+                second_end = second.get('end_time', '')
+
+                if not (first_days & second_days):
+                    continue
+
+                if first_start < second_end and first_end > second_start:
+                    shared_days = sorted(first_days & second_days)
+                    shared_days_text = ', '.join(shared_days)
+                    return (
+                        f'Conflict warning: Schedule {i + 1} overlaps with Schedule {j + 1} '
+                        f'on {shared_days_text}. Please adjust the times.'
+                    )
+        return None
 
     def save(self, commit=True):
         instance = super().save(commit=False)

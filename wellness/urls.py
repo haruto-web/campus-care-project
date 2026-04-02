@@ -17,6 +17,7 @@ urlpatterns = [
     path('intervention/create/<int:student_id>/', views.create_intervention, name='create_intervention_for_student'),
     path('interventions/', views.interventions_list, name='interventions_list'),
     path('intervention/<int:intervention_id>/update/', views.update_intervention, name='update_intervention'),
+    path('intervention/<int:intervention_id>/complete/', views.mark_intervention_completed, name='mark_intervention_completed'),
     
     # Counselor - Alerts
     path('alerts/', views.alerts_list, name='alerts_list'),

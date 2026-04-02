@@ -237,19 +237,19 @@
     </div>
     {% else %}
     <!-- Empty State -->
-    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl px-6 py-12 sm:px-10 text-center">
+    <div class="rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/60 to-blue-50/70 px-6 py-14 sm:px-10 text-center shadow-sm">
         <div class="max-w-2xl mx-auto flex flex-col items-center">
-        <div class="w-20 h-20 rounded-full bg-white/70 border border-blue-100 flex items-center justify-center shadow-sm mb-6">
-            <i class="bi bi-book text-5xl text-blue-400"></i>
+        <div class="w-20 h-20 rounded-2xl bg-white border border-indigo-100 flex items-center justify-center shadow-md mb-6">
+            <i class="bi bi-book text-4xl text-indigo-500"></i>
         </div>
-        <h3 class="text-2xl font-bold text-gray-800 mb-4">
+        <h3 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 tracking-tight">
             {% if user.role == 'teacher' %}
                 No Classes Created Yet
             {% else %}
                 No Classes Enrolled
             {% endif %}
         </h3>
-        <p class="text-gray-600 mb-8 max-w-xl mx-auto leading-relaxed">
+        <p class="text-gray-600 mb-9 max-w-xl mx-auto leading-relaxed text-base">
             {% if user.role == 'teacher' %}
                 Classes are created by the administrator. Your assigned classes will appear here once they are added.
             {% else %}
@@ -257,20 +257,20 @@
             {% endif %}
         </p>
         {% if user.role != 'teacher' %}
-        <div class="w-full max-w-md rounded-2xl bg-white border border-blue-100 shadow-sm p-6 text-left">
-            <h4 class="font-semibold text-gray-800 text-center mb-4">What to do next:</h4>
-            <ul class="space-y-3">
-                <li class="flex items-center gap-3 text-gray-600">
-                    <span class="w-10 h-10 rounded-full border-2 border-emerald-200 bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i class="bi bi-check-circle-fill"></i></span>
-                    <span>Contact your teacher</span>
+        <div class="w-full max-w-md rounded-2xl bg-white/95 border border-indigo-100 shadow-md p-6 text-left">
+            <h4 class="font-semibold text-gray-800 text-center mb-5">What to do next</h4>
+            <ul class="space-y-4">
+                <li class="flex items-center gap-3 text-gray-700">
+                    <span class="w-9 h-9 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i class="bi bi-check2"></i></span>
+                    <span class="font-medium">Contact your teacher</span>
                 </li>
-                <li class="flex items-center gap-3 text-gray-600">
-                    <span class="w-10 h-10 rounded-full border-2 border-emerald-200 bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i class="bi bi-check-circle-fill"></i></span>
-                    <span>Visit the school office</span>
+                <li class="flex items-center gap-3 text-gray-700">
+                    <span class="w-9 h-9 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i class="bi bi-check2"></i></span>
+                    <span class="font-medium">Visit the school office</span>
                 </li>
-                <li class="flex items-center gap-3 text-gray-600">
-                    <span class="w-10 h-10 rounded-full border-2 border-emerald-200 bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i class="bi bi-check-circle-fill"></i></span>
-                    <span>Check with your counselor</span>
+                <li class="flex items-center gap-3 text-gray-700">
+                    <span class="w-9 h-9 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i class="bi bi-check2"></i></span>
+                    <span class="font-medium">Check with your counselor</span>
                 </li>
             </ul>
         </div>

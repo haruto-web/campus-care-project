@@ -283,6 +283,7 @@ def interventions_list(request):
     if year_level_filter:
         interventions = interventions.filter(student__year_level=year_level_filter)
 
+    now_dt = timezone.now()
     today = timezone.localdate()
     if date_filter == 'today':
         interventions = interventions.filter(scheduled_date__date=today)
@@ -312,9 +313,21 @@ def interventions_list(request):
         scheduled_date__date__lte=month_end,
     ).order_by('scheduled_date')
 
+    conflict_keys = set()
+    for item in month_interventions.filter(status='scheduled').values('counselor_id', 'scheduled_date').annotate(total=Count('id')):
+        if item['total'] > 1:
+            conflict_keys.add((item['counselor_id'], item['scheduled_date']))
+
     events_by_date = {}
     for intervention in month_interventions:
         event_date = timezone.localtime(intervention.scheduled_date).date()
+        intervention.is_overdue = (
+            intervention.status == 'scheduled' and intervention.scheduled_date < now_dt
+        )
+        intervention.has_conflict = (
+            intervention.status == 'scheduled'
+            and (intervention.counselor_id, intervention.scheduled_date) in conflict_keys
+        )
         events_by_date.setdefault(event_date, []).append(intervention)
 
     month_grid = []
@@ -339,9 +352,12 @@ def interventions_list(request):
         'status_filter': status_filter,
         'year_level_filter': year_level_filter,
         'date_filter': date_filter,
+        'now_dt': now_dt,
+        'conflict_count': len(conflict_keys),
         'calendar_month': month_start,
         'calendar_weeks': month_grid,
         'calendar_month_param': month_start.strftime('%Y-%m'),
+        'today_calendar_month_param': today.replace(day=1).strftime('%Y-%m'),
         'prev_calendar_month': prev_month.strftime('%Y-%m'),
         'next_calendar_month': next_month.strftime('%Y-%m'),
         'calendar_day_names': list(calendar.day_abbr),
@@ -403,6 +419,35 @@ def update_intervention(request, intervention_id):
         'intervention': intervention,
     }
     return render(request, 'wellness/update_intervention.html', context)
+
+
+@login_required
+@require_POST
+def mark_intervention_completed(request, intervention_id):
+    if request.user.role not in ['counselor', 'admin']:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    intervention = get_object_or_404(Intervention, id=intervention_id)
+    next_url = request.POST.get('next') or reverse('wellness:interventions_list')
+
+    if intervention.status != 'scheduled':
+        messages.info(request, 'Only scheduled interventions can be marked as completed.')
+        return redirect(next_url)
+
+    intervention.status = 'completed'
+    intervention.save(update_fields=['status'])
+    log_action(
+        request,
+        'INTERVENTION_UPDATED',
+        'Intervention',
+        intervention.id,
+        intervention.student.get_full_name(),
+        extra_data={'quick_mark_completed': True},
+    )
+    messages.success(request, 'Intervention marked as completed.')
+    return redirect(next_url)
+
 
 @login_required
 def alerts_list(request):

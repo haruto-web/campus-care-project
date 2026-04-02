@@ -74,6 +74,24 @@
                     <h3 class="text-lg font-semibold text-gray-800">Calendar View</h3>
                     <p class="text-gray-600 text-sm mt-1">Monthly overview of scheduled meetings and intervention activity.</p>
                 </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <a href="?status=&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ calendar_month_param }}"
+                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if not status_filter %}bg-gray-800 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                        All
+                    </a>
+                    <a href="?status=scheduled&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ calendar_month_param }}"
+                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if status_filter == 'scheduled' %}bg-blue-600 text-white{% else %}bg-blue-100 text-blue-800 hover:bg-blue-200{% endif %}">
+                        Scheduled
+                    </a>
+                    <a href="?status=completed&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ calendar_month_param }}"
+                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if status_filter == 'completed' %}bg-green-600 text-white{% else %}bg-green-100 text-green-800 hover:bg-green-200{% endif %}">
+                        Completed
+                    </a>
+                    <a href="?status=cancelled&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ calendar_month_param }}"
+                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if status_filter == 'cancelled' %}bg-gray-700 text-white{% else %}bg-gray-200 text-gray-800 hover:bg-gray-300{% endif %}">
+                        Cancelled
+                    </a>
+                </div>
                 <div class="flex items-center gap-2 self-start lg:self-auto">
                     <a href="?status={{ status_filter }}&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ prev_calendar_month }}"
                        class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
@@ -86,11 +104,21 @@
                        class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
                         <i class="bi bi-chevron-right"></i>
                     </a>
+                    <a href="?status={{ status_filter }}&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ today_calendar_month_param }}"
+                       class="inline-flex items-center justify-center h-10 px-3 rounded-lg border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition text-sm font-semibold">
+                        Today
+                    </a>
                 </div>
             </div>
         </div>
 
         <div class="p-4 md:p-6">
+            {% if conflict_count > 0 %}
+            <div class="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                <i class="bi bi-exclamation-triangle-fill mr-1"></i>
+                Conflict warning: {{ conflict_count }} overlapping scheduled slot{{ conflict_count|pluralize }} detected for the same counselor.
+            </div>
+            {% endif %}
             <div class="hidden sm:grid grid-cols-7 gap-2 mb-2">
                 {% for day_name in calendar_day_names %}
                 <div class="text-center text-xs font-semibold uppercase tracking-wide text-gray-500 py-2">
@@ -122,9 +150,30 @@
                             {% for event in cell.events %}
                             <a href="{% url 'wellness:update_intervention' event.id %}"
                                class="block rounded-lg px-2.5 py-2 text-xs border {% if event.status == 'scheduled' %}bg-indigo-50 border-indigo-100 text-indigo-900{% elif event.status == 'completed' %}bg-green-50 border-green-100 text-green-900{% else %}bg-gray-100 border-gray-200 text-gray-700{% endif %} hover:shadow-sm transition">
-                                <div class="font-semibold truncate">{{ event.student.get_full_name }}</div>
+                                <div class="flex items-center justify-between gap-1">
+                                    <div class="font-semibold truncate">{{ event.student.get_full_name }}</div>
+                                    <div class="flex items-center gap-1">
+                                        {% if event.has_conflict %}
+                                        <span class="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">Conflict</span>
+                                        {% endif %}
+                                        {% if event.is_overdue %}
+                                        <span class="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">Overdue</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
                                 <div class="mt-1 opacity-80">{{ event.scheduled_date|date:"g:i A" }} • {{ event.get_intervention_type_display }}</div>
                             </a>
+                            {% if event.status == 'scheduled' %}
+                            <form method="post" action="{% url 'wellness:mark_intervention_completed' event.id %}" id="quickCompleteCal-{{ event.id }}" class="mt-1">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="button"
+                                        onclick="confirmQuickComplete('quickCompleteCal-{{ event.id }}')"
+                                        class="w-full text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded-lg px-2 py-1 hover:bg-green-100 transition">
+                                    Mark Completed
+                                </button>
+                            </form>
+                            {% endif %}
                             {% endfor %}
                             {% if cell.extra_count %}
                             <div class="text-[11px] font-medium text-gray-500 px-1">
@@ -195,6 +244,16 @@
                                         <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
                                             Upcoming
                                         </span>
+                                        {% if intervention.has_conflict %}
+                                        <span class="inline-flex items-center px-3 py-1 mt-2 text-sm font-semibold rounded-full bg-amber-100 text-amber-800">
+                                            Conflict
+                                        </span>
+                                        {% endif %}
+                                        {% if intervention.scheduled_date < now_dt %}
+                                        <span class="inline-flex items-center px-3 py-1 mt-2 text-sm font-semibold rounded-full bg-red-100 text-red-800">
+                                            Overdue
+                                        </span>
+                                        {% endif %}
                                     {% elif intervention.status == 'completed' %}
                                         <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
                                             Completed
@@ -207,9 +266,22 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ intervention.counselor.get_full_name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <div class="flex items-center gap-2">
                                     <a href="{% url 'wellness:update_intervention' intervention.id %}" class="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
                                         <i class="bi bi-pencil mr-1"></i> Update
                                     </a>
+                                    {% if intervention.status == 'scheduled' %}
+                                    <form method="post" action="{% url 'wellness:mark_intervention_completed' intervention.id %}" id="quickCompleteTbl-{{ intervention.id }}" class="inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="button"
+                                                onclick="confirmQuickComplete('quickCompleteTbl-{{ intervention.id }}')"
+                                                class="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+                                            <i class="bi bi-check2 mr-1"></i> Complete
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -236,5 +308,25 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+
+
+
+
+{% block extra_js %}
+<script>
+function confirmQuickComplete(formId) {
+    showConfirmModal({
+        title: 'Mark Intervention Completed',
+        body: 'Are you sure you want to mark this intervention as completed?',
+        okLabel: 'Mark Completed',
+        type: 'success',
+        onConfirm: function() {
+            document.getElementById(formId).submit();
+        }
+    });
+}
+</script>
 {% endblock %}
 

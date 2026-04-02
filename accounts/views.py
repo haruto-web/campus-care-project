@@ -1150,6 +1150,15 @@ def student_dashboard(request):
         class_obj__in=classes,
         due_date__gte=now
     ).order_by('due_date')[:5]
+
+    due_this_week_end = now + timedelta(days=7)
+    due_this_week_assignments = Assignment.objects.filter(
+        class_obj__in=classes,
+        due_date__gte=now,
+        due_date__lte=due_this_week_end,
+    ).exclude(
+        id__in=submitted_ids
+    ).order_by('due_date')[:5]
     
     # Get recent announcements (all, with read status)
     from academics.models import Announcement
@@ -1175,6 +1184,8 @@ def student_dashboard(request):
     context = {
         'classes': classes,
         'assignments': assignments,
+        'due_this_week_assignments': due_this_week_assignments,
+        'due_this_week_count': due_this_week_assignments.count(),
         'announcements': announcements,
         'recently_graded': recently_graded,
         'last_checkin': last_checkin,
