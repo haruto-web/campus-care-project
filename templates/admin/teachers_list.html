@@ -125,9 +125,24 @@
 
 <script>
 function confirmDelete(userId, userName) {
-    if (confirm(`Are you sure you want to remove ${userName}? This will delete their account and all associated data.`)) {
-        window.location.href = `/manage/user/${userId}/delete/`;
-    }
+    showConfirmModal({
+        title: 'Remove Teacher Account',
+        body: `You are about to remove <strong>${userName}</strong>. The account will be disabled immediately and can be undone shortly after.`,
+        okLabel: 'Yes, Remove',
+        type: 'danger',
+        onConfirm() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/manage/user/${userId}/delete/`;
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = 'csrfmiddlewaretoken';
+            csrf.value = '{{ csrf_token }}';
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
 }
 </script>
 {% endblock %}

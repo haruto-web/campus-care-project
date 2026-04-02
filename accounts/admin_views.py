@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.html import format_html
+from django.middleware.csrf import get_token
 from django.db import transaction
 from django.db.models import Count, Q
 from accounts.models import User, AuditLog, ApprovedStudent, RegistrationRequest
@@ -46,6 +47,18 @@ def _pop_undo_payload(token):
 
 def _class_redirect_target(payload):
     return redirect(payload.get('redirect_to') or 'admin_all_classes')
+
+
+def _undo_inline_form(request, action_url, button_label='Undo'):
+    return format_html(
+        '<form method="post" action="{}" class="inline-block ml-2">'
+        '<input type="hidden" name="csrfmiddlewaretoken" value="{}">'
+        '<button type="submit" class="underline font-semibold">{}</button>'
+        '</form>',
+        action_url,
+        get_token(request),
+        button_label,
+    )
 
 
 def _serialize_class_for_undo(cls):
@@ -684,10 +697,10 @@ def admin_delete_user(request, user_id):
     messages.success(
         request,
         format_html(
-            '{} {} has been removed. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            '{} {} has been removed. {} ({}s)',
             user_role.capitalize(),
             user_name,
-            reverse('admin_undo_delete_user', args=[token]),
+            _undo_inline_form(request, reverse('admin_undo_delete_user', args=[token])),
             UNDO_GRACE_SECONDS,
         )
     )
@@ -700,6 +713,7 @@ def admin_delete_user(request, user_id):
 
 @login_required
 @admin_required
+@require_POST
 def admin_undo_delete_user(request, token):
     payload = _pop_undo_payload(token)
     if not payload or payload.get('kind') != 'undo_user_delete':

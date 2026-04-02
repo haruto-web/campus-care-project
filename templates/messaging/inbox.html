@@ -42,10 +42,10 @@
         {% endfor %}
     </div>
     {% else %}
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-10 text-center text-gray-400 dark:text-gray-500 flex flex-col items-center justify-center gap-3">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-10 text-center text-gray-400 dark:text-gray-500 flex flex-col items-center justify-center gap-3 bt-empty min-h-[260px]">
         <i class="bi bi-chat-dots text-5xl block"></i>
-        <p class="font-medium">No conversations yet.</p>
-        <a href="{% url 'messaging:new_message' %}" class="inline-block text-blue-600 hover:underline text-sm">Start a new message</a>
+        <p class="font-medium bt-empty-title">No conversations yet.</p>
+        <a href="{% url 'messaging:new_message' %}" class="inline-block text-blue-600 hover:underline text-sm bt-empty-subtitle">Start a new message</a>
     </div>
     {% endif %}
 </div>

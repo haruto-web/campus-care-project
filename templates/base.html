@@ -407,6 +407,24 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             });
         }
 
+        function syncDashboardStatsLive() {
+            const statNodes = document.querySelectorAll('[data-dashboard-stat]');
+            if (!statNodes.length) return;
+            if (!window.location.pathname.includes('/dashboard')) return;
+
+            fetch("{% url 'dashboard_stats' %}", { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(response => response.ok ? response.json() : null)
+                .then(data => {
+                    if (!data) return;
+                    Object.entries(data).forEach(([key, value]) => {
+                        document.querySelectorAll(`[data-dashboard-stat="${key}"]`).forEach((el) => {
+                            el.textContent = value;
+                        });
+                    });
+                })
+                .catch(() => {});
+        }
+
         /* === Theme === */
         function toggleTheme() {
             const isDark = document.documentElement.classList.toggle('dark');
@@ -419,6 +437,7 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             removeDuplicateFlashMessages();
             enhanceResponsiveTables();
             enhanceEmptyStates();
+            syncDashboardStatsLive();
             const icon = document.getElementById('themeIcon');
             if (icon && localStorage.getItem('theme') === 'dark') icon.className = 'bi bi-sun';
 
@@ -435,6 +454,8 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
                 }
             }
         });
+        window.addEventListener('focus', syncDashboardStatsLive);
+        setInterval(syncDashboardStatsLive, 7000);
         document.addEventListener('focusin', function (event) {
             if (event.target.matches('input[type="date"], input[type="datetime-local"]')) {
                 enforceCurrentDateTimeInputs();
