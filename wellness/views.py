@@ -259,6 +259,7 @@ def interventions_list(request):
     # Apply filters
     status_filter = request.GET.get('status', '')
     year_level_filter = request.GET.get('year_level', '')
+    date_filter = request.GET.get('date', '')
     
     if status_filter == 'history':
         interventions = interventions.filter(status__in=['completed', 'cancelled'])
@@ -268,8 +269,17 @@ def interventions_list(request):
     if year_level_filter:
         interventions = interventions.filter(student__year_level=year_level_filter)
 
-    calendar_month_raw = request.GET.get('calendar_month', '')
     today = timezone.localdate()
+    if date_filter == 'today':
+        interventions = interventions.filter(scheduled_date__date=today)
+    elif date_filter == 'week':
+        week_end = today + timedelta(days=7)
+        interventions = interventions.filter(scheduled_date__date__gte=today, scheduled_date__date__lte=week_end)
+    elif date_filter == 'month':
+        month_end = today + timedelta(days=30)
+        interventions = interventions.filter(scheduled_date__date__gte=today, scheduled_date__date__lte=month_end)
+
+    calendar_month_raw = request.GET.get('calendar_month', '')
     try:
         if calendar_month_raw:
             calendar_month_date = datetime.strptime(calendar_month_raw, '%Y-%m').date()
@@ -314,6 +324,7 @@ def interventions_list(request):
         'interventions': interventions,
         'status_filter': status_filter,
         'year_level_filter': year_level_filter,
+        'date_filter': date_filter,
         'calendar_month': month_start,
         'calendar_weeks': month_grid,
         'calendar_month_param': month_start.strftime('%Y-%m'),
@@ -391,6 +402,7 @@ def alerts_list(request):
     alert_type = request.GET.get('type', '')
     show_resolved = request.GET.get('resolved', '')
     severity_filter = request.GET.get('severity', '')
+    quick_filter = request.GET.get('quick', '')
     
     if alert_type:
         alerts = alerts.filter(alert_type=alert_type)
@@ -400,6 +412,14 @@ def alerts_list(request):
     
     if severity_filter:
         alerts = alerts.filter(severity=severity_filter)
+
+    today = timezone.localdate()
+    if quick_filter == 'urgent':
+        alerts = alerts.filter(severity__in=['critical', 'high'], resolved=False)
+    elif quick_filter == 'unread':
+        alerts = alerts.filter(is_read=False, resolved=False)
+    elif quick_filter == 'today':
+        alerts = alerts.filter(created_at__date=today)
     
     # Attach concern description for teacher_concern alerts
     from wellness.models import TeacherConcern
@@ -437,6 +457,7 @@ def alerts_list(request):
         'alert_type': alert_type,
         'show_resolved': show_resolved,
         'severity_filter': severity_filter,
+        'quick_filter': quick_filter,
         'critical_unread': critical_unread,
         'high_unread': high_unread,
         'students_needing_intervention': students_needing_intervention,

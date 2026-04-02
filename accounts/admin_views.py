@@ -548,6 +548,7 @@ def admin_manage_users(request):
     search_query = request.GET.get('search', '')
     year_level_filter = request.GET.get('year_level', '')
     section_filter = request.GET.get('section', '')
+    messaging_filter = request.GET.get('messaging', '')
     
     users = User.objects.all()
     
@@ -567,6 +568,9 @@ def admin_manage_users(request):
     
     if section_filter:
         users = users.filter(section__icontains=section_filter)
+
+    if messaging_filter == 'suspended':
+        users = users.filter(messaging_suspended_until__gt=timezone.now())
     
     users = users.filter(is_active=True).order_by('role', 'last_name', 'first_name')
     
@@ -576,12 +580,57 @@ def admin_manage_users(request):
         'search_query': search_query,
         'year_level_filter': year_level_filter,
         'section_filter': section_filter,
+        'messaging_filter': messaging_filter,
         'total_count': User.objects.filter(is_active=True).count(),
         'student_count': User.objects.filter(is_active=True, role='student').count(),
         'teacher_count': User.objects.filter(is_active=True, role='teacher').count(),
         'counselor_count': User.objects.filter(is_active=True, role='counselor').count(),
+        'archived_count': User.objects.filter(is_active=False).exclude(role='admin').count(),
     }
     return render(request, 'admin/manage_users.html', context)
+
+
+@login_required
+@admin_required
+def admin_archived_users(request):
+    role_filter = request.GET.get('role', 'all')
+    search_query = request.GET.get('search', '')
+    users = User.objects.filter(is_active=False).exclude(role='admin')
+
+    if role_filter != 'all':
+        users = users.filter(role=role_filter)
+
+    if search_query:
+        users = users.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(username__icontains=search_query)
+        )
+
+    users = users.order_by('role', 'last_name', 'first_name')
+    context = {
+        'users': users,
+        'role_filter': role_filter,
+        'search_query': search_query,
+        'total_archived_count': User.objects.filter(is_active=False).exclude(role='admin').count(),
+        'student_archived_count': User.objects.filter(is_active=False, role='student').count(),
+        'teacher_archived_count': User.objects.filter(is_active=False, role='teacher').count(),
+        'counselor_archived_count': User.objects.filter(is_active=False, role='counselor').count(),
+    }
+    return render(request, 'admin/archived_users.html', context)
+
+
+@login_required
+@admin_required
+@require_POST
+def admin_restore_archived_user(request, user_id):
+    user = get_object_or_404(User, id=user_id, is_active=False)
+    user.is_active = True
+    user.save(update_fields=['is_active'])
+    log_action(request, 'USER_RESTORED', 'User', user.id, user.get_full_name(), extra_data={'archive_restore': True})
+    messages.success(request, f'{user.get_full_name()} has been restored successfully.')
+    return redirect('admin_archived_users')
 
 @login_required
 @admin_required

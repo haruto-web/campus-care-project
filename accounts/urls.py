@@ -23,8 +23,10 @@ urlpatterns = [
 
     # Admin URLs
     path('manage/users/', admin_views.admin_manage_users, name='admin_manage_users'),
+    path('manage/users/archived/', admin_views.admin_archived_users, name='admin_archived_users'),
     path('manage/create-user/', admin_views.admin_create_user, name='admin_create_user'),
     path('manage/user/<int:user_id>/delete/', admin_views.admin_delete_user, name='admin_delete_user'),
+    path('manage/user/<int:user_id>/restore/', admin_views.admin_restore_archived_user, name='admin_restore_archived_user'),
     path('manage/user/undo-delete/<str:token>/', admin_views.admin_undo_delete_user, name='admin_undo_delete_user'),
     path('manage/teachers/', admin_views.admin_teachers_list, name='admin_teachers_list'),
     path('manage/teacher/<int:teacher_id>/dashboard/', admin_views.admin_teacher_dashboard, name='admin_teacher_dashboard'),

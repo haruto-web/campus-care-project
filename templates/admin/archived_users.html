@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Archived Users - Admin{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-3 sm:px-4 py-6 overflow-x-hidden">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6">
+        <div>
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100 leading-tight break-words"><i class="bi bi-archive"></i> Archived Users</h2>
+            <p class="text-gray-600 dark:text-gray-400">Restore previously removed user accounts.</p>
+        </div>
+        <a href="{% url 'admin_manage_users' %}" class="w-full sm:w-auto text-center bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+            <i class="bi bi-arrow-left"></i> Back to Manage Users
+        </a>
+    </div>
+
+    <div class="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <a href="?role=all" class="px-4 py-2 rounded-lg {% if role_filter == 'all' %}bg-amber-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %}">
+            All ({{ total_archived_count }})
+        </a>
+        <a href="?role=student" class="px-4 py-2 rounded-lg {% if role_filter == 'student' %}bg-amber-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %}">
+            Students ({{ student_archived_count }})
+        </a>
+        <a href="?role=teacher" class="px-4 py-2 rounded-lg {% if role_filter == 'teacher' %}bg-amber-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %}">
+            Teachers ({{ teacher_archived_count }})
+        </a>
+        <a href="?role=counselor" class="px-4 py-2 rounded-lg {% if role_filter == 'counselor' %}bg-amber-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %}">
+            Counselors ({{ counselor_archived_count }})
+        </a>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search</label>
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Name, email, username..."
+                       class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Role</label>
+                <select name="role" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                    <option value="all" {% if role_filter == 'all' %}selected{% endif %}>All Roles</option>
+                    <option value="student" {% if role_filter == 'student' %}selected{% endif %}>Student</option>
+                    <option value="teacher" {% if role_filter == 'teacher' %}selected{% endif %}>Teacher</option>
+                    <option value="counselor" {% if role_filter == 'counselor' %}selected{% endif %}>Counselor</option>
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="w-full sm:w-auto bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-700">
+                    <i class="bi bi-search"></i> Apply
+                </button>
+                <a href="{% url 'admin_archived_users' %}" class="w-full sm:w-auto text-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Username</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Role</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {% for user in users %}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-gray-100">{{ user.get_full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{{ user.email }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{{ user.username }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                    {% if user.role == 'student' %}bg-blue-100 text-blue-800
+                                    {% elif user.role == 'teacher' %}bg-green-100 text-green-800
+                                    {% else %}bg-purple-100 text-purple-800{% endif %}">
+                                    {{ user.role|title }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <form method="post" action="{% url 'admin_restore_archived_user' user.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">No archived users found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

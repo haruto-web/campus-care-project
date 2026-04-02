@@ -226,6 +226,7 @@
                         Cancel
                     </a>
                 </div>
+                <p id="interventionDraftStatus" class="text-xs text-gray-500 pt-2">Draft not saved yet</p>
             </form>
         </div>
     </div>
@@ -242,6 +243,58 @@ let students = [];
 let currentFilter = 'all';
 let currentYearLevel = '';
 const scheduledIds = new Set({{ scheduled_student_ids|safe }});
+const interventionForm = document.getElementById('interventionForm');
+const draftStatusEl = document.getElementById('interventionDraftStatus');
+const draftKey = 'brighttrack_intervention_draft_{{ request.user.id }}';
+
+function updateDraftStatus(message) {
+    if (draftStatusEl) {
+        draftStatusEl.textContent = message;
+    }
+}
+
+function saveInterventionDraft() {
+    if (!interventionForm) return;
+    const payload = {
+        student: interventionForm.querySelector('[name="student"]')?.value || '',
+        intervention_type: interventionForm.querySelector('[name="intervention_type"]')?.value || '',
+        description: interventionForm.querySelector('[name="description"]')?.value || '',
+        scheduled_date: interventionForm.querySelector('[name="scheduled_date"]')?.value || '',
+        status: interventionForm.querySelector('[name="status"]')?.value || '',
+        notes: interventionForm.querySelector('[name="notes"]')?.value || '',
+        outcome: interventionForm.querySelector('[name="outcome"]')?.value || '',
+        saved_at: new Date().toISOString()
+    };
+    localStorage.setItem(draftKey, JSON.stringify(payload));
+    const ts = new Date(payload.saved_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    updateDraftStatus('Draft saved at ' + ts);
+}
+
+function restoreInterventionDraft() {
+    const raw = localStorage.getItem(draftKey);
+    if (!raw || !interventionForm) return;
+    try {
+        const payload = JSON.parse(raw);
+        const setIfEmpty = (name, value) => {
+            const field = interventionForm.querySelector('[name="' + name + '"]');
+            if (!field || !value) return;
+            if (!field.value) field.value = value;
+        };
+        setIfEmpty('student', payload.student);
+        setIfEmpty('intervention_type', payload.intervention_type);
+        setIfEmpty('description', payload.description);
+        setIfEmpty('scheduled_date', payload.scheduled_date);
+        setIfEmpty('status', payload.status);
+        setIfEmpty('notes', payload.notes);
+        setIfEmpty('outcome', payload.outcome);
+        if (payload.saved_at) {
+            const ts = new Date(payload.saved_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            updateDraftStatus('Draft restored from ' + ts);
+        }
+    } catch (e) {
+        localStorage.removeItem(draftKey);
+    }
+}
 
 // Fetch all students on page load
 fetch('{% url "wellness:api_students" %}')
@@ -256,6 +309,24 @@ fetch('{% url "wellness:api_students" %}')
         });
     })
     .catch(error => console.error('Error loading students:', error));
+
+restoreInterventionDraft();
+
+let draftTimer = null;
+if (interventionForm) {
+    interventionForm.addEventListener('input', () => {
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(saveInterventionDraft, 350);
+    });
+    interventionForm.addEventListener('change', () => {
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(saveInterventionDraft, 100);
+    });
+    interventionForm.addEventListener('submit', () => {
+        localStorage.removeItem(draftKey);
+        updateDraftStatus('Draft cleared after submit');
+    });
+}
 
 function getScheduledBadge(id) {
     return scheduledIds.has(id)

@@ -16,7 +16,7 @@
 
     <div class="bg-white rounded-lg shadow-lg">
         <div class="p-8">
-            <form method="post">
+            <form method="post" id="announcementForm">
                 {% csrf_token %}
                 
                 <div class="mb-6">
@@ -66,8 +66,72 @@
                         Cancel
                     </a>
                 </div>
+                <p id="announcementDraftStatus" class="text-xs text-gray-500 mt-3">Draft not saved yet</p>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const announcementForm = document.getElementById('announcementForm');
+const announcementStatus = document.getElementById('announcementDraftStatus');
+const announcementDraftKey = 'brighttrack_announcement_draft_class_{{ class.id }}';
+
+function setAnnouncementStatus(message) {
+    if (announcementStatus) announcementStatus.textContent = message;
+}
+
+function saveAnnouncementDraft() {
+    if (!announcementForm) return;
+    const payload = {
+        title: announcementForm.querySelector('[name="title"]')?.value || '',
+        content: announcementForm.querySelector('[name="content"]')?.value || '',
+        priority: announcementForm.querySelector('[name="priority"]')?.value || 'normal',
+        saved_at: new Date().toISOString()
+    };
+    localStorage.setItem(announcementDraftKey, JSON.stringify(payload));
+    const ts = new Date(payload.saved_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setAnnouncementStatus('Draft saved at ' + ts);
+}
+
+function restoreAnnouncementDraft() {
+    const raw = localStorage.getItem(announcementDraftKey);
+    if (!raw || !announcementForm) return;
+    try {
+        const payload = JSON.parse(raw);
+        const title = announcementForm.querySelector('[name="title"]');
+        const content = announcementForm.querySelector('[name="content"]');
+        const priority = announcementForm.querySelector('[name="priority"]');
+        if (title && !title.value && payload.title) title.value = payload.title;
+        if (content && !content.value && payload.content) content.value = payload.content;
+        if (priority && payload.priority) priority.value = payload.priority;
+        if (payload.saved_at) {
+            const ts = new Date(payload.saved_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            setAnnouncementStatus('Draft restored from ' + ts);
+        }
+    } catch (e) {
+        localStorage.removeItem(announcementDraftKey);
+    }
+}
+
+restoreAnnouncementDraft();
+
+let announcementDraftTimer = null;
+if (announcementForm) {
+    announcementForm.addEventListener('input', () => {
+        clearTimeout(announcementDraftTimer);
+        announcementDraftTimer = setTimeout(saveAnnouncementDraft, 300);
+    });
+    announcementForm.addEventListener('change', () => {
+        clearTimeout(announcementDraftTimer);
+        announcementDraftTimer = setTimeout(saveAnnouncementDraft, 100);
+    });
+    announcementForm.addEventListener('submit', () => {
+        localStorage.removeItem(announcementDraftKey);
+        setAnnouncementStatus('Draft cleared after submit');
+    });
+}
+</script>
 {% endblock %}
