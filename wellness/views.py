@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.core.cache import cache
 from django.urls import reverse
 from django.utils.html import format_html
+from django.middleware.csrf import get_token
 from datetime import datetime, timedelta
 import calendar
 import secrets
@@ -35,6 +36,19 @@ def _pop_undo_payload(token):
     payload = cache.get(key)
     cache.delete(key)
     return payload
+
+
+def _undo_inline_form(request, action_url, button_label='Undo'):
+    csrf_token = get_token(request)
+    return format_html(
+        '<form method="post" action="{}" class="inline-block ml-2">'
+        '<input type="hidden" name="csrfmiddlewaretoken" value="{}">'
+        '<button type="submit" class="underline font-semibold">{}</button>'
+        '</form>',
+        action_url,
+        csrf_token,
+        button_label,
+    )
 
 @login_required
 def create_concern(request, student_id=None):
@@ -372,8 +386,8 @@ def update_intervention(request, intervention_id):
                 messages.warning(
                     request,
                     format_html(
-                        'Intervention cancelled. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
-                        undo_url,
+                        'Intervention cancelled. {} ({}s)',
+                        _undo_inline_form(request, undo_url),
                         UNDO_GRACE_SECONDS,
                     ),
                 )
@@ -562,8 +576,8 @@ def resolve_alert(request, alert_id):
     messages.warning(
         request,
         format_html(
-            'Alert resolved. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
-            undo_url,
+            'Alert resolved. {} ({}s)',
+            _undo_inline_form(request, undo_url),
             UNDO_GRACE_SECONDS,
         ),
     )
@@ -571,6 +585,7 @@ def resolve_alert(request, alert_id):
 
 
 @login_required
+@require_POST
 def undo_alert_resolve(request, token):
     payload = _pop_undo_payload(token)
     if not payload or payload.get('type') != 'alert_resolve':
@@ -594,6 +609,7 @@ def undo_alert_resolve(request, token):
 
 
 @login_required
+@require_POST
 def undo_intervention_cancel(request, token):
     payload = _pop_undo_payload(token)
     if not payload or payload.get('type') != 'intervention_cancel':

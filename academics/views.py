@@ -12,12 +12,14 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.dateparse import parse_datetime
+from django.middleware.csrf import get_token
 from .models import Class, Announcement, Material, Assignment, Attendance, Submission, Grade
 from .forms import ClassForm, AssignmentForm, MaterialForm
 from campus_care.validators import validate_submission_upload, validate_document_upload
 from accounts.decorators import deny_access, teacher_owns_class, teacher_owns_submission
 from accounts.utils import log_action, hit_rate_limit
 from datetime import date, datetime, timedelta
+from urllib.parse import urlencode
 import calendar
 import json
 import os
@@ -65,6 +67,19 @@ def _parse_dt(value):
     if timezone.is_naive(dt):
         dt = timezone.make_aware(dt, timezone.get_current_timezone())
     return dt
+
+
+def _undo_inline_form(request, action_url, button_label='Undo'):
+    csrf_token = get_token(request)
+    return format_html(
+        '<form method="post" action="{}" class="inline-block ml-2">'
+        '<input type="hidden" name="csrfmiddlewaretoken" value="{}">'
+        '<button type="submit" class="underline font-semibold">{}</button>'
+        '</form>',
+        action_url,
+        csrf_token,
+        button_label,
+    )
 
 
 @login_required
@@ -199,11 +214,18 @@ def add_student(request, class_id, student_id):
     log_action(request, 'STUDENT_ENROLLED', 'Class', class_obj.id, class_obj.code, extra_data={'student_id': student.id})
     messages.success(request, f'{student.get_full_name()} added to {class_obj.code}!')
     
-    # Preserve filters when redirecting
+    # Preserve known filters and keep redirects internal only.
     search_query = request.GET.get('search', '')
     year_level = request.GET.get('year_level', '')
-    redirect_url = f"{request.META.get('HTTP_REFERER', '')}" if request.META.get('HTTP_REFERER') else f'/class/{class_id}/students/'
-    
+    redirect_url = reverse('academics:manage_students', kwargs={'class_id': class_id})
+    query_params = {}
+    if search_query:
+        query_params['search'] = search_query
+    if year_level:
+        query_params['year_level'] = year_level
+    if query_params:
+        redirect_url = f'{redirect_url}?{urlencode(query_params)}'
+
     return redirect(redirect_url)
 
 @login_required
@@ -291,10 +313,10 @@ def drop_student(request, class_id, student_id):
     messages.success(
         request,
         format_html(
-            '{} has been dropped from {}. All related records were removed. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            '{} has been dropped from {}. All related records were removed. {} ({}s)',
             student.get_full_name(),
             class_obj.code,
-            reverse('academics:undo_drop_student', args=[token]),
+            _undo_inline_form(request, reverse('academics:undo_drop_student', args=[token])),
             UNDO_GRACE_SECONDS,
         )
     )
@@ -302,6 +324,7 @@ def drop_student(request, class_id, student_id):
 
 
 @login_required
+@require_POST
 def undo_drop_student(request, token):
     payload = _pop_undo_payload(token)
     if not payload or payload.get('kind') != 'undo_drop_student':
@@ -611,8 +634,8 @@ def delete_material(request, material_id):
     messages.warning(
         request,
         format_html(
-            'Material deleted. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
-            undo_url,
+            'Material deleted. {} ({}s)',
+            _undo_inline_form(request, undo_url),
             UNDO_GRACE_SECONDS,
         ),
     )
@@ -620,6 +643,7 @@ def delete_material(request, material_id):
 
 
 @login_required
+@require_POST
 def undo_material_delete(request, token):
     payload = _pop_undo_payload(token)
     if not payload or payload.get('type') != 'material_delete':
@@ -1103,9 +1127,9 @@ def delete_assignment(request, assignment_id):
     messages.warning(
         request,
         format_html(
-            'Assignment "{}" deleted. <a href="{}" class="underline font-semibold">Undo</a> ({}s)',
+            'Assignment "{}" deleted. {} ({}s)',
             assignment.title,
-            undo_url,
+            _undo_inline_form(request, undo_url),
             UNDO_GRACE_SECONDS,
         ),
     )
@@ -1113,6 +1137,7 @@ def delete_assignment(request, assignment_id):
 
 
 @login_required
+@require_POST
 def undo_assignment_delete(request, token):
     payload = _pop_undo_payload(token)
     if not payload or payload.get('type') != 'assignment_delete':
