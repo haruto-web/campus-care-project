@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Avg
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
@@ -21,6 +21,8 @@ from accounts.utils import log_action, hit_rate_limit
 from datetime import date, datetime, timedelta
 from urllib.parse import urlencode
 import calendar
+import csv
+import io
 import json
 import os
 import secrets
@@ -736,6 +738,33 @@ def my_classes(request):
             })
         return schedule_days
 
+    def build_student_schedule_export_rows(class_queryset):
+        day_order = {day: index for index, (day, _) in enumerate(Class.DAY_CHOICES)}
+        rows = []
+        for cls in class_queryset:
+            for block in Class.parse_schedule_blocks(cls.schedule):
+                days = block.get('days') or []
+                if not days:
+                    continue
+                classroom = (block.get('classroom') or '').strip()
+                for day in days:
+                    rows.append({
+                        'day': day,
+                        'day_index': day_order.get(day, 99),
+                        'start_time': block['start_time'],
+                        'end_time': block['end_time'],
+                        'start_display': Class._input_to_display_time(block['start_time']),
+                        'end_display': Class._input_to_display_time(block['end_time']),
+                        'subject': cls.name,
+                        'code': cls.code,
+                        'teacher': cls.teacher.get_full_name() if cls.teacher else '',
+                        'section': cls.section or '',
+                        'year_level': cls.year_level or '',
+                        'classroom': classroom or (cls.room or ''),
+                    })
+        rows.sort(key=lambda item: (item['day_index'], item['start_time'], item['code'], item['subject']))
+        return rows
+
     if request.user.role == 'teacher':
         classes = Class.objects.filter(teacher=request.user)
         
@@ -759,15 +788,130 @@ def my_classes(request):
         }
     elif request.user.role == 'student':
         classes = request.user.enrolled_classes.all()
+        export_rows = build_student_schedule_export_rows(classes)
         context = {
             'classes': classes,
             'schedule_calendar_days': build_schedule_calendar(classes),
+            'schedule_export_available': bool(export_rows),
         }
     else:
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
     
     return render(request, 'academics/my_classes.html', context)
+
+
+@login_required
+def export_student_schedule(request):
+    if request.user.role != 'student':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    classes = request.user.enrolled_classes.all()
+    day_order = {day: index for index, (day, _) in enumerate(Class.DAY_CHOICES)}
+    rows = []
+    for cls in classes:
+        for block in Class.parse_schedule_blocks(cls.schedule):
+            days = block.get('days') or []
+            if not days:
+                continue
+            classroom = (block.get('classroom') or '').strip()
+            for day in days:
+                rows.append({
+                    'day': day,
+                    'day_index': day_order.get(day, 99),
+                    'start_time': block['start_time'],
+                    'end_time': block['end_time'],
+                    'start_display': Class._input_to_display_time(block['start_time']),
+                    'end_display': Class._input_to_display_time(block['end_time']),
+                    'subject': cls.name,
+                    'code': cls.code,
+                    'teacher': cls.teacher.get_full_name() if cls.teacher else '',
+                    'section': cls.section or '',
+                    'year_level': cls.year_level or '',
+                    'classroom': classroom or (cls.room or ''),
+                })
+    rows.sort(key=lambda item: (item['day_index'], item['start_time'], item['code'], item['subject']))
+
+    if not rows:
+        messages.warning(request, 'No available class schedules to export.')
+        return redirect('academics:my_classes')
+
+    export_format = (request.GET.get('format') or 'csv').lower()
+    now_stamp = timezone.localtime().strftime('%Y%m%d_%H%M%S')
+
+    if export_format == 'ics':
+        day_to_byday = {
+            'Monday': 'MO',
+            'Tuesday': 'TU',
+            'Wednesday': 'WE',
+            'Thursday': 'TH',
+            'Friday': 'FR',
+            'Saturday': 'SA',
+            'Sunday': 'SU',
+        }
+        day_to_weekday_index = {
+            'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3,
+            'Friday': 4, 'Saturday': 5, 'Sunday': 6
+        }
+
+        def next_date_for_day(day_name):
+            today = timezone.localdate()
+            target = day_to_weekday_index[day_name]
+            delta = (target - today.weekday()) % 7
+            return today + timedelta(days=delta)
+
+        lines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//BrightTrack//Student Schedule//EN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            f'X-WR-CALNAME:BrightTrack Schedule - {request.user.get_full_name() or request.user.username}',
+        ]
+
+        generated_at_utc = timezone.now().strftime('%Y%m%dT%H%M%SZ')
+        for index, row in enumerate(rows, start=1):
+            base_date = next_date_for_day(row['day'])
+            dt_start = f'{base_date.strftime("%Y%m%d")}T{row["start_time"].replace(":", "")}00'
+            dt_end = f'{base_date.strftime("%Y%m%d")}T{row["end_time"].replace(":", "")}00'
+            lines.extend([
+                'BEGIN:VEVENT',
+                f'UID:brighttrack-schedule-{request.user.id}-{index}-{now_stamp}@brighttrack',
+                f'DTSTAMP:{generated_at_utc}',
+                f'SUMMARY:{row["subject"]} ({row["code"]})',
+                f'DESCRIPTION:Teacher: {row["teacher"] or "TBA"} | Section: {row["section"] or "N/A"} | Grade: {row["year_level"] or "N/A"}',
+                f'LOCATION:{row["classroom"] or "TBA"}',
+                f'DTSTART:{dt_start}',
+                f'DTEND:{dt_end}',
+                f'RRULE:FREQ=WEEKLY;BYDAY={day_to_byday[row["day"]]}',
+                'END:VEVENT',
+            ])
+        lines.append('END:VCALENDAR')
+
+        response = HttpResponse('\r\n'.join(lines) + '\r\n', content_type='text/calendar; charset=utf-8')
+        response['Content-Disposition'] = f'attachment; filename="brighttrack_schedule_{now_stamp}.ics"'
+        return response
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Day', 'Start Time', 'End Time', 'Subject', 'Class Code', 'Teacher', 'Section', 'Grade Level', 'Classroom'])
+    for row in rows:
+        writer.writerow([
+            row['day'],
+            row['start_display'],
+            row['end_display'],
+            row['subject'],
+            row['code'],
+            row['teacher'],
+            row['section'],
+            row['year_level'],
+            row['classroom'],
+        ])
+
+    response = HttpResponse(output.getvalue(), content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="brighttrack_schedule_{now_stamp}.csv"'
+    return response
 
 # Student-specific views
 
