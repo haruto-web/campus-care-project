@@ -148,8 +148,7 @@ def counselor_chat(request):
                     counselor=request.user,
                     intervention_type='counseling',
                     description=f"AI-Generated Intervention: {result.get('summary', '')}",
-                    scheduled_date=timezone.now() + timedelta(days=3),
-                    status='scheduled'
+                    status='pending'
                 )
                 
                 # Create alert notification
@@ -357,8 +356,7 @@ Format: Subject line and email body"""
                         counselor=request.user,
                         intervention_type='counseling',
                         description=f"AI Auto-Generated: {result.get('summary', 'Intervention needed for high-risk student')}",
-                        scheduled_date=datetime.now() + timedelta(days=3),
-                        status='scheduled'
+                        status='pending'
                     )
                     created_ids.append(iv.id)
                     

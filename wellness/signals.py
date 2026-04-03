@@ -1,5 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 from .models import RiskAssessment, TeacherConcern, WellnessCheckIn, Alert, Intervention, Notification
 
 @receiver(post_save, sender=RiskAssessment)
@@ -88,8 +89,9 @@ def create_teacher_concern_alert(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Intervention)
 def notify_student_intervention(sender, instance, created, **kwargs):
     """Notify student when an intervention is scheduled for them"""
-    if created and instance.status == 'scheduled':
-        sched = instance.scheduled_date.strftime('%b %d, %Y at %I:%M %p')
+    if instance.status == 'scheduled':
+        local_sched = timezone.localtime(instance.scheduled_date)
+        sched = local_sched.strftime('%b %d, %Y at %I:%M %p')
         msg = f'A {instance.get_intervention_type_display()} session has been scheduled for you on {sched} by {instance.counselor.get_full_name()}.'
         Notification.objects.create(
             recipient=instance.student,

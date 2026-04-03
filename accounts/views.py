@@ -1111,7 +1111,7 @@ def dashboard_stats_view(request):
         return JsonResponse({
             'high_risk_count': RiskAssessment.objects.filter(risk_level='high').count(),
             'medium_risk_count': RiskAssessment.objects.filter(risk_level='medium').count(),
-            'pending_interventions': Intervention.objects.filter(status='scheduled').count(),
+            'pending_interventions': Intervention.objects.filter(status='pending').count(),
             'unread_alerts': Alert.objects.filter(is_read=False).count(),
         })
 
@@ -1311,7 +1311,7 @@ def counselor_dashboard(request):
         scheduled_date__gte=timezone.now()
     ).order_by('scheduled_date')[:5]
     
-    pending_interventions = Intervention.objects.filter(status='scheduled').count()
+    pending_interventions = Intervention.objects.filter(status='pending').count()
     
     # Section-based breakdowns
     from collections import defaultdict
@@ -1571,7 +1571,8 @@ def student_profile_view(request, student_id):
     concerns = TeacherConcern.objects.filter(student=student).order_by('-date_observed')[:10]
     
     # Get interventions
-    interventions = Intervention.objects.filter(student=student).order_by('-scheduled_date')[:10]
+    from django.db.models import F
+    interventions = Intervention.objects.filter(student=student).order_by(F('scheduled_date').desc(nulls_last=True))[:10]
     
     # Get AI intervention recommendations if student is at risk
     ai_recommendations = None

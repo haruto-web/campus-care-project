@@ -241,23 +241,23 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <a href="{% url 'wellness:at_risk_students' %}?risk_level=high"
                 class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block">
-                    <h3 class="text-3xl font-bold text-red-600" data-dashboard-stat="high_risk_count">{{ high_risk_count }}</h3>
-                <p class="text-gray-600">High Risk</p>
+                    <h3 class="text-3xl font-bold text-red-600 dark:text-red-400" data-dashboard-stat="high_risk_count">{{ high_risk_count }}</h3>
+                <p class="text-gray-600 dark:text-gray-400">High Risk</p>
             </a>
             <a href="{% url 'wellness:at_risk_students' %}?risk_level=medium"
                 class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block">
-                    <h3 class="text-3xl font-bold text-yellow-600" data-dashboard-stat="medium_risk_count">{{ medium_risk_count }}</h3>
-                <p class="text-gray-600">Medium Risk</p>
+                    <h3 class="text-3xl font-bold text-yellow-600 dark:text-yellow-400" data-dashboard-stat="medium_risk_count">{{ medium_risk_count }}</h3>
+                <p class="text-gray-600 dark:text-gray-400">Medium Risk</p>
             </a>
             <a href="{% url 'wellness:interventions_list' %}"
                 class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block">
-                    <h3 class="text-3xl font-bold text-blue-600" data-dashboard-stat="pending_interventions">{{ pending_interventions }}</h3>
-                <p class="text-gray-600">Pending</p>
+                    <h3 class="text-3xl font-bold text-blue-600 dark:text-blue-400" data-dashboard-stat="pending_interventions">{{ pending_interventions }}</h3>
+                <p class="text-gray-600 dark:text-gray-400">Pending</p>
             </a>
             <a href="{% url 'wellness:alerts_list' %}"
                 class="bg-white rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block">
-                    <h3 class="text-3xl font-bold text-purple-600" data-dashboard-stat="unread_alerts">{{ unread_alerts }}</h3>
-                <p class="text-gray-600">Alerts</p>
+                    <h3 class="text-3xl font-bold text-purple-600 dark:text-purple-400" data-dashboard-stat="unread_alerts">{{ unread_alerts }}</h3>
+                <p class="text-gray-600 dark:text-gray-400">Alerts</p>
             </a>
         </div>
 

@@ -370,13 +370,21 @@
                                 <span class="px-3 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-700">{{ intervention.get_intervention_type_display }}</span>
                                 {% if intervention.status == 'completed' %}
                                 <span class="px-3 py-1 text-xs font-bold rounded-full bg-green-100 text-green-700">Completed</span>
+                                {% elif intervention.status == 'pending' %}
+                                <span class="px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>
                                 {% elif intervention.status == 'scheduled' %}
                                 <span class="px-3 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-700">Scheduled</span>
                                 {% else %}
                                 <span class="px-3 py-1 text-xs font-bold rounded-full bg-gray-100 text-gray-700">Cancelled</span>
                                 {% endif %}
                             </div>
-                            <p class="text-sm text-gray-500">{{ intervention.scheduled_date|date:"M d, Y" }}</p>
+                            <p class="text-sm text-gray-500">
+                                {% if intervention.scheduled_date %}
+                                    {{ intervention.scheduled_date|date:"M d, Y" }}
+                                {% else %}
+                                    <span class="italic text-amber-600 dark:text-amber-400">Pending Schedule</span>
+                                {% endif %}
+                            </p>
                         </div>
                         <p class="text-gray-700">{{ intervention.description }}</p>
                     </div>

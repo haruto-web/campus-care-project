@@ -268,7 +268,11 @@ def interventions_list(request):
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
     
-    interventions = Intervention.objects.select_related('student', 'counselor').order_by('-scheduled_date')
+    interventions = Intervention.objects.select_related('student', 'counselor').order_by('scheduled_date')
+    # If using PostgreSQL, we can use nulls_first/last but standard ordering puts NULLS last usually.
+    # To be safe and show pending first if no date:
+    from django.db.models import F
+    interventions = interventions.order_by(F('scheduled_date').desc(nulls_last=True))
     
     # Apply filters
     status_filter = request.GET.get('status', '')

@@ -566,7 +566,7 @@ function generateWeeklySummary() {
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div class="${statBg} rounded-lg p-4 shadow-sm border border-orange-100">
-                    <div class="text-3xl font-bold text-orange-600">${d.new_alerts}</div>
+                    <div class="text-3xl font-bold text-orange-600 dark:text-orange-400">${d.new_alerts}</div>
                     <div class="text-sm ${statText} mt-1">New Alerts</div>
                 </div>
                 <div class="${statBg} rounded-lg p-4 shadow-sm border border-red-100">
@@ -578,7 +578,7 @@ function generateWeeklySummary() {
                     <div class="text-sm ${statText} mt-1">Interventions</div>
                 </div>
                 <div class="${statBg} rounded-lg p-4 shadow-sm border border-purple-100">
-                    <div class="text-3xl font-bold text-purple-600">${d.new_concerns}</div>
+                    <div class="text-3xl font-bold text-purple-600 dark:text-purple-400">${d.new_concerns}</div>
                     <div class="text-sm ${statText} mt-1">Teacher Concerns</div>
                 </div>
             </div>
@@ -754,11 +754,11 @@ function generateReport() {
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div class="${statBg} rounded-lg p-4 shadow-sm border border-red-100">
-                    <div class="text-3xl font-bold text-red-600">${d.high_risk_count}</div>
+                    <div class="text-3xl font-bold text-red-600 dark:text-red-400">${d.high_risk_count}</div>
                     <div class="text-sm ${statText} mt-1">High-Risk Students</div>
                 </div>
                 <div class="${statBg} rounded-lg p-4 shadow-sm border border-yellow-100">
-                    <div class="text-3xl font-bold text-yellow-600">${d.medium_risk_count}</div>
+                    <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">${d.medium_risk_count}</div>
                     <div class="text-sm ${statText} mt-1">Medium-Risk Students</div>
                 </div>
                 <div class="${statBg} rounded-lg p-4 shadow-sm border border-orange-100">
@@ -766,7 +766,7 @@ function generateReport() {
                     <div class="text-sm ${statText} mt-1">Unresolved Alerts</div>
                 </div>
                 <div class="${statBg} rounded-lg p-4 shadow-sm border border-blue-100">
-                    <div class="text-3xl font-bold text-blue-600">${d.pending_interventions}</div>
+                    <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">${d.pending_interventions}</div>
                     <div class="text-sm ${statText} mt-1">Pending Interventions</div>
                 </div>
             </div>

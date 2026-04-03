@@ -26,3 +26,13 @@ class InterventionForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'outcome': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        status = cleaned_data.get('status')
+        scheduled_date = cleaned_data.get('scheduled_date')
+
+        if status == 'scheduled' and not scheduled_date:
+            self.add_error('scheduled_date', 'A scheduled date and time is required when the status is "Scheduled".')
+        
+        return cleaned_data

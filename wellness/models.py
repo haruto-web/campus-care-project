@@ -71,6 +71,7 @@ class Intervention(models.Model):
         ('other', 'Other'),
     ]
     STATUS_CHOICES = [
+        ('pending', 'Pending Approval'),
         ('scheduled', 'Scheduled'),
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
@@ -79,8 +80,8 @@ class Intervention(models.Model):
     counselor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='interventions_managed')
     intervention_type = models.CharField(max_length=20, choices=INTERVENTION_TYPES)
     description = models.TextField()
-    scheduled_date = models.DateTimeField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    scheduled_date = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     notes = models.TextField(blank=True)
     outcome = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
