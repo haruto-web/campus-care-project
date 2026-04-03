@@ -7,6 +7,7 @@ app_name = 'academics'
 urlpatterns = [
     path('my-classes/', views.my_classes, name='my_classes'),
     path('student/schedule/export/', views.export_student_schedule, name='export_student_schedule'),
+    path('student/grades/export/', views.export_student_grades, name='export_student_grades'),
     path('create/', views.create_class, name='create_class'),
     path('class/<int:class_id>/', views.class_detail, name='class_detail'),
     path('class/<int:class_id>/edit/', views.edit_class, name='edit_class'),

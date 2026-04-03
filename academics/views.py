@@ -1278,13 +1278,120 @@ def student_grades(request):
     
     gpa = (total_score / total_points * 4.0) if total_points > 0 else None
     
+    has_graded = any(
+        any(g['score'] is not None for g in cd['grades'])
+        for cd in grades_by_class
+    )
+
     context = {
         'grades_by_class': grades_by_class,
         'my_classes': request.user.enrolled_classes.all(),
         'class_filter': class_filter,
         'gpa': round(gpa, 2) if gpa else None,
+        'grades_export_available': has_graded,
     }
     return render(request, 'academics/student_grades.html', context)
+
+@login_required
+def export_student_grades(request):
+    if request.user.role != 'student':
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    all_classes = request.user.enrolled_classes.all()
+    rows = []
+    for class_obj in all_classes:
+        assignments = Assignment.objects.filter(class_obj=class_obj).order_by('due_date')
+        for assignment in assignments:
+            submission = Submission.objects.filter(assignment=assignment, student=request.user).first()
+            if submission:
+                if submission.score is not None:
+                    percentage = (submission.score / assignment.total_points * 100) if assignment.total_points > 0 else 0
+                    letter = (
+                        'A' if percentage >= 90 else
+                        'B' if percentage >= 80 else
+                        'C' if percentage >= 70 else
+                        'D' if percentage >= 60 else 'F'
+                    )
+                    status = 'Graded'
+                else:
+                    percentage = None
+                    letter = 'N/A'
+                    status = 'Pending'
+            else:
+                percentage = None
+                letter = 'N/A'
+                status = 'Not Submitted'
+            rows.append({
+                'class_code': class_obj.code,
+                'class_name': class_obj.name,
+                'teacher': class_obj.teacher.get_full_name() if class_obj.teacher else '',
+                'assignment': assignment.title,
+                'due_date': assignment.due_date.strftime('%b %d, %Y') if assignment.due_date else '',
+                'total_points': assignment.total_points,
+                'score': submission.score if submission else '',
+                'percentage': f'{percentage:.1f}' if percentage is not None else '',
+                'letter_grade': letter,
+                'status': status,
+                'feedback': (submission.feedback or '') if submission else '',
+            })
+
+    if not rows:
+        messages.warning(request, 'No grade records available to export.')
+        return redirect('academics:student_grades')
+
+    export_format = (request.GET.get('format') or 'csv').lower()
+    now_stamp = timezone.localtime().strftime('%Y%m%d_%H%M%S')
+    student_name = request.user.get_full_name() or request.user.username
+
+    if export_format == 'txt':
+        lines = [
+            f'GRADES REPORT — {student_name}',
+            f'Generated: {timezone.localtime().strftime("%B %d, %Y %I:%M %p")}',
+            '=' * 70,
+        ]
+        current_class = None
+        for row in rows:
+            class_label = f"{row['class_code']} - {row['class_name']}"
+            if class_label != current_class:
+                current_class = class_label
+                lines.append('')
+                lines.append(f'CLASS: {class_label}')
+                lines.append(f'Teacher: {row["teacher"]}')
+                lines.append('-' * 70)
+                lines.append(f'{"Assignment":<40} {"Score":<12} {"Pct":>6}  {"Grade":<6} Status')
+                lines.append('-' * 70)
+            score_str = f"{row['score']}/{row['total_points']}" if row['score'] != '' else f"-/{row['total_points']}"
+            pct_str = f"{row['percentage']}%" if row['percentage'] else '-'
+            lines.append(
+                f"{row['assignment'][:39]:<40} {score_str:<12} {pct_str:>6}  {row['letter_grade']:<6} {row['status']}"
+            )
+            if row['feedback']:
+                lines.append(f'  Feedback: {row["feedback"]}')
+        lines.append('')
+        lines.append('=' * 70)
+        lines.append('END OF REPORT')
+        content = '\n'.join(lines)
+        response = HttpResponse(content, content_type='text/plain; charset=utf-8')
+        response['Content-Disposition'] = f'attachment; filename="grades_{now_stamp}.txt"'
+        return response
+
+    # Default: CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Class Code', 'Class Name', 'Teacher', 'Assignment', 'Due Date',
+                     'Total Points', 'Score', 'Percentage', 'Letter Grade', 'Status', 'Feedback'])
+    for row in rows:
+        writer.writerow([
+            row['class_code'], row['class_name'], row['teacher'],
+            row['assignment'], row['due_date'], row['total_points'],
+            row['score'], row['percentage'], row['letter_grade'],
+            row['status'], row['feedback'],
+        ])
+    response = HttpResponse(output.getvalue(), content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="grades_{now_stamp}.csv"'
+    return response
+
 
 @login_required
 def student_attendance(request):
