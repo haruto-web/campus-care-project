@@ -5,17 +5,17 @@
 {% block content %}
 <div class="space-y-6">
     <!-- Header with explanation -->
-    <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 p-6 rounded-lg">
-        <h2 class="text-3xl font-bold text-gray-800 mb-2">School Overview & Insights</h2>
-        <p class="text-green-800">View important statistics and trends about student wellbeing and academic support across the school.</p>
+    <div class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-slate-800 dark:to-slate-900 border border-green-200 dark:border-slate-700 p-6 rounded-lg">
+        <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">School Overview & Insights</h2>
+        <p class="text-green-800 dark:text-green-400">View important statistics and trends about student wellbeing and academic support across the school.</p>
     </div>
     
     <!-- Statistics Interpretation -->
-    <div class="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 p-4 rounded-lg">
-        <h3 class="text-blue-900 font-semibold mb-2">📊 Data Insights</h3>
+    <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-900 border-l-4 border-blue-500 p-4 rounded-lg">
+        <h3 class="text-blue-900 dark:text-blue-300 font-semibold mb-2">📊 Data Insights</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-                <p class="text-blue-800">
+                <p class="text-blue-800 dark:text-gray-300">
                     <strong>Risk Distribution:</strong> 
                     {% if high_risk_count > medium_risk_count and high_risk_count > low_risk_count %}
                         High concentration of at-risk students. Increase intervention resources.
@@ -27,7 +27,7 @@
                 </p>
             </div>
             <div>
-                <p class="text-purple-800">
+                <p class="text-purple-800 dark:text-gray-300">
                     <strong>Intervention Effectiveness:</strong> 
                     {% if completion_rate >= 80 %}
                         Excellent completion rate ({{ completion_rate }}%). Maintain current approach.
@@ -63,24 +63,24 @@
     
     <!-- Charts Section -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-blue-100">
-                <h5 class="text-lg font-semibold text-gray-800 flex items-center">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow border-2 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b dark:border-slate-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800">
+                <h5 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
                     Student Support Levels
                 </h5>
-                <p class="text-sm text-gray-600 mt-1">How many students need different levels of help</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">How many students need different levels of help</p>
             </div>
             <div class="p-6">
                 <canvas id="riskPieChart" height="250"></canvas>
             </div>
         </div>
         
-        <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b bg-gradient-to-r from-purple-50 to-purple-100">
-                <h5 class="text-lg font-semibold text-gray-800 flex items-center">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow border-2 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b dark:border-slate-700 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-slate-700 dark:to-slate-800">
+                <h5 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
                     Meeting Status
                 </h5>
-                <p class="text-sm text-gray-600 mt-1">Progress of scheduled student meetings</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Progress of scheduled student meetings</p>
             </div>
             <div class="p-6">
                 <canvas id="interventionBarChart" height="250"></canvas>
@@ -90,10 +90,10 @@
     
     <!-- Meeting and Notification Statistics -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b">
-                <h5 class="text-lg font-semibold text-gray-800">Student Meeting Statistics</h5>
-                <p class="text-sm text-gray-600 mt-1">How well are we supporting students through meetings</p>
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow border-2 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b dark:border-slate-700">
+                <h5 class="text-lg font-semibold text-gray-800 dark:text-white">Student Meeting Statistics</h5>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">How well are we supporting students through meetings</p>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-3 gap-4 text-center mb-4">
@@ -110,16 +110,16 @@
                         <p class="text-sm text-gray-600">Cancelled</p>
                     </div>
                 </div>
-                <hr class="my-4">
-                <p class="mb-2"><strong>Total Meetings:</strong> {{ total_interventions }}</p>
-                <p><strong>Success Rate:</strong> <span class="{% if completion_rate >= 80 %}text-green-600{% elif completion_rate >= 60 %}text-yellow-600{% else %}text-red-600{% endif %} font-bold">{{ completion_rate }}%</span></p>
+                <hr class="my-4 border-gray-200 dark:border-slate-700">
+                <p class="mb-2 text-gray-800 dark:text-gray-200"><strong>Total Meetings:</strong> {{ total_interventions }}</p>
+                <p class="text-gray-800 dark:text-gray-200"><strong>Success Rate:</strong> <span class="{% if completion_rate >= 80 %}text-green-600 dark:text-green-400{% elif completion_rate >= 60 %}text-yellow-600 dark:text-yellow-400{% else %}text-red-600 dark:text-red-400{% endif %} font-bold">{{ completion_rate }}%</span></p>
             </div>
         </div>
         
-        <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b">
-                <h5 class="text-lg font-semibold text-gray-800">Notification Statistics</h5>
-                <p class="text-sm text-gray-600 mt-1">How quickly we respond to student needs</p>
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow border-2 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b dark:border-slate-700">
+                <h5 class="text-lg font-semibold text-gray-800 dark:text-white">Notification Statistics</h5>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">How quickly we respond to student needs</p>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-2 gap-4 text-center mb-4">
@@ -132,17 +132,17 @@
                         <p class="text-sm text-gray-600">Resolved</p>
                     </div>
                 </div>
-                <hr class="my-4">
-                <p class="mb-2"><strong>Total Notifications:</strong> {{ total_alerts }}</p>
-                <p><strong>Response Rate:</strong> <span class="{% if resolution_rate >= 80 %}text-green-600{% elif resolution_rate >= 60 %}text-yellow-600{% else %}text-red-600{% endif %} font-bold">{{ resolution_rate }}%</span></p>
+                <hr class="my-4 border-gray-200 dark:border-slate-700">
+                <p class="mb-2 text-gray-800 dark:text-gray-200"><strong>Total Notifications:</strong> {{ total_alerts }}</p>
+                <p class="text-gray-800 dark:text-gray-200"><strong>Response Rate:</strong> <span class="{% if resolution_rate >= 80 %}text-green-600 dark:text-green-400{% elif resolution_rate >= 60 %}text-yellow-600 dark:text-yellow-400{% else %}text-red-600 dark:text-red-400{% endif %} font-bold">{{ resolution_rate }}%</span></p>
             </div>
         </div>
     </div>
     
     <!-- Age Range Analysis -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="px-6 py-4 border-b bg-gradient-to-r from-orange-50 to-red-50">
-            <h5 class="text-lg font-semibold text-gray-800 flex items-center">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow border-2 dark:border-slate-700 overflow-hidden">
+        <div class="px-6 py-4 border-b dark:border-slate-700 bg-gradient-to-r from-orange-50 to-red-50 dark:from-slate-700 dark:to-slate-800">
+            <h5 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
                 Age Range of High-Risk Students
             </h5>
         </div>
@@ -160,9 +160,9 @@
     </div>
     
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b">
-                <h5 class="text-lg font-semibold text-gray-800 flex items-center">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow border-2 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b dark:border-slate-700">
+                <h5 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
                     Alerts by Type
                 </h5>
             </div>
@@ -171,9 +171,9 @@
             </div>
         </div>
         
-        <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b">
-                <h5 class="text-lg font-semibold text-gray-800 flex items-center">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow border-2 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b dark:border-slate-700">
+                <h5 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
                     Interventions by Type
                 </h5>
             </div>
@@ -184,9 +184,9 @@
     </div>
     
     <!-- Academic Overview -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="px-6 py-4 border-b">
-            <h5 class="text-lg font-semibold text-gray-800">Academic Overview</h5>
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow border-2 dark:border-slate-700 overflow-hidden">
+        <div class="px-6 py-4 border-b dark:border-slate-700">
+            <h5 class="text-lg font-semibold text-gray-800 dark:text-white">Academic Overview</h5>
         </div>
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
@@ -203,19 +203,19 @@
     </div>
     
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b">
-                <h5 class="text-lg font-semibold text-gray-800">Recent Concerns (Last 7 Days)</h5>
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow border-2 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b dark:border-slate-700">
+                <h5 class="text-lg font-semibold text-gray-800 dark:text-white">Recent Concerns (Last 7 Days)</h5>
             </div>
             <div class="p-6">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                        <thead class="bg-gray-50 dark:bg-slate-700">
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Severity</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Student</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Type</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Severity</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
@@ -245,18 +245,18 @@
             </div>
         </div>
         
-        <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b">
-                <h5 class="text-lg font-semibold text-gray-800">Upcoming Interventions</h5>
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow border-2 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b dark:border-slate-700">
+                <h5 class="text-lg font-semibold text-gray-800 dark:text-white">Upcoming Interventions</h5>
             </div>
             <div class="p-6">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                        <thead class="bg-gray-50 dark:bg-slate-700">
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Student</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Type</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
@@ -281,19 +281,70 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Hidden data container for chart hydration (fixes JS lints) -->
+<div id="chart-data" class="hidden"
+    data-high-risk="{{ high_risk_count }}"
+    data-medium-risk="{{ medium_risk_count }}"
+    data-low-risk="{{ low_risk_count }}"
+    data-scheduled-int="{{ scheduled_interventions }}"
+    data-completed-int="{{ completed_interventions }}"
+    data-cancelled-int="{{ cancelled_interventions }}"
+    data-age-range="{{ age_range_values|safe }}">
+</div>
+<div id="alerts-data" class="hidden">
+    {% for alert in alerts_by_type %}
+    <span class="alert-item" data-label="{{ alert.type_display }}" data-count="{{ alert.count }}"></span>
+    {% endfor %}
+</div>
+<div id="interventions-data" class="hidden">
+    {% for intervention in interventions_by_type %}
+    <span class="intervention-item" data-label="{{ intervention.type_display }}" data-count="{{ intervention.count }}"></span>
+    {% endfor %}
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Determine theme colors
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#cbd5e1' : '#4b5563';
+    const gridColor = isDark ? '#334155' : '#e5e7eb';
+    
+    // Set global chart defaults for dark mode logic
+    Chart.defaults.color = textColor;
+    Chart.defaults.scale.grid.color = gridColor;
+    Chart.defaults.scale.grid.borderColor = gridColor;
+
+    // Retrieve data securely from DOM
+    const dataContainer = document.getElementById('chart-data');
+    const riskData = [
+        Number(dataContainer.dataset.highRisk || 0),
+        Number(dataContainer.dataset.mediumRisk || 0),
+        Number(dataContainer.dataset.lowRisk || 0)
+    ];
+    const intData = [
+        Number(dataContainer.dataset.scheduledInt || 0),
+        Number(dataContainer.dataset.completedInt || 0),
+        Number(dataContainer.dataset.cancelledInt || 0)
+    ];
+    const ageData = JSON.parse(dataContainer.dataset.ageRange || '[]');
+    
+    const alertLabels = Array.from(document.querySelectorAll('.alert-item')).map(el => el.dataset.label);
+    const alertCounts = Array.from(document.querySelectorAll('.alert-item')).map(el => Number(el.dataset.count));
+    
+    const intTypeLabels = Array.from(document.querySelectorAll('.intervention-item')).map(el => el.dataset.label);
+    const intTypeCounts = Array.from(document.querySelectorAll('.intervention-item')).map(el => Number(el.dataset.count));
+
     // Risk Distribution Pie Chart
     new Chart(document.getElementById('riskPieChart'), {
         type: 'doughnut',
         data: {
             labels: ['Need Urgent Help', 'Need Some Help', 'Doing Well'],
             datasets: [{
-                data: [{{ high_risk_count }}, {{ medium_risk_count }}, {{ low_risk_count }}],
+                data: riskData,
                 backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
                 borderWidth: 2,
-                borderColor: '#fff'
+                borderColor: isDark ? '#1e293b' : '#fff'
             }]
         },
         options: {
@@ -310,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: ['Upcoming', 'Completed', 'Cancelled'],
             datasets: [{
                 label: 'Student Meetings',
-                data: [{{ scheduled_interventions }}, {{ completed_interventions }}, {{ cancelled_interventions }}],
+                data: intData,
                 backgroundColor: ['#3b82f6', '#10b981', '#6b7280'],
                 borderRadius: 8
             }]
@@ -330,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: ['15-17 years', '18-20 years', '21-23 years', '24+ years'],
             datasets: [{
                 label: 'High-Risk Students',
-                data: {{ age_range_values|safe }},
+                data: ageData,
                 backgroundColor: '#f97316',
                 borderRadius: 8
             }]
@@ -347,10 +398,10 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('alertsTypeChart'), {
         type: 'bar',
         data: {
-            labels: [{% for alert in alerts_by_type %}'{{ alert.type_display }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            labels: alertLabels,
             datasets: [{
                 label: 'Count',
-                data: [{% for alert in alerts_by_type %}{{ alert.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                data: alertCounts,
                 backgroundColor: '#dc2626',
                 borderRadius: 8
             }]
@@ -368,10 +419,10 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('interventionsTypeChart'), {
         type: 'bar',
         data: {
-            labels: [{% for intervention in interventions_by_type %}'{{ intervention.type_display }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            labels: intTypeLabels,
             datasets: [{
                 label: 'Count',
-                data: [{% for intervention in interventions_by_type %}{{ intervention.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                data: intTypeCounts,
                 backgroundColor: '#8b5cf6',
                 borderRadius: 8
             }]

@@ -12,7 +12,7 @@
             <p class="text-gray-600 dark:text-gray-400">Welcome back, {{ user.get_full_name }}!</p>
         </div>
         <div class="flex items-center space-x-4">
-            <button class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition"
+            <button class="px-4 py-2 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/60 transition"
                 onclick="window.location.reload()">
                 <i class="bi bi-arrow-clockwise mr-1"></i> Refresh
             </button>
@@ -91,7 +91,7 @@
                             class="flex items-start justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-2 mb-1">
-                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded font-medium">{{ assignment.class_obj.code }}</span>
+                                    <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs rounded font-medium">{{ assignment.class_obj.code }}</span>
                                     <span class="text-xs text-gray-500 dark:text-gray-400">{{ assignment.total_points }}
                                         points</span>
                                 </div>
@@ -147,10 +147,10 @@
                             data-id="{{ announcement.id }}" data-read="{{ announcement.is_read|yesno:'true,false' }}">
                             <div class="flex items-start justify-between mb-2">
                                 <div class="flex items-center space-x-2">
-                                    <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded font-medium">
+                                    <span class="px-2 py-1 bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 text-xs rounded font-medium">
                                         {{ announcement.class_obj.code|default:"SCHOOL" }}</span>
                                     {% if announcement.priority == 'urgent' %}
-                                    <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded font-medium">
+                                    <span class="px-2 py-1 bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 text-xs rounded font-medium">
                                         <i class="bi bi-exclamation-triangle mr-1"></i>URGENT
                                     </span>
                                     {% endif %}
@@ -170,12 +170,12 @@
                     </div>
                     <div id="all-read-msg" class="text-center py-8 hidden">
                         <i class="bi bi-check-circle text-purple-400 text-4xl mb-3"></i>
-                        <p class="text-gray-600">All announcements read!</p>
+                        <p class="text-gray-600 dark:text-gray-400">All announcements read!</p>
                     </div>
                     {% else %}
                     <div class="text-center py-8 flex flex-col items-center justify-center gap-2">
-                        <i class="bi bi-megaphone text-gray-300 text-4xl"></i>
-                        <p class="text-gray-600">No recent announcements</p>
+                        <i class="bi bi-megaphone text-gray-300 dark:text-gray-600 text-4xl"></i>
+                        <p class="text-gray-600 dark:text-gray-400">No recent announcements</p>
                     </div>
                     {% endif %}
                 </div>

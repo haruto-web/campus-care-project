@@ -50,8 +50,8 @@
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Students</p>
                     <p class="text-3xl font-bold text-blue-600" data-dashboard-stat="total_students">{{ total_students }}</p>
                 </div>
-                <div class="bg-blue-100 p-3 rounded-full">
-                    <i class="bi bi-people text-blue-600 text-xl"></i>
+                <div class="bg-blue-100 dark:bg-blue-900/40 p-3 rounded-full">
+                    <i class="bi bi-people text-blue-600 dark:text-blue-400 text-xl"></i>
                 </div>
             </div>
             <a href="{% url 'admin_manage_users' %}?role=student"
@@ -64,8 +64,8 @@
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Teachers</p>
                     <p class="text-3xl font-bold text-green-600" data-dashboard-stat="total_teachers">{{ total_teachers }}</p>
                 </div>
-                <div class="bg-green-100 p-3 rounded-full">
-                    <i class="bi bi-person-workspace text-green-600 text-xl"></i>
+                <div class="bg-green-100 dark:bg-green-900/40 p-3 rounded-full">
+                    <i class="bi bi-person-workspace text-green-600 dark:text-green-400 text-xl"></i>
                 </div>
             </div>
             <a href="{% url 'admin_teachers_list' %}"
@@ -78,8 +78,8 @@
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Counselors</p>
                     <p class="text-3xl font-bold text-teal-600" data-dashboard-stat="total_counselors">{{ total_counselors }}</p>
                 </div>
-                <div class="bg-teal-100 p-3 rounded-full">
-                    <i class="bi bi-person-heart text-teal-600 text-xl"></i>
+                <div class="bg-teal-100 dark:bg-teal-900/40 p-3 rounded-full">
+                    <i class="bi bi-person-heart text-teal-600 dark:text-teal-400 text-xl"></i>
                 </div>
             </div>
             <a href="{% url 'admin_manage_users' %}?role=counselor"
@@ -92,8 +92,8 @@
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Classes</p>
                     <p class="text-3xl font-bold text-purple-600" data-dashboard-stat="total_classes">{{ total_classes }}</p>
                 </div>
-                <div class="bg-purple-100 p-3 rounded-full">
-                    <i class="bi bi-book text-purple-600 text-xl"></i>
+                <div class="bg-purple-100 dark:bg-purple-900/40 p-3 rounded-full">
+                    <i class="bi bi-book text-purple-600 dark:text-purple-400 text-xl"></i>
                 </div>
             </div>
             <a href="{% url 'admin_all_classes' %}"
@@ -106,8 +106,8 @@
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Students Need Help</p>
                     <p class="text-3xl font-bold text-red-600" data-dashboard-stat="high_risk_count">{{ high_risk_count }}</p>
                 </div>
-                <div class="bg-red-100 p-3 rounded-full">
-                    <i class="bi bi-exclamation-triangle text-red-600 text-xl"></i>
+                <div class="bg-red-100 dark:bg-red-900/40 p-3 rounded-full">
+                    <i class="bi bi-exclamation-triangle text-red-600 dark:text-red-400 text-xl"></i>
                 </div>
             </div>
             <a href="{% url 'wellness:at_risk_students' %}"
@@ -251,6 +251,17 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Hidden data container to fix JS lints when parsing template tags -->
+<div id="admin-chart-data" class="hidden"
+    data-total-students="{{ total_students|default:'0' }}"
+    data-total-teachers="{{ total_teachers|default:'0' }}"
+    data-total-counselors="{{ total_counselors|default:'0' }}"
+    data-total-admins="{{ total_admins|default:'0' }}"
+    data-high-risk="{{ high_risk_count|default:'0' }}"
+    data-medium-risk="{{ medium_risk_count|default:'0' }}"
+    data-low-risk="{{ low_risk_count|default:'0' }}">
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     function refreshDashboardStats() {
@@ -270,46 +281,76 @@
     setInterval(refreshDashboardStats, 5000);
     window.addEventListener('focus', refreshDashboardStats);
 
-    // User Distribution Pie Chart
-    const userCtx = document.getElementById('userChart').getContext('2d');
-    new Chart(userCtx, {
-        type: 'pie',
-        data: {
-            labels: ['Students', 'Teachers', 'Counselors', 'Admins'],
-            datasets: [{
-                data: [{{ total_students }}, {{ total_teachers }}, {{ total_counselors }}, {{ total_admins }}],
-                backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
-            }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Theme setup for dark mode charts
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#cbd5e1' : '#4b5563';
+        const gridColor = isDark ? '#334155' : '#e5e7eb';
+        
+        Chart.defaults.color = textColor;
+        if (Chart.defaults.scale) {
+            Chart.defaults.scale.grid.color = gridColor;
+            Chart.defaults.scale.grid.borderColor = gridColor;
         }
-    });
 
-    // Risk Level Bar Chart
-    const riskCtx = document.getElementById('riskChart').getContext('2d');
-    new Chart(riskCtx, {
-        type: 'bar',
-        data: {
-            labels: ['High Risk', 'Medium Risk', 'Low Risk'],
-            datasets: [{
-                label: 'Students',
-                data: [{{ high_risk_count }}, {{ medium_risk_count }}, {{ low_risk_count }}],
-                backgroundColor: ['#EF4444', '#F59E0B', '#10B981']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false }
+        const dataContainer = document.getElementById('admin-chart-data');
+        const userRoleData = [
+            Number(dataContainer.dataset.totalStudents || 0),
+            Number(dataContainer.dataset.totalTeachers || 0),
+            Number(dataContainer.dataset.totalCounselors || 0),
+            Number(dataContainer.dataset.totalAdmins || 0)
+        ];
+
+        const riskLevelData = [
+            Number(dataContainer.dataset.highRisk || 0),
+            Number(dataContainer.dataset.mediumRisk || 0),
+            Number(dataContainer.dataset.lowRisk || 0)
+        ];
+
+        // User Distribution Pie Chart
+        const userCtx = document.getElementById('userChart').getContext('2d');
+        new Chart(userCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Students', 'Teachers', 'Counselors', 'Admins'],
+                datasets: [{
+                    data: userRoleData,
+                    backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B'],
+                    borderColor: isDark ? '#1e293b' : '#ffffff',
+                    borderWidth: 2
+                }]
             },
-            scales: {
-                y: { beginAtZero: true }
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
             }
-        }
+        });
+
+        // Risk Level Bar Chart
+        const riskCtx = document.getElementById('riskChart').getContext('2d');
+        new Chart(riskCtx, {
+            type: 'bar',
+            data: {
+                labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+                datasets: [{
+                    label: 'Students',
+                    data: riskLevelData,
+                    backgroundColor: ['#EF4444', '#F59E0B', '#10B981'],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
     });
 </script>
 {% endblock %}

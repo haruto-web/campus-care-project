@@ -7,7 +7,7 @@
 {% block content %}
 <div class="space-y-6">
     <!-- Mobile Quick Actions - Top Priority -->
-    <div class="lg:hidden bg-white rounded-lg shadow-lg overflow-hidden">
+    <div class="lg:hidden bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden">
         <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3">
             <div class="flex items-center">
                 <i class="bi bi-lightning-charge-fill text-xl mr-2"></i>
@@ -39,18 +39,18 @@
     </div>
 
     <!-- Mobile Navigation Tabs -->
-    <div class="lg:hidden bg-white rounded-lg shadow overflow-hidden">
+    <div class="lg:hidden bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
         <div class="flex">
             <button onclick="showMobileSection('overview')" id="tab-overview"
                 class="flex-1 px-4 py-3 text-sm font-medium bg-blue-600 text-white">
                 Overview
             </button>
             <button onclick="showMobileSection('alerts')" id="tab-alerts"
-                class="flex-1 px-4 py-3 text-sm font-medium bg-gray-100 text-gray-700">
+                class="flex-1 px-4 py-3 text-sm font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300">
                 Alerts
             </button>
             <button onclick="showMobileSection('interventions')" id="tab-interventions"
-                class="flex-1 px-4 py-3 text-sm font-medium bg-gray-100 text-gray-700">
+                class="flex-1 px-4 py-3 text-sm font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300">
                 Meetings
             </button>
         </div>
@@ -61,9 +61,9 @@
         <!-- Overview Section -->
         <div id="mobile-overview" class="mobile-section">
             <!-- Statistics -->
-            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 rounded-lg mb-4">
-                <h3 class="text-blue-900 font-bold text-lg mb-2">📊 Status Overview</h3>
-                <div class="bg-white p-3 rounded-lg border border-blue-100">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 border border-blue-200 dark:border-slate-700 p-4 rounded-lg mb-4">
+                <h3 class="text-blue-900 dark:text-blue-400 font-bold text-lg mb-2">📊 Status Overview</h3>
+                <div class="bg-white dark:bg-slate-800 p-3 rounded-lg border border-blue-100 dark:border-slate-700">
                     <p class="text-blue-800 text-sm">
                         {% if high_risk_count > 10 %}
                         <span
@@ -105,7 +105,7 @@
 
         <!-- Alerts Section -->
         <div id="mobile-alerts" class="mobile-section hidden">
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden border dark:border-slate-700">
                 <div class="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-3">
                     <h5 class="font-bold">Recent System Alerts</h5>
                 </div>
@@ -113,7 +113,7 @@
                     {% if alerts %}
                     <div class="space-y-3">
                         {% for alert in alerts|slice:":10" %}
-                        <div class="border rounded-lg p-3">
+                        <div class="border dark:border-slate-700 rounded-lg p-3">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
                                     <div class="flex items-center gap-2 mb-1">
@@ -124,9 +124,9 @@
                                                 {% else %}bg-blue-500 text-white{% endif %}">
                                             {{ alert.severity|upper }}</span>
                                     </div>
-                                    <h6 class="font-semibold text-gray-800 text-sm">{{ alert.get_alert_type_display }}</h6>
-                                    <p class="text-sm text-gray-600 mb-1">{{ alert.message|truncatechars:60 }}</p>
-                                    <p class="text-xs text-gray-500">{{ alert.student.get_full_name }} • {{ alert.created_at|date:"M d" }}</p>
+                                    <h6 class="font-semibold text-gray-800 dark:text-white text-sm">{{ alert.get_alert_type_display }}</h6>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">{{ alert.message|truncatechars:60 }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-500">{{ alert.student.get_full_name }} • {{ alert.created_at|date:"M d" }}</p>
                                 </div>
                             </div>
                         </div>
@@ -144,7 +144,7 @@
 
         <!-- Interventions Section -->
         <div id="mobile-interventions" class="mobile-section hidden">
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden border dark:border-slate-700">
                 <div class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-3">
                     <h5 class="font-bold">Upcoming Interventions</h5>
                 </div>
