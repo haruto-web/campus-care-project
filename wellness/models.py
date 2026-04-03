@@ -87,6 +87,11 @@ class Intervention(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    def save(self, *args, **kwargs):
+        if self.scheduled_date and self.status == 'pending':
+            self.status = 'scheduled'
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.intervention_type} for {self.student.username} - {self.status}"
 

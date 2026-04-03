@@ -32,6 +32,11 @@ class InterventionForm(forms.ModelForm):
         status = cleaned_data.get('status')
         scheduled_date = cleaned_data.get('scheduled_date')
 
+        # Logic improvement: Auto-switch status to 'scheduled' if a date is provided and it was 'pending'
+        if scheduled_date and status == 'pending':
+            cleaned_data['status'] = 'scheduled'
+            status = 'scheduled'
+
         if status == 'scheduled' and not scheduled_date:
             self.add_error('scheduled_date', 'A scheduled date and time is required when the status is "Scheduled".')
         

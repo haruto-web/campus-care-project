@@ -1339,6 +1339,7 @@ def counselor_dashboard(request):
         'high_risk_count': high_risk_count,
         'medium_risk_count': medium_risk_count,
         'alerts': alerts,
+        'students_with_interventions': list(Intervention.objects.filter(status='scheduled').values_list('student_id', flat=True).distinct()),
         'unread_alerts': unread_alerts,
         'upcoming_interventions': upcoming_interventions,
         'pending_interventions': pending_interventions,

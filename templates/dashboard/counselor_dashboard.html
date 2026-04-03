@@ -413,7 +413,13 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <a href="{% url 'wellness:alerts_list' %}?severity={{ alert.severity }}"
+                                                                        {% if alert.student.id not in students_with_interventions %}
+                                    <a href='{% url "wellness:create_intervention" alert.student.id %}'
+                                        class='ml-3 px-2 py-1 bg-indigo-600 hover:bg-indigo-700 rounded text-xs font-bold text-white shadow-sm'>
+                                        Schedule
+                                    </a>
+                                    {% endif %}
+                                    <a href='{% url "wellness:alerts_list" %}?severity={{ alert.severity }}'
                                         class="ml-3 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs font-medium text-gray-700">
                                         View
                                     </a>

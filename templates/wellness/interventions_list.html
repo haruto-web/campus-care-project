@@ -34,7 +34,7 @@
                 Next 30 Days
             </a>
             <a href="?status={{ status_filter }}&year_level={{ year_level_filter }}&calendar_month={{ calendar_month_param }}"
-               class="px-3 py-1.5 rounded-full text-sm font-medium {% if not date_filter %}bg-gray-700 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+               class="px-3 py-1.5 rounded-full text-sm font-medium {% if not date_filter %}bg-gray-700 text-white dark:bg-gray-600{% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
                 Clear Date Filter
             </a>
         </div>
@@ -68,16 +68,16 @@
         </form>
     </div>
     <!-- Results Section -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="p-6 border-b border-gray-200">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-100 dark:border-gray-700/50 overflow-hidden transition-colors">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-800">Calendar View</h3>
-                    <p class="text-gray-600 text-sm mt-1">Monthly overview of scheduled meetings and intervention activity.</p>
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Calendar View</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Monthly overview of scheduled meetings and intervention activity.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <a href="?status=&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ calendar_month_param }}"
-                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if not status_filter %}bg-gray-800 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if not status_filter %}bg-gray-800 text-white dark:bg-gray-600{% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
                         All
                     </a>
                     <a href="?status=pending&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ calendar_month_param }}"
@@ -85,32 +85,32 @@
                         Pending
                     </a>
                     <a href="?status=scheduled&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ calendar_month_param }}"
-                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if status_filter == 'scheduled' %}bg-blue-600 text-white{% else %}bg-blue-100 text-blue-800 hover:bg-blue-200{% endif %}">
+                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if status_filter == 'scheduled' %}bg-blue-600 text-white{% else %}bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50{% endif %}">
                         Scheduled
                     </a>
                     <a href="?status=completed&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ calendar_month_param }}"
-                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if status_filter == 'completed' %}bg-green-600 text-white{% else %}bg-green-100 text-green-800 hover:bg-green-200{% endif %}">
+                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if status_filter == 'completed' %}bg-green-600 text-white{% else %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50{% endif %}">
                         Completed
                     </a>
                     <a href="?status=cancelled&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ calendar_month_param }}"
-                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if status_filter == 'cancelled' %}bg-gray-700 text-white{% else %}bg-gray-200 text-gray-800 hover:bg-gray-300{% endif %}">
+                       class="px-3 py-1.5 rounded-full text-sm font-medium {% if status_filter == 'cancelled' %}bg-gray-700 text-white dark:bg-gray-600{% else %}bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %}">
                         Cancelled
                     </a>
                 </div>
                 <div class="flex items-center gap-2 self-start lg:self-auto">
                     <a href="?status={{ status_filter }}&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ prev_calendar_month }}"
-                       class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                       class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition shadow-sm">
                         <i class="bi bi-chevron-left"></i>
                     </a>
-                    <div class="px-4 py-2 rounded-lg bg-purple-50 text-purple-800 font-semibold min-w-[170px] text-center">
+                    <div class="px-4 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 font-semibold min-w-[170px] text-center border border-purple-100 dark:border-purple-800/30">
                         {{ calendar_month|date:"F Y" }}
                     </div>
                     <a href="?status={{ status_filter }}&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ next_calendar_month }}"
-                       class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                       class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition shadow-sm">
                         <i class="bi bi-chevron-right"></i>
                     </a>
                     <a href="?status={{ status_filter }}&year_level={{ year_level_filter }}&date={{ date_filter }}&calendar_month={{ today_calendar_month_param }}"
-                       class="inline-flex items-center justify-center h-10 px-3 rounded-lg border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition text-sm font-semibold">
+                       class="inline-flex items-center justify-center h-10 px-3 rounded-lg border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition text-sm font-semibold shadow-sm">
                         Today
                     </a>
                 </div>
@@ -136,16 +136,16 @@
                 {% for week in calendar_weeks %}
                 <div class="grid grid-cols-1 sm:grid-cols-7 gap-2">
                     {% for cell in week %}
-                    <div class="rounded-xl border {% if cell.is_today %}border-indigo-400 ring-2 ring-indigo-100{% else %}border-gray-200{% endif %} {% if cell.in_month %}bg-white{% else %}bg-gray-50{% endif %} min-h-[140px] p-3">
+                    <div class="rounded-xl border {% if cell.is_today %}border-indigo-400 ring-2 ring-indigo-100 dark:ring-indigo-900/30{% else %}border-gray-200 dark:border-gray-700/50{% endif %} {% if cell.in_month %}bg-white dark:bg-gray-800{% else %}bg-gray-50 dark:bg-gray-900/40{% endif %} min-h-[140px] p-3 transition-colors shadow-sm">
                         <div class="flex items-center justify-between mb-2">
                             <div>
-                                <span class="sm:hidden block text-[11px] uppercase tracking-wide text-gray-400">{{ cell.date|date:"D" }}</span>
-                                <span class="text-sm font-semibold {% if cell.in_month %}text-gray-800{% else %}text-gray-400{% endif %}">
+                                <span class="sm:hidden block text-[11px] uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ cell.date|date:"D" }}</span>
+                                <span class="text-sm font-bold {% if cell.in_month %}text-gray-800 dark:text-white{% else %}text-gray-400 dark:text-gray-600{% endif %}">
                                     {{ cell.date|date:"j" }}
                                 </span>
                             </div>
                             {% if cell.events %}
-                            <span class="text-[11px] font-semibold px-2 py-1 rounded-full bg-indigo-100 text-indigo-800">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/30">
                                 {{ cell.events|length }} item{{ cell.events|length|pluralize }}
                             </span>
                             {% endif %}
@@ -154,19 +154,19 @@
                         <div class="space-y-2">
                             {% for event in cell.events %}
                             <a href="{% url 'wellness:update_intervention' event.id %}"
-                               class="block rounded-lg px-2.5 py-2 text-xs border {% if event.status == 'scheduled' %}bg-indigo-50 border-indigo-100 text-indigo-900{% elif event.status == 'completed' %}bg-green-50 border-green-100 text-green-900{% else %}bg-gray-100 border-gray-200 text-gray-700{% endif %} hover:shadow-sm transition">
+                               class="block rounded-lg px-2.5 py-2 text-xs border {% if event.status == 'scheduled' %}bg-indigo-50 dark:bg-indigo-900/30 border-indigo-100 dark:border-indigo-800/30 text-indigo-900 dark:text-indigo-200{% elif event.status == 'completed' %}bg-green-50 dark:bg-green-900/30 border-green-100 dark:border-green-800/30 text-green-900 dark:text-green-200{% else %}bg-gray-100 dark:bg-gray-700/50 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300{% endif %} hover:shadow-md hover:scale-[1.02] transform transition-all duration-200">
                                 <div class="flex items-center justify-between gap-1">
-                                    <div class="font-semibold truncate">{{ event.student.get_full_name }}</div>
+                                    <div class="font-bold truncate">{{ event.student.get_full_name }}</div>
                                     <div class="flex items-center gap-1">
                                         {% if event.has_conflict %}
-                                        <span class="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">Conflict</span>
+                                        <span class="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/30 uppercase tracking-tighter">Conflict</span>
                                         {% endif %}
                                         {% if event.is_overdue %}
-                                        <span class="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">Overdue</span>
+                                        <span class="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/30 uppercase tracking-tighter">Overdue</span>
                                         {% endif %}
                                     </div>
                                 </div>
-                                <div class="mt-1 opacity-80">{{ event.scheduled_date|date:"g:i A" }} • {{ event.get_intervention_type_display }}</div>
+                                <div class="mt-1 opacity-90 font-medium">{{ event.scheduled_date|date:"g:i A" }} • {{ event.get_intervention_type_display }}</div>
                             </a>
                             {% if event.status == 'scheduled' %}
                             <form method="post" action="{% url 'wellness:mark_intervention_completed' event.id %}" id="quickCompleteCal-{{ event.id }}" class="mt-1">
@@ -174,7 +174,7 @@
                                 <input type="hidden" name="next" value="{{ request.get_full_path }}">
                                 <button type="button"
                                         onclick="confirmQuickComplete('quickCompleteCal-{{ event.id }}')"
-                                        class="w-full text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded-lg px-2 py-1 hover:bg-green-100 transition">
+                                        class="w-full text-[11px] font-bold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800/30 rounded-lg px-2 py-1.5 hover:bg-green-100 dark:hover:bg-green-900/50 transition shadow-sm">
                                     Mark Completed
                                 </button>
                             </form>
@@ -279,22 +279,22 @@
                                     {% endif %}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ intervention.counselor.get_full_name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <div class="flex items-center gap-2">
-                                    <a href="{% url 'wellness:update_intervention' intervention.id %}" class="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
-                                        <i class="bi bi-pencil mr-1"></i> Update
-                                    </a>
-                                    {% if intervention.status == 'scheduled' %}
-                                    <form method="post" action="{% url 'wellness:mark_intervention_completed' intervention.id %}" id="quickCompleteTbl-{{ intervention.id }}" class="inline">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                        <button type="button"
-                                                onclick="confirmQuickComplete('quickCompleteTbl-{{ intervention.id }}')"
-                                                class="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
-                                            <i class="bi bi-check2 mr-1"></i> Complete
-                                        </button>
-                                    </form>
-                                    {% endif %}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <a href="{% url 'wellness:update_intervention' intervention.id %}" class="inline-flex items-center px-4 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold shadow-sm hover:shadow-md text-xs">
+                                            <i class="bi bi-pencil-square mr-1.5"></i> Update
+                                        </a>
+                                        {% if intervention.status == 'scheduled' %}
+                                        <form method="post" action="{% url 'wellness:mark_intervention_completed' intervention.id %}" id="quickCompleteTbl-{{ intervention.id }}" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                            <button type="button"
+                                                    onclick="confirmQuickComplete('quickCompleteTbl-{{ intervention.id }}')"
+                                                    class="inline-flex items-center px-4 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-bold shadow-sm hover:shadow-md text-xs">
+                                                <i class="bi bi-check2-all mr-1.5"></i> Complete
+                                            </button>
+                                        </form>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>

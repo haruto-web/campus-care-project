@@ -524,6 +524,7 @@ def alerts_list(request):
         'critical_unread': critical_unread,
         'high_unread': high_unread,
         'students_needing_intervention': students_needing_intervention,
+        'students_with_interventions': list(students_with_interventions),
     }
     return render(request, 'wellness/alerts_list.html', context)
 

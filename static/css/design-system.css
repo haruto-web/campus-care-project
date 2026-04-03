@@ -75,9 +75,9 @@
   --bt-surface-hover: #273549;
   --bt-border: #2d3f55;
   --bt-border-light: #1e293b;
-  --bt-text: #e2e8f0;
-  --bt-text-secondary: #94a3b8;
-  --bt-text-muted: #64748b;
+  --bt-text: #f8fafc;
+  --bt-text-secondary: #cbd5e1;
+  --bt-text-muted: #94a3b8;
   --sidebar-bg: #0f172a;
   --sidebar-hover: rgba(255,255,255,0.04);
   --sidebar-active: rgba(99,102,241,0.18);
@@ -1332,4 +1332,16 @@ select::-ms-expand {
 .dark ::-webkit-scrollbar-track { background: #1e293b; }
 .dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 .dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+
+/* --- Global Dark Mode Visibility Overrides --- */
+.dark .bg-white { background-color: var(--bt-surface) !important; }
+.dark .text-gray-900, .dark .text-gray-800 { color: var(--bt-text) !important; }
+.dark .text-gray-700, .dark .text-gray-600 { color: var(--bt-text-secondary) !important; }
+.dark .text-gray-500, .dark .text-gray-400 { color: var(--bt-text-muted) !important; }
+.dark .border-gray-100, .dark .border-gray-200 { border-color: var(--bt-border) !important; }
+.dark .bg-gray-50, .dark .bg-gray-100 { background-color: var(--bt-bg) !important; }
+.dark .bg-blue-50, .dark .bg-indigo-50, .dark .bg-purple-50 { background-color: rgba(99, 102, 241, 0.1) !important; border-color: rgba(99, 102, 241, 0.2) !important; }
+.dark .text-blue-900, .dark .text-indigo-900, .dark .text-purple-900 { color: var(--bt-text) !important; }
+.dark .text-blue-800, .dark .text-indigo-800, .dark .text-purple-800 { color: var(--bt-text-secondary) !important; }
 
