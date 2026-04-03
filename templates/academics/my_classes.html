@@ -98,13 +98,22 @@
                 <p class="text-sm text-gray-500">A cleaner weekly view of your class schedule.</p>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
-                {% if user.role == 'student' and schedule_export_available %}
-                <a href="{% url 'academics:export_student_schedule' %}?format=csv" class="inline-flex items-center px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 transition">
-                    <i class="bi bi-download mr-1"></i> Export CSV
-                </a>
-                <a href="{% url 'academics:export_student_schedule' %}?format=ics" class="inline-flex items-center px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 transition">
-                    <i class="bi bi-calendar2-week mr-1"></i> Export Calendar
-                </a>
+                {% if user.role == 'student' %}
+                    {% if schedule_export_available %}
+                    <a href="{% url 'academics:export_student_schedule' %}?format=csv" class="inline-flex items-center px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 transition">
+                        <i class="bi bi-download mr-1"></i> Export CSV
+                    </a>
+                    <a href="{% url 'academics:export_student_schedule' %}?format=txt" class="inline-flex items-center px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 transition">
+                        <i class="bi bi-file-text mr-1"></i> Download Report
+                    </a>
+                    <a href="{% url 'academics:export_student_schedule' %}?format=ics" class="inline-flex items-center px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 transition">
+                        <i class="bi bi-calendar2-week mr-1"></i> Export Calendar
+                    </a>
+                    {% else %}
+                    <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 border border-gray-200 text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed">
+                        <i class="bi bi-slash-circle mr-1"></i> No Schedule Data
+                    </span>
+                    {% endif %}
                 {% endif %}
                 <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
                     {{ classes.count }} scheduled class{{ classes.count|pluralize }}

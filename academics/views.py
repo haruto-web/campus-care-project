@@ -893,6 +893,34 @@ def export_student_schedule(request):
         response['Content-Disposition'] = f'attachment; filename="brighttrack_schedule_{now_stamp}.ics"'
         return response
 
+    if export_format == 'txt':
+        lines = [
+            f'WEEKLY CLASS SCHEDULE — {request.user.get_full_name() or request.user.username}',
+            f'Generated: {timezone.localtime().strftime("%B %d, %Y %I:%M %p")}',
+            '=' * 80,
+        ]
+        
+        current_day = None
+        for row in rows:
+            if row['day'] != current_day:
+                current_day = row['day']
+                lines.append('')
+                lines.append(f'--- {current_day.upper()} ---')
+                lines.append(f'{"TIME":<20} | {"SUBJECT":<30} | {"CLASSROOM":<15}')
+                lines.append('-' * 80)
+            
+            time_str = f"{row['start_display']} - {row['end_display']}"
+            subject_str = f"{row['subject']} ({row['code']})"
+            lines.append(f'{time_str:<20} | {subject_str[:29]:<30} | {row["classroom"] or "TBA":<15}')
+            
+        lines.append('')
+        lines.append('=' * 80)
+        lines.append('END OF SCHEDULE')
+        
+        response = HttpResponse('\n'.join(lines), content_type='text/plain; charset=utf-8')
+        response['Content-Disposition'] = f'attachment; filename="brighttrack_schedule_{now_stamp}.txt"'
+        return response
+
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(['Day', 'Start Time', 'End Time', 'Subject', 'Class Code', 'Teacher', 'Section', 'Grade Level', 'Classroom'])
@@ -1303,38 +1331,29 @@ def export_student_grades(request):
     for class_obj in all_classes:
         assignments = Assignment.objects.filter(class_obj=class_obj).order_by('due_date')
         for assignment in assignments:
+            # Only include graded assignments in the export
             submission = Submission.objects.filter(assignment=assignment, student=request.user).first()
-            if submission:
-                if submission.score is not None:
-                    percentage = (submission.score / assignment.total_points * 100) if assignment.total_points > 0 else 0
-                    letter = (
-                        'A' if percentage >= 90 else
-                        'B' if percentage >= 80 else
-                        'C' if percentage >= 70 else
-                        'D' if percentage >= 60 else 'F'
-                    )
-                    status = 'Graded'
-                else:
-                    percentage = None
-                    letter = 'N/A'
-                    status = 'Pending'
-            else:
-                percentage = None
-                letter = 'N/A'
-                status = 'Not Submitted'
-            rows.append({
-                'class_code': class_obj.code,
-                'class_name': class_obj.name,
-                'teacher': class_obj.teacher.get_full_name() if class_obj.teacher else '',
-                'assignment': assignment.title,
-                'due_date': assignment.due_date.strftime('%b %d, %Y') if assignment.due_date else '',
-                'total_points': assignment.total_points,
-                'score': submission.score if submission else '',
-                'percentage': f'{percentage:.1f}' if percentage is not None else '',
-                'letter_grade': letter,
-                'status': status,
-                'feedback': (submission.feedback or '') if submission else '',
-            })
+            if submission and submission.score is not None:
+                percentage = (submission.score / assignment.total_points * 100) if assignment.total_points > 0 else 0
+                letter = (
+                    'A' if percentage >= 90 else
+                    'B' if percentage >= 80 else
+                    'C' if percentage >= 70 else
+                    'D' if percentage >= 60 else 'F'
+                )
+                rows.append({
+                    'class_code': class_obj.code,
+                    'class_name': class_obj.name,
+                    'teacher': class_obj.teacher.get_full_name() if class_obj.teacher else '',
+                    'assignment': assignment.title,
+                    'due_date': assignment.due_date.strftime('%b %d, %Y') if assignment.due_date else '',
+                    'total_points': assignment.total_points,
+                    'score': submission.score,
+                    'percentage': f'{percentage:.1f}',
+                    'letter_grade': letter,
+                    'status': 'Graded',
+                    'feedback': submission.feedback or '',
+                })
 
     if not rows:
         messages.warning(request, 'No grade records available to export.')

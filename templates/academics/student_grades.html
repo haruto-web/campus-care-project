@@ -17,6 +17,10 @@
                 <a href="{% url 'academics:export_student_grades' %}?format=txt" class="inline-flex items-center px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 transition">
                     <i class="bi bi-file-text mr-1"></i> Export Report
                 </a>
+                {% else %}
+                <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg text-sm font-medium cursor-not-allowed">
+                    <i class="bi bi-slash-circle mr-1"></i> No Grading Data
+                </span>
                 {% endif %}
                 <div class="text-right">
                     <p class="text-sm text-gray-600">Current GPA</p>
