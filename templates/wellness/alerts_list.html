@@ -6,8 +6,8 @@
 <div class="space-y-6">
     <!-- Header with explanation -->
     <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 p-6 rounded-lg">
-        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-800 mb-2">Student Notifications</h2>
-        <p class="text-yellow-800 dark:text-yellow-800">Important updates about students who may need your attention or support.</p>
+        <h2 class="text-3xl font-bold !text-gray-900 dark:!text-gray-900 mb-2">Student Notifications</h2>
+        <p class="!text-yellow-900 dark:!text-yellow-900">Important updates about students who may need your attention or support.</p>
     </div>
     
     <!-- Warning Banner for Critical/High Alerts -->
@@ -176,7 +176,7 @@
                                             
                                     {% if alert.student.id not in students_with_interventions %}
                                     <a href='{% url "wellness:create_intervention_for_student" alert.student.id %}'
-                                       class='w-full lg:w-auto px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-semibold transition text-center whitespace-nowrap'>
+                                       class='w-full lg:w-40 h-10 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-semibold transition text-center whitespace-nowrap inline-flex items-center justify-center'>
                                         <i class='bi bi-calendar-plus mr-1'></i> Schedule Meeting
                                     </a>
                                     {% endif %}
@@ -210,7 +210,7 @@
                                     
                                     {% if alert.student.id not in students_with_interventions %}
                                     <a href='{% url "wellness:create_intervention_for_student" alert.student.id %}'
-                                       class='w-full lg:w-auto px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-semibold transition text-center whitespace-nowrap'>
+                                       class='w-full lg:w-40 h-10 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-semibold transition text-center whitespace-nowrap inline-flex items-center justify-center'>
                                         <i class='bi bi-calendar-plus mr-1'></i> Schedule Meeting
                                     </a>
                                     {% endif %}
@@ -219,7 +219,7 @@
                                     <form method="post" action="{% url 'wellness:mark_alert_read' alert.id %}?type={{ alert_type }}&severity={{ severity_filter }}&resolved={{ show_resolved }}" class="w-full lg:w-auto">
                                         {% csrf_token %}
                                         <button type="submit"
-                                                class="w-full lg:w-auto px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-semibold transition text-center whitespace-nowrap">
+                                                class="w-full lg:w-40 h-10 px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-semibold transition text-center whitespace-nowrap inline-flex items-center justify-center">
                                             Mark Read
                                         </button>
                                     </form>
@@ -229,7 +229,7 @@
                                         <button type="button"
                                                 data-name="{{ alert.student.get_full_name }}"
                                                 onclick="var el=this; showConfirmModal({title:'Resolve Alert',body:'Mark this alert as resolved for <strong>'+el.dataset.name+'</strong>? This action will be recorded.',okLabel:'Yes, Resolve',type:'success',onConfirm(){document.getElementById('resolveAlertForm-{{ alert.id }}').submit()}})"
-                                                class="w-full lg:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition text-center whitespace-nowrap">
+                                                class="w-full lg:w-40 h-10 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition text-center whitespace-nowrap inline-flex items-center justify-center">
                                             Resolve
                                         </button>
                                     </form>

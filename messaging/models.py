@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from campus_care.encrypted_fields import EncryptedTextField
 
 
 class Conversation(models.Model):
@@ -20,7 +21,7 @@ class Conversation(models.Model):
 class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
-    body = models.TextField(blank=True)
+    body = EncryptedTextField(blank=True)
     attachment = models.FileField(upload_to='message_attachments/', blank=True, null=True)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -58,10 +59,10 @@ class MessageReport(models.Model):
     reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='filed_reports')
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='reports')
     reason = models.CharField(max_length=20, choices=REASON_CHOICES)
-    details = models.TextField(blank=True)
+    details = EncryptedTextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     consequence = models.CharField(max_length=20, choices=CONSEQUENCE_CHOICES, blank=True)
-    counselor_notes = models.TextField(blank=True)
+    counselor_notes = EncryptedTextField(blank=True)
     resolved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='resolved_reports'

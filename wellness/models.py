@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from campus_care.encrypted_fields import EncryptedTextField
 
 class WellnessCheckIn(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wellness_checkins')
@@ -9,8 +10,8 @@ class WellnessCheckIn(models.Model):
     workload_level = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
     sleep_quality = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
     need_help = models.BooleanField(default=False)
-    comments = models.TextField(blank=True)
-    text_response = models.TextField(blank=True, null=True, help_text="Optional: How are you feeling today?")
+    comments = EncryptedTextField(blank=True)
+    text_response = EncryptedTextField(blank=True, null=True, help_text="Optional: How are you feeling today?")
     
     def __str__(self):
         return f"{self.student.username} - {self.date.strftime('%Y-%m-%d')}"
@@ -30,7 +31,7 @@ class RiskAssessment(models.Model):
     attendance_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     missing_assignments = models.IntegerField(default=0)
     failing_classes = models.IntegerField(default=0)
-    notes = models.TextField(blank=True)
+    notes = EncryptedTextField(blank=True)
     
     class Meta:
         ordering = ['-date']
@@ -54,7 +55,7 @@ class TeacherConcern(models.Model):
     teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='concerns_submitted')
     concern_type = models.CharField(max_length=20, choices=CONCERN_TYPES)
     severity = models.CharField(max_length=10, choices=SEVERITY_LEVELS)
-    description = models.TextField()
+    description = EncryptedTextField()
     date_observed = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     resolved = models.BooleanField(default=False)
@@ -79,11 +80,11 @@ class Intervention(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='interventions')
     counselor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='interventions_managed')
     intervention_type = models.CharField(max_length=20, choices=INTERVENTION_TYPES)
-    description = models.TextField()
+    description = EncryptedTextField()
     scheduled_date = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    notes = models.TextField(blank=True)
-    outcome = models.TextField(blank=True)
+    notes = EncryptedTextField(blank=True)
+    outcome = EncryptedTextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -102,7 +103,7 @@ class Notification(models.Model):
     ]
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='student_notifications')
     notif_type = models.CharField(max_length=30, choices=NOTIF_TYPES)
-    message = models.TextField()
+    message = EncryptedTextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -133,7 +134,7 @@ class Alert(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='alerts')
     alert_type = models.CharField(max_length=30, choices=ALERT_TYPES)
     severity = models.CharField(max_length=10, choices=SEVERITY_LEVELS, default='medium')
-    message = models.TextField()
+    message = EncryptedTextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
     resolved = models.BooleanField(default=False)

@@ -3,6 +3,7 @@ from django.db import models
 import random
 from django.utils import timezone
 from datetime import timedelta
+from campus_care.encrypted_fields import EncryptedTextField
 
 class User(AbstractUser):
     ROLE_CHOICES = [
@@ -38,9 +39,9 @@ class User(AbstractUser):
     section = models.CharField(max_length=50, blank=True)
     subject = models.CharField(max_length=100, blank=True)
     id_picture = models.FileField(upload_to='id_pictures/', blank=True, null=True)
-    about_me = models.TextField(blank=True)
+    about_me = EncryptedTextField(blank=True)
     profile_completed = models.BooleanField(default=False)
-    address = models.TextField(blank=True)
+    address = EncryptedTextField(blank=True)
     guardian_name = models.CharField(max_length=150, blank=True)
     guardian_relation = models.CharField(max_length=50, blank=True)
     guardian_occupation = models.CharField(max_length=100, blank=True)
