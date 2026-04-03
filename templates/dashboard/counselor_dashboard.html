@@ -414,7 +414,7 @@
                                         </div>
                                     </div>
                                                                         {% if alert.student.id not in students_with_interventions %}
-                                    <a href='{% url "wellness:create_intervention" alert.student.id %}'
+                                    <a href='{% url "wellness:create_intervention_for_student" alert.student.id %}'
                                         class='ml-3 px-2 py-1 bg-indigo-600 hover:bg-indigo-700 rounded text-xs font-bold text-white shadow-sm'>
                                         Schedule
                                     </a>
