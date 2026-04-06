@@ -1023,79 +1023,10 @@ def my_classes(request):
             })
         return schedule_days
 
-    def build_student_schedule_export_rows(class_queryset):
-        day_order = {day: index for index, (day, _) in enumerate(Class.DAY_CHOICES)}
-        rows = []
-        for cls in class_queryset:
-            for block in Class.parse_schedule_blocks(cls.schedule):
-                days = block.get('days') or []
-                if not days:
-                    continue
-                classroom = (block.get('classroom') or '').strip()
-                for day in days:
-                    rows.append({
-                        'day': day,
-                        'day_index': day_order.get(day, 99),
-                        'start_time': block['start_time'],
-                        'end_time': block['end_time'],
-                        'start_display': Class._input_to_display_time(block['start_time']),
-                        'end_display': Class._input_to_display_time(block['end_time']),
-                        'subject': cls.name,
-                        'code': cls.code,
-                        'teacher': cls.teacher.get_full_name() if cls.teacher else '',
-                        'section': cls.section or '',
-                        'year_level': cls.year_level or '',
-                        'classroom': classroom or (cls.room or ''),
-                    })
-        rows.sort(key=lambda item: (item['day_index'], item['start_time'], item['code'], item['subject']))
-        return rows
-
-    if request.user.role == 'teacher':
-        classes = Class.objects.filter(teacher=request.user)
-        
-        # Apply filters for teachers
-        year_level_filter = request.GET.get('year_level_filter', '')
-        section_filter = request.GET.get('section_filter', '')
-        
-        if year_level_filter:
-            # Filter classes that have at least one student with the specified year level
-            classes = classes.filter(students__year_level=year_level_filter).distinct()
-        
-        if section_filter:
-            # Filter by section (assuming section is part of class name or code)
-            classes = classes.filter(Q(name__icontains=section_filter) | Q(code__icontains=section_filter))
-        
-        context = {
-            'classes': classes,
-            'year_level_filter': year_level_filter,
-            'section_filter': section_filter,
-            'schedule_calendar_days': build_schedule_calendar(classes),
-        }
-    elif request.user.role == 'student':
-        classes = request.user.enrolled_classes.all()
-        export_rows = build_student_schedule_export_rows(classes)
-        context = {
-            'classes': classes,
-            'schedule_calendar_days': build_schedule_calendar(classes),
-            'schedule_export_available': bool(export_rows),
-        }
-    else:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
-    
-    return render(request, 'academics/my_classes.html', context)
-
-
-@login_required
-def export_student_schedule(request):
-    if request.user.role != 'student':
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
-
-    classes = request.user.enrolled_classes.all()
+def _get_schedule_export_rows(class_queryset):
     day_order = {day: index for index, (day, _) in enumerate(Class.DAY_CHOICES)}
     rows = []
-    for cls in classes:
+    for cls in class_queryset:
         for block in Class.parse_schedule_blocks(cls.schedule):
             days = block.get('days') or []
             if not days:
@@ -1117,6 +1048,89 @@ def export_student_schedule(request):
                     'classroom': classroom or (cls.room or ''),
                 })
     rows.sort(key=lambda item: (item['day_index'], item['start_time'], item['code'], item['subject']))
+    return rows
+
+
+@login_required
+def my_classes(request):
+    def build_schedule_calendar(class_queryset):
+        ordered_days = [choice[0] for choice in Class.DAY_CHOICES]
+        day_buckets = {day: [] for day in ordered_days}
+
+        for cls in class_queryset:
+            for block in Class.parse_schedule_blocks(cls.schedule):
+                start_display = Class._input_to_display_time(block['start_time'])
+                end_display = Class._input_to_display_time(block['end_time'])
+                block_classroom = (block.get('classroom') or '').strip()
+                for day in block['days']:
+                    day_buckets.setdefault(day, []).append({
+                        'class': cls,
+                        'start_time': block['start_time'],
+                        'start_display': start_display,
+                        'end_display': end_display,
+                        'classroom': block_classroom,
+                    })
+
+        schedule_days = []
+        for day in ordered_days:
+            entries = sorted(day_buckets.get(day, []), key=lambda item: item['start_time'])
+            schedule_days.append({
+                'day': day,
+                'short_day': day[:3],
+                'entries': entries,
+            })
+        return schedule_days
+        
+    if request.user.role == 'teacher':
+        classes = Class.objects.filter(teacher=request.user)
+
+        # Apply filters for teachers
+        year_level_filter = request.GET.get('year_level_filter', '')
+        section_filter = request.GET.get('section_filter', '')
+        
+        if year_level_filter:
+            # Filter classes that have at least one student with the specified year level
+            classes = classes.filter(students__year_level=year_level_filter).distinct()
+        
+        if section_filter:
+            # Filter by section (assuming section is part of class name or code)
+            classes = classes.filter(Q(name__icontains=section_filter) | Q(code__icontains=section_filter))
+        
+        export_rows = _get_schedule_export_rows(classes)
+        context = {
+            'classes': classes,
+            'year_level_filter': year_level_filter,
+            'section_filter': section_filter,
+            'schedule_calendar_days': build_schedule_calendar(classes),
+            'schedule_export_available': bool(export_rows),
+        }
+    elif request.user.role == 'student':
+        classes = request.user.enrolled_classes.all()
+        export_rows = _get_schedule_export_rows(classes)
+        context = {
+            'classes': classes,
+            'schedule_calendar_days': build_schedule_calendar(classes),
+            'schedule_export_available': bool(export_rows),
+        }
+    else:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+    
+    return render(request, 'academics/my_classes.html', context)
+
+
+@login_required
+def export_student_schedule(request):
+    if request.user.role not in ['student', 'teacher']:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    if request.user.role == 'teacher':
+        classes = Class.objects.filter(teacher=request.user)
+    else:
+        classes = request.user.enrolled_classes.all()
+        
+    rows = _get_schedule_export_rows(classes)
 
     if not rows:
         messages.warning(request, 'No available class schedules to export.')
