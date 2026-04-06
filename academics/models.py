@@ -134,6 +134,7 @@ class Assignment(models.Model):
     due_date = models.DateTimeField()
     total_points = models.IntegerField()
     submission_type = models.CharField(max_length=20, choices=SUBMISSION_TYPE_CHOICES, default='file_upload')
+    allow_late_submission = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):

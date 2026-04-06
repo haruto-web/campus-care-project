@@ -32,13 +32,25 @@
             <div class="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
                 <p class="text-red-800 text-sm">
                     <i class="bi bi-exclamation-triangle mr-1"></i>
-                    This assignment is overdue. Late submissions may receive reduced credit.
+                    {% if assignment.allow_late_submission %}
+                    This assignment is overdue. Late submissions are allowed and will be marked late.
+                    {% else %}
+                    This assignment is overdue and locked. Submission is no longer allowed.
+                    {% endif %}
                 </p>
             </div>
             {% endif %}
         </div>
 
         <!-- Submission Form -->
+        {% if assignment.submission_locked %}
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p class="text-sm text-red-700 font-medium">
+                <i class="bi bi-lock-fill mr-1"></i>
+                Submission locked: due date passed and late submission is disabled by your teacher.
+            </p>
+        </div>
+        {% endif %}
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             
@@ -77,7 +89,7 @@
             {% endif %}
 
             <div class="flex gap-4">
-                <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                <button type="submit" {% if assignment.submission_locked %}disabled{% endif %} class="{% if assignment.submission_locked %}bg-gray-400 cursor-not-allowed{% else %}bg-blue-600 hover:bg-blue-700{% endif %} text-white px-8 py-3 rounded-lg transition font-semibold">
                     <i class="bi bi-upload mr-2"></i>Submit Assignment
                 </button>
                 <a href="{% url 'academics:student_assignments' %}" class="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-300 transition font-semibold">

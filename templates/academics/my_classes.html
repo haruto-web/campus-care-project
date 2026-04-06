@@ -20,31 +20,31 @@
 
     {% if user.role == 'student' and classes %}
     <!-- Quick Overview for Students -->
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center">
                 <i class="bi bi-info-circle text-blue-600 mr-2"></i> Class Overview
             </h3>
-            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+            <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
                 {{ classes.count }} class{{ classes.count|pluralize }} enrolled
             </span>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="text-center p-3 bg-blue-50 rounded-lg">
-                <div class="text-2xl font-bold text-blue-600">{{ classes.count }}</div>
-                <p class="text-sm text-gray-600">Total Classes</p>
+            <div class="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ classes.count }}</div>
+                <p class="text-sm text-gray-600 dark:text-slate-400">Total Classes</p>
             </div>
-            <div class="text-center p-3 bg-green-50 rounded-lg">
-                <div class="text-2xl font-bold text-green-600">{{ total_assignments|default:0 }}</div>
-                <p class="text-sm text-gray-600">Total Assignments</p>
+            <div class="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ total_assignments|default:0 }}</div>
+                <p class="text-sm text-gray-600 dark:text-slate-400">Total Assignments</p>
             </div>
-            <div class="text-center p-3 bg-yellow-50 rounded-lg">
-                <div class="text-2xl font-bold text-yellow-600">{{ pending_assignments|default:0 }}</div>
-                <p class="text-sm text-gray-600">Pending Work</p>
+            <div class="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ pending_assignments|default:0 }}</div>
+                <p class="text-sm text-gray-600 dark:text-slate-400">Pending Work</p>
             </div>
-            <div class="text-center p-3 bg-purple-50 rounded-lg">
-                <div class="text-2xl font-bold text-purple-600">{{ total_teachers|default:0 }}</div>
-                <p class="text-sm text-gray-600">Teachers</p>
+            <div class="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ total_teachers|default:0 }}</div>
+                <p class="text-sm text-gray-600 dark:text-slate-400">Teachers</p>
             </div>
         </div>
     </div>
@@ -52,15 +52,15 @@
 
     {% if user.role == 'teacher' %}
     <!-- Filters for Teachers -->
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <div class="flex items-center mb-4">
             <i class="bi bi-funnel text-blue-600 text-xl mr-2"></i>
-            <h3 class="text-lg font-semibold text-gray-800">Filter Classes</h3>
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200">Filter Classes</h3>
         </div>
         <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Grade Level</label>
-                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" name="year_level_filter">
+                <select class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" name="year_level_filter">
                     <option value="">All Grade Levels</option>
                     <option value="7" {% if year_level_filter == '7' %}selected{% endif %}>Grade 7</option>
                     <option value="8" {% if year_level_filter == '8' %}selected{% endif %}>Grade 8</option>
@@ -70,7 +70,7 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Section</label>
-                <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" name="section_filter" placeholder="e.g., Apple, Orange, A, B" value="{{ section_filter }}">
+                <input type="text" class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" name="section_filter" placeholder="e.g., Apple, Orange, A, B" value="{{ section_filter }}">
             </div>
             <div class="flex items-end">
                 <button type="submit" class="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition flex items-center justify-center">
@@ -79,7 +79,7 @@
             </div>
             {% if year_level_filter or section_filter %}
             <div class="flex items-end">
-                <a href="{% url 'academics:my_classes' %}" class="w-full bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition text-center">
+                <a href="{% url 'academics:my_classes' %}" class="w-full bg-gray-500 dark:bg-slate-600 text-white px-6 py-2 rounded-lg hover:bg-gray-600 dark:hover:bg-slate-500 transition text-center">
                     <i class="bi bi-x-circle mr-2"></i>Clear
                 </a>
             </div>
@@ -89,33 +89,33 @@
     {% endif %}
 
     {% if classes %}
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
             <div>
-                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                    <i class="bi bi-calendar3 text-indigo-600 mr-2"></i> Weekly Schedule Calendar
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center">
+                    <i class="bi bi-calendar3 text-indigo-600 dark:text-indigo-400 mr-2"></i> Weekly Schedule Calendar
                 </h3>
-                <p class="text-sm text-gray-500">A cleaner weekly view of your class schedule.</p>
+                <p class="text-sm text-gray-500 dark:text-slate-400">A cleaner weekly view of your class schedule.</p>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
                 {% if user.role == 'student' %}
                     {% if schedule_export_available %}
-                    <a href="{% url 'academics:export_student_schedule' %}?format=csv" class="inline-flex items-center px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 transition">
+                    <a href="{% url 'academics:export_student_schedule' %}?format=csv" class="inline-flex items-center px-3 py-1.5 bg-white dark:bg-slate-700 border border-indigo-200 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm font-medium hover:bg-indigo-50 dark:hover:bg-slate-600 transition">
                         <i class="bi bi-download mr-1"></i> Export CSV
                     </a>
-                    <a href="{% url 'academics:export_student_schedule' %}?format=txt" class="inline-flex items-center px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 transition">
+                    <a href="{% url 'academics:export_student_schedule' %}?format=txt" class="inline-flex items-center px-3 py-1.5 bg-white dark:bg-slate-700 border border-indigo-200 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm font-medium hover:bg-indigo-50 dark:hover:bg-slate-600 transition">
                         <i class="bi bi-file-text mr-1"></i> Download Report
                     </a>
-                    <a href="{% url 'academics:export_student_schedule' %}?format=ics" class="inline-flex items-center px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 transition">
+                    <a href="{% url 'academics:export_student_schedule' %}?format=ics" class="inline-flex items-center px-3 py-1.5 bg-white dark:bg-slate-700 border border-indigo-200 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm font-medium hover:bg-indigo-50 dark:hover:bg-slate-600 transition">
                         <i class="bi bi-calendar2-week mr-1"></i> Export Calendar
                     </a>
                     {% else %}
-                    <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 border border-gray-200 text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed">
+                    <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 rounded-lg text-sm font-medium cursor-not-allowed">
                         <i class="bi bi-slash-circle mr-1"></i> No Schedule Data
                     </span>
                     {% endif %}
                 {% endif %}
-                <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
+                <span class="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-200 rounded-full text-sm font-medium">
                     {{ classes.count }} scheduled class{{ classes.count|pluralize }}
                 </span>
             </div>
@@ -123,29 +123,29 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {% for day in schedule_calendar_days %}
-            <div class="rounded-xl border border-gray-200 bg-gray-50/70 overflow-hidden">
-                <div class="px-4 py-3 bg-white border-b border-gray-200">
-                    <h4 class="font-semibold text-gray-800">{{ day.day }}</h4>
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">{{ day.short_day }}</p>
+            <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/70 dark:bg-slate-800/50 overflow-hidden">
+                <div class="px-4 py-3 bg-white dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-700">
+                    <h4 class="font-semibold text-gray-800 dark:text-slate-200">{{ day.day }}</h4>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wide">{{ day.short_day }}</p>
                 </div>
                 <div class="p-4 space-y-3 min-h-[180px]">
                     {% if day.entries %}
                         {% for entry in day.entries %}
-                        <a href="{% url 'academics:class_detail' entry.class.id %}" class="block rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-3 hover:bg-indigo-100 transition">
+                        <a href="{% url 'academics:class_detail' entry.class.id %}" class="block rounded-xl border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-3 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
-                                    <p class="font-semibold text-gray-800 truncate">{{ entry.class.name }}</p>
-                                    <p class="text-xs text-gray-500">{{ entry.class.code }}{% if entry.classroom %} • {{ entry.classroom }}{% endif %}</p>
+                                    <p class="font-semibold text-gray-800 dark:text-indigo-100 truncate">{{ entry.class.name }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-indigo-300">{{ entry.class.code }}{% if entry.classroom %} • {{ entry.classroom }}{% endif %}</p>
                                 </div>
-                                <span class="shrink-0 text-[11px] font-semibold text-indigo-700 bg-white border border-indigo-200 rounded-full px-2 py-1">
+                                <span class="shrink-0 text-[11px] font-semibold text-indigo-700 dark:text-indigo-200 bg-white dark:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700/50 rounded-full px-2 py-1">
                                     {{ entry.start_display }}
                                 </span>
                             </div>
-                            <p class="mt-2 text-sm text-indigo-800">{{ entry.start_display }} - {{ entry.end_display }}</p>
+                            <p class="mt-2 text-sm text-indigo-800 dark:text-indigo-200">{{ entry.start_display }} - {{ entry.end_display }}</p>
                         </a>
                         {% endfor %}
                     {% else %}
-                    <div class="h-full flex items-center justify-center text-center text-sm text-gray-400">
+                    <div class="h-full flex items-center justify-center text-center text-sm text-gray-400 dark:text-slate-500">
                         No classes scheduled
                     </div>
                     {% endif %}
@@ -161,7 +161,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for class in classes %}
         {% cycle 'from-blue-600 to-indigo-600' 'from-emerald-600 to-teal-600' 'from-violet-600 to-purple-600' 'from-amber-600 to-orange-600' 'from-rose-600 to-pink-600' as class_gradient silent %}
-        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden group">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden group border border-transparent dark:border-slate-700">
             <!-- Class Header -->
             <div class="bg-gradient-to-r {{ class_gradient }} text-white px-6 py-4">
                 <div class="flex items-center justify-between">
@@ -187,56 +187,56 @@
             <div class="p-6">
                 <div class="space-y-3 mb-6">
                     <!-- Teacher/Students Info -->
-                    <div class="flex items-center text-gray-600">
-                        <i class="bi bi-person-fill text-blue-600 mr-3 text-lg"></i>
+                    <div class="flex items-center text-gray-600 dark:text-slate-300">
+                        <i class="bi bi-person-fill text-blue-600 dark:text-blue-400 mr-3 text-lg"></i>
                         <div>
                             {% if user.role == 'teacher' %}
                                 <span class="font-medium">{{ class.students.count }} student{{ class.students.count|pluralize }}</span>
-                                <p class="text-sm text-gray-500">in this class</p>
+                                <p class="text-sm text-gray-500 dark:text-slate-400">in this class</p>
                             {% else %}
                                 <span class="font-medium">{{ class.teacher.get_full_name }}</span>
-                                <p class="text-sm text-gray-500">Teacher</p>
+                                <p class="text-sm text-gray-500 dark:text-slate-400">Teacher</p>
                             {% endif %}
                         </div>
                     </div>
                     
                     <!-- Section Info -->
-                    <div class="flex items-center text-gray-600">
-                        <i class="bi bi-collection text-green-600 mr-3 text-lg"></i>
+                    <div class="flex items-center text-gray-600 dark:text-slate-300">
+                        <i class="bi bi-collection text-green-600 dark:text-green-400 mr-3 text-lg"></i>
                         <div>
                             <span class="font-medium">Section {{ class.section }}</span>
-                            <p class="text-sm text-gray-500">Grade {{ class.year_level }}</p>
+                            <p class="text-sm text-gray-500 dark:text-slate-400">Grade {{ class.year_level }}</p>
                         </div>
                     </div>
                     
                     <!-- Schedule -->
                     {% if class.schedule %}
-                    <div class="flex items-center text-gray-600">
-                        <i class="bi bi-clock text-orange-600 mr-3 text-lg"></i>
+                    <div class="flex items-center text-gray-600 dark:text-slate-300">
+                        <i class="bi bi-clock text-orange-600 dark:text-orange-400 mr-3 text-lg"></i>
                         <div>
                             <span class="font-medium">{{ class.schedule }}</span>
-                            <p class="text-sm text-gray-500">Class Schedule</p>
+                            <p class="text-sm text-gray-500 dark:text-slate-400">Class Schedule</p>
                         </div>
                     </div>
                     {% endif %}
                     
                     <!-- Room -->
                     {% if class.room %}
-                    <div class="flex items-center text-gray-600">
-                        <i class="bi bi-geo-alt text-red-600 mr-3 text-lg"></i>
+                    <div class="flex items-center text-gray-600 dark:text-slate-300">
+                        <i class="bi bi-geo-alt text-red-600 dark:text-red-400 mr-3 text-lg"></i>
                         <div>
                             <span class="font-medium">{{ class.room }}</span>
-                            <p class="text-sm text-gray-500">Classroom</p>
+                            <p class="text-sm text-gray-500 dark:text-slate-400">Classroom</p>
                         </div>
                     </div>
                     {% endif %}
                     
                     <!-- Semester -->
-                    <div class="flex items-center text-gray-600">
-                        <i class="bi bi-calendar-event text-purple-600 mr-3 text-lg"></i>
+                    <div class="flex items-center text-gray-600 dark:text-slate-300">
+                        <i class="bi bi-calendar-event text-purple-600 dark:text-purple-400 mr-3 text-lg"></i>
                         <div>
                             <span class="font-medium">{{ class.semester }}</span>
-                            <p class="text-sm text-gray-500">Semester</p>
+                            <p class="text-sm text-gray-500 dark:text-slate-400">Semester</p>
                         </div>
                     </div>
                 </div>

@@ -152,10 +152,15 @@ def create_announcement(request, class_id):
         messages.error(request, 'Only the class teacher can post announcements.')
         return redirect('academics:class_detail', class_id=class_id)
     
+    allow_late_submission_selected = request.POST.get('allow_late_submission', 'true') if request.method == 'POST' else 'true'
+
     if request.method == 'POST':
-        title = request.POST.get('title')
-        content = request.POST.get('content')
+        title = request.POST.get('title', '').strip()
+        content = request.POST.get('content', '').strip()
         priority = request.POST.get('priority', 'normal')
+        if not title or not content:
+            messages.error(request, 'Title and content are required.')
+            return render(request, 'academics/create_announcement.html', {'class': class_obj})
         if priority not in dict(Announcement.PRIORITY_CHOICES):
             messages.error(request, 'Invalid announcement priority.')
             return render(request, 'academics/create_announcement.html', {'class': class_obj})
@@ -172,6 +177,140 @@ def create_announcement(request, class_id):
         return redirect('academics:class_detail', class_id=class_id)
     
     return render(request, 'academics/create_announcement.html', {'class': class_obj})
+
+
+@login_required
+def edit_announcement(request, class_id, announcement_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    announcement = get_object_or_404(Announcement, id=announcement_id, class_obj=class_obj)
+
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        content = request.POST.get('content', '').strip()
+        priority = request.POST.get('priority', 'normal')
+
+        if not title or not content:
+            messages.error(request, 'Title and content are required.')
+            return render(
+                request,
+                'academics/create_announcement.html',
+                {'class': class_obj, 'announcement': announcement, 'edit_mode': True},
+            )
+
+        if priority not in dict(Announcement.PRIORITY_CHOICES):
+            messages.error(request, 'Invalid announcement priority.')
+            return render(
+                request,
+                'academics/create_announcement.html',
+                {'class': class_obj, 'announcement': announcement, 'edit_mode': True},
+            )
+
+        announcement.title = title
+        announcement.content = content
+        announcement.priority = priority
+        announcement.save(update_fields=['title', 'content', 'priority'])
+        log_action(
+            request,
+            'ANNOUNCEMENT_UPDATED',
+            'Announcement',
+            announcement.id,
+            announcement.title,
+            extra_data={'class_id': class_obj.id},
+        )
+        messages.success(request, 'Announcement updated successfully!')
+        return redirect('academics:class_detail', class_id=class_obj.id)
+
+    return render(
+        request,
+        'academics/create_announcement.html',
+        {'class': class_obj, 'announcement': announcement, 'edit_mode': True},
+    )
+
+
+@login_required
+@require_POST
+def delete_announcement(request, announcement_id):
+    announcement = get_object_or_404(Announcement, id=announcement_id)
+    denied = _teacher_class_or_redirect(request, announcement.class_obj)
+    if denied:
+        return denied
+
+    class_id = announcement.class_obj.id
+    undo_token = _stash_undo_payload({
+        'type': 'announcement_delete',
+        'actor_id': request.user.id,
+        'class_id': class_id,
+        'announcement': {
+            'title': announcement.title,
+            'content': announcement.content,
+            'priority': announcement.priority,
+            'author_id': announcement.author_id,
+            'created_at': announcement.created_at.isoformat() if announcement.created_at else '',
+        },
+    })
+    undo_url = reverse('academics:undo_announcement_delete', kwargs={'token': undo_token})
+    log_action(
+        request,
+        'ANNOUNCEMENT_DELETED',
+        'Announcement',
+        announcement.id,
+        announcement.title,
+        extra_data={'class_id': class_id, 'undo_window_seconds': UNDO_GRACE_SECONDS},
+    )
+    announcement.delete()
+    messages.warning(
+        request,
+        format_html(
+            'Announcement deleted. {} ({}s)',
+            _undo_inline_form(request, undo_url),
+            UNDO_GRACE_SECONDS,
+        ),
+    )
+    return redirect('academics:class_detail', class_id=class_id)
+
+
+@login_required
+@require_POST
+def undo_announcement_delete(request, token):
+    payload = _pop_undo_payload(token)
+    if not payload or payload.get('type') != 'announcement_delete':
+        messages.error(request, 'Undo link is no longer valid.')
+        return redirect('academics:my_classes')
+    if payload.get('actor_id') != request.user.id:
+        messages.error(request, 'You do not have permission to undo this action.')
+        return redirect('academics:my_classes')
+
+    class_obj = get_object_or_404(Class, id=payload.get('class_id'))
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
+
+    data = payload.get('announcement', {})
+    restored = Announcement.objects.create(
+        class_obj=class_obj,
+        author_id=data.get('author_id') or request.user.id,
+        title=data.get('title') or 'Restored Announcement',
+        content=data.get('content') or '',
+        priority=data.get('priority') or 'normal',
+    )
+    restored_created_at = _parse_dt(data.get('created_at'))
+    if restored_created_at:
+        Announcement.objects.filter(id=restored.id).update(created_at=restored_created_at)
+
+    log_action(
+        request,
+        'ANNOUNCEMENT_RESTORED',
+        'Announcement',
+        restored.id,
+        restored.title,
+        extra_data={'class_id': class_obj.id, 'restored_via_undo': True},
+    )
+    messages.success(request, 'Announcement restored successfully.')
+    return redirect('academics:class_detail', class_id=class_obj.id)
 
 @login_required
 def create_class(request):
@@ -421,12 +560,21 @@ def create_assignment(request, class_id):
         if form.is_valid():
             assignment = form.save(commit=False)
             assignment.class_obj = class_obj
+            assignment.allow_late_submission = allow_late_submission_selected == 'true'
             if assignment.total_points < 1 or assignment.total_points > 100:
                 messages.error(request, 'Total points must be between 1 and 100.')
-                return render(request, 'academics/create_assignment.html', {'form': form, 'class': class_obj})
+                return render(
+                    request,
+                    'academics/create_assignment.html',
+                    {'form': form, 'class': class_obj, 'allow_late_submission_selected': allow_late_submission_selected},
+                )
             if assignment.due_date <= timezone.now():
                 messages.error(request, 'Due date must be in the future.')
-                return render(request, 'academics/create_assignment.html', {'form': form, 'class': class_obj})
+                return render(
+                    request,
+                    'academics/create_assignment.html',
+                    {'form': form, 'class': class_obj, 'allow_late_submission_selected': allow_late_submission_selected},
+                )
             assignment.save()
             log_action(request, 'ASSIGNMENT_CREATED', 'Assignment', assignment.id, assignment.title, extra_data={'class_id': class_obj.id})
             messages.success(request, f'Assignment "{assignment.title}" created successfully!')
@@ -434,7 +582,82 @@ def create_assignment(request, class_id):
     else:
         form = AssignmentForm()
     
-    return render(request, 'academics/create_assignment.html', {'form': form, 'class': class_obj})
+    return render(
+        request,
+        'academics/create_assignment.html',
+        {'form': form, 'class': class_obj, 'allow_late_submission_selected': allow_late_submission_selected},
+    )
+
+
+@login_required
+def edit_assignment(request, class_id, assignment_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    assignment = get_object_or_404(Assignment, id=assignment_id, class_obj=class_obj)
+
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
+
+    allow_late_submission_selected = request.POST.get('allow_late_submission') if request.method == 'POST' else None
+    if allow_late_submission_selected not in ('true', 'false'):
+        allow_late_submission_selected = 'true' if assignment.allow_late_submission else 'false'
+
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST, instance=assignment)
+        if form.is_valid():
+            updated_assignment = form.save(commit=False)
+            updated_assignment.allow_late_submission = allow_late_submission_selected == 'true'
+            if updated_assignment.total_points < 1 or updated_assignment.total_points > 100:
+                messages.error(request, 'Total points must be between 1 and 100.')
+                return render(
+                    request,
+                    'academics/create_assignment.html',
+                    {
+                        'form': form,
+                        'class': class_obj,
+                        'assignment': assignment,
+                        'edit_mode': True,
+                        'allow_late_submission_selected': allow_late_submission_selected,
+                    },
+                )
+            if updated_assignment.due_date <= timezone.now():
+                messages.error(request, 'Due date must be in the future.')
+                return render(
+                    request,
+                    'academics/create_assignment.html',
+                    {
+                        'form': form,
+                        'class': class_obj,
+                        'assignment': assignment,
+                        'edit_mode': True,
+                        'allow_late_submission_selected': allow_late_submission_selected,
+                    },
+                )
+            updated_assignment.save()
+            log_action(
+                request,
+                'ASSIGNMENT_UPDATED',
+                'Assignment',
+                updated_assignment.id,
+                updated_assignment.title,
+                extra_data={'class_id': class_obj.id},
+            )
+            messages.success(request, f'Assignment "{updated_assignment.title}" updated successfully!')
+            return redirect('academics:class_detail', class_id=class_obj.id)
+    else:
+        form = AssignmentForm(instance=assignment)
+
+    return render(
+        request,
+        'academics/create_assignment.html',
+        {
+            'form': form,
+            'class': class_obj,
+            'assignment': assignment,
+            'edit_mode': True,
+            'allow_late_submission_selected': allow_late_submission_selected,
+        },
+    )
 
 @login_required
 def mark_attendance(request, class_id):
@@ -587,18 +810,9 @@ def upload_material(request, class_id):
             # Validate file upload
             uploaded_file = request.FILES.get('file')
             if uploaded_file:
-                allowed_material_extensions = {
-                    '.pdf', '.doc', '.docx', '.ppt', '.pptx',
-                    '.xls', '.xlsx', '.txt', '.zip', '.csv',
-                }
-                ext = os.path.splitext(uploaded_file.name)[1].lower()
-                if ext not in allowed_material_extensions:
-                    messages.error(request, 'Unsupported file type for class materials. Use PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, ZIP, or CSV.')
-                    return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
-                try:
-                    validate_document_upload(uploaded_file)
-                except ValidationError as e:
-                    messages.error(request, str(e.message))
+                validation_error = _validate_material_file(uploaded_file)
+                if validation_error:
+                    messages.error(request, validation_error)
                     return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
             material = form.save(commit=False)
             material.class_obj = class_obj
@@ -625,6 +839,77 @@ def upload_material(request, class_id):
         form = MaterialForm()
     
     return render(request, 'academics/upload_material.html', {'form': form, 'class': class_obj})
+
+
+def _validate_material_file(uploaded_file):
+    allowed_material_extensions = {
+        '.pdf', '.doc', '.docx', '.ppt', '.pptx',
+        '.xls', '.xlsx', '.txt', '.zip', '.csv',
+    }
+    ext = os.path.splitext(uploaded_file.name)[1].lower()
+    if ext not in allowed_material_extensions:
+        return 'Unsupported file type for class materials. Use PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, ZIP, or CSV.'
+    try:
+        validate_document_upload(uploaded_file)
+    except ValidationError as e:
+        return str(e.message)
+    return None
+
+
+@login_required
+def edit_material(request, class_id, material_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    material = get_object_or_404(Material, id=material_id, class_obj=class_obj)
+
+    denied = _teacher_class_or_redirect(request, class_obj)
+    if denied:
+        return denied
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        uploaded_file = request.FILES.get('file')
+
+        if not title:
+            messages.error(request, 'Material title is required.')
+            form = MaterialForm(instance=material)
+            return render(
+                request,
+                'academics/upload_material.html',
+                {'class': class_obj, 'material': material, 'edit_mode': True, 'form': form},
+            )
+
+        if uploaded_file:
+            validation_error = _validate_material_file(uploaded_file)
+            if validation_error:
+                messages.error(request, validation_error)
+                form = MaterialForm(instance=material)
+                return render(
+                    request,
+                    'academics/upload_material.html',
+                    {'class': class_obj, 'material': material, 'edit_mode': True, 'form': form},
+                )
+            material.file = uploaded_file
+
+        material.title = title
+        material.description = description
+        material.save()
+        log_action(
+            request,
+            'MATERIAL_UPDATED',
+            'Material',
+            material.id,
+            material.title,
+            extra_data={'class_id': class_obj.id},
+        )
+        messages.success(request, f'Material "{material.title}" updated successfully!')
+        return redirect('academics:class_detail', class_id=class_obj.id)
+
+    return render(
+        request,
+        'academics/upload_material.html',
+        {'class': class_obj, 'material': material, 'edit_mode': True, 'form': MaterialForm(instance=material)},
+    )
 
 @login_required
 @require_POST
@@ -897,7 +1182,7 @@ def export_student_schedule(request):
         lines = [
             f'WEEKLY CLASS SCHEDULE — {request.user.get_full_name() or request.user.username}',
             f'Generated: {timezone.localtime().strftime("%B %d, %Y %I:%M %p")}',
-            '=' * 80,
+            '=' * 120,
         ]
         
         current_day = None
@@ -906,15 +1191,16 @@ def export_student_schedule(request):
                 current_day = row['day']
                 lines.append('')
                 lines.append(f'--- {current_day.upper()} ---')
-                lines.append(f'{"TIME":<20} | {"SUBJECT":<30} | {"CLASSROOM":<15}')
-                lines.append('-' * 80)
+                lines.append(f'{"TIME":<20} | {"SUBJECT":<30} | {"TEACHER":<35} | {"CLASSROOM":<15}')
+                lines.append('-' * 120)
             
             time_str = f"{row['start_display']} - {row['end_display']}"
             subject_str = f"{row['subject']} ({row['code']})"
-            lines.append(f'{time_str:<20} | {subject_str[:29]:<30} | {row["classroom"] or "TBA":<15}')
+            teacher_str = row['teacher'] or 'TBA'
+            lines.append(f'{time_str:<20} | {subject_str[:29]:<30} | {teacher_str[:34]:<35} | {row["classroom"] or "TBA":<15}')
             
         lines.append('')
-        lines.append('=' * 80)
+        lines.append('=' * 120)
         lines.append('END OF SCHEDULE')
         
         response = HttpResponse('\n'.join(lines), content_type='text/plain; charset=utf-8')
@@ -1045,6 +1331,21 @@ def student_assignments(request):
     )
     
     now = timezone.now()
+
+    def _late_label(due_dt, ref_dt):
+        delta = ref_dt - due_dt
+        total_seconds = max(int(delta.total_seconds()), 0)
+        minutes = max(total_seconds // 60, 1)
+        if minutes < 60:
+            return f'{minutes} min late'
+        hours = minutes // 60
+        if hours < 24:
+            return f'{hours} hr{"s" if hours != 1 else ""} late'
+        days = hours // 24
+        rem_hours = hours % 24
+        if rem_hours:
+            return f'{days} day{"s" if days != 1 else ""} {rem_hours} hr{"s" if rem_hours != 1 else ""} late'
+        return f'{days} day{"s" if days != 1 else ""} late'
     upcoming_assignments = []
     overdue_assignments = []
     completed_assignments = []
@@ -1053,6 +1354,13 @@ def student_assignments(request):
         submission = Submission.objects.filter(assignment=assignment, student=request.user).first()
         assignment.submission = submission
         assignment.is_overdue = assignment.due_date < now
+        assignment.overdue_label = _late_label(assignment.due_date, now) if assignment.is_overdue else ''
+        assignment.submission_is_late = bool(
+            submission and submission.submitted_at and submission.submitted_at > assignment.due_date
+        )
+        assignment.is_locked_overdue = bool(
+            assignment.is_overdue and not assignment.allow_late_submission and not submission
+        )
         
         if submission:
             completed_assignments.append(assignment)
@@ -1074,12 +1382,12 @@ def student_assignments(request):
         key=lambda assignment: assignment.due_date
     )
     for assignment in overdue_sorted:
-        days_late = max((now - assignment.due_date).days, 1)
+        late_label = _late_label(assignment.due_date, now)
         recovery_plan.append({
             'assignment': assignment,
             'status': 'overdue',
-            'priority_label': 'High',
-            'urgency_text': f'{days_late} day{"s" if days_late != 1 else ""} overdue',
+            'priority_label': 'High' if assignment.allow_late_submission else 'Locked',
+            'urgency_text': late_label if assignment.allow_late_submission else 'Locked at due date',
         })
 
     upcoming_sorted = sorted(
@@ -1128,13 +1436,16 @@ def student_assignments(request):
         submission = assignment.id in submitted_ids
         is_submitted = bool(submission)
         is_overdue = assignment.due_date < now and not is_submitted
-        status = 'submitted' if is_submitted else ('overdue' if is_overdue else 'upcoming')
-        if calendar_filter != 'all' and status != calendar_filter:
+        is_locked = is_overdue and not assignment.allow_late_submission
+        filter_status = 'submitted' if is_submitted else ('overdue' if is_overdue else 'upcoming')
+        status = 'submitted' if is_submitted else ('locked' if is_locked else ('overdue' if is_overdue else 'upcoming'))
+        if calendar_filter != 'all' and filter_status != calendar_filter:
             continue
         events_by_date.setdefault(event_date, []).append({
             'assignment': assignment,
             'status': status,
             'time_label': timezone.localtime(assignment.due_date).strftime('%I:%M %p').lstrip('0'),
+            'can_submit': not is_locked,
         })
 
     month_grid = []
@@ -1190,6 +1501,7 @@ def submit_assignment(request, assignment_id):
     
     existing_submission = Submission.objects.filter(assignment=assignment, student=request.user).first()
     assignment.is_overdue = assignment.due_date < timezone.now()
+    assignment.submission_locked = bool(assignment.is_overdue and not assignment.allow_late_submission)
     
     context = {
         'assignment': assignment,
@@ -1197,6 +1509,9 @@ def submit_assignment(request, assignment_id):
     }
     
     if request.method == 'POST':
+        if assignment.submission_locked:
+            messages.error(request, 'This assignment is locked because the due date has passed.')
+            return redirect('academics:student_assignments')
         if hit_rate_limit(request, f'academics_submit_assignment_{assignment_id}', limit=10, window_seconds=600):
             messages.error(request, 'Too many submission attempts. Please wait before trying again.')
             return redirect('academics:submit_assignment', assignment_id=assignment_id)
@@ -1219,6 +1534,7 @@ def submit_assignment(request, assignment_id):
                 except ValidationError as e:
                     messages.error(request, str(e.message))
                     return render(request, 'academics/submit_assignment.html', context)
+            is_late_now = timezone.now() > assignment.due_date
             if existing_submission:
                 try:
                     if file:
@@ -1232,7 +1548,10 @@ def submit_assignment(request, assignment_id):
                 except Exception:
                     messages.error(request, 'File upload failed. Please try again.')
                     return render(request, 'academics/submit_assignment.html', context)
-                messages.success(request, 'Assignment resubmitted successfully!')
+                if is_late_now:
+                    messages.success(request, 'Assignment resubmitted successfully. Marked as late.')
+                else:
+                    messages.success(request, 'Assignment resubmitted successfully!')
             else:
                 try:
                     Submission.objects.create(
@@ -1244,7 +1563,10 @@ def submit_assignment(request, assignment_id):
                 except Exception:
                     messages.error(request, 'File upload failed. Please try again.')
                     return render(request, 'academics/submit_assignment.html', context)
-                messages.success(request, 'Assignment submitted successfully!')
+                if is_late_now:
+                    messages.success(request, 'Assignment submitted successfully. Marked as late.')
+                else:
+                    messages.success(request, 'Assignment submitted successfully!')
             return redirect('academics:student_assignments')
     
     return render(request, 'academics/submit_assignment.html', context)
