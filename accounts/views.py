@@ -1615,11 +1615,16 @@ def profile_view(request):
 def student_profile_view(request, student_id):
     student = get_object_or_404(User, id=student_id, role='student')
     
-    # Check permission - only teachers, counselors, and admins can view
-    if request.user.role not in ['teacher', 'counselor', 'admin']:
+    # Check permission
+    if request.user.role == 'student':
+        shared_class = Class.objects.filter(students=request.user).filter(students=student).exists()
+        if request.user.id != student.id and not shared_class:
+            messages.error(request, 'Permission denied.')
+            return redirect('dashboard')
+    elif request.user.role == 'teacher' and not request.user.classes_taught.filter(students=student).exists():
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
-    if request.user.role == 'teacher' and not request.user.classes_taught.filter(students=student).exists():
+    elif request.user.role not in ['teacher', 'counselor', 'admin']:
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
     log_action(

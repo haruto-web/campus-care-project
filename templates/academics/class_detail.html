@@ -335,12 +335,9 @@
                     <a href="{% url 'student_profile' student.id %}" class="flex items-center gap-3 flex-1 min-w-0">
                         <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">{{ student.get_full_name|slice:":1"|upper }}</div>
                         <div class="min-w-0">
-                            <p class="font-semibold text-gray-800 truncate hover:text-blue-700">{{ student.get_full_name }}</p>
+                            <p class="font-semibold text-gray-800 truncate hover:text-blue-700">{{ student.get_full_name }}{% if student.id == user.id %} (You){% endif %}</p>
                             <p class="text-xs text-gray-500 truncate">{{ student.email }}</p>
                         </div>
-                    </a>
-                    <a href="{% url 'messaging:new_message_to' student.id %}" class="shrink-0 bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-lg hover:bg-blue-100 transition text-xs font-semibold">
-                        <i class="bi bi-chat-dots"></i> Message
                     </a>
                 </div>
                 {% endfor %}

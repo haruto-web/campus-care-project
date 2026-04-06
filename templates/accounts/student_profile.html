@@ -34,6 +34,11 @@
                     {% if student.phone %}
                     <p class="text-blue-100"><i class="bi bi-telephone"></i> {{ student.phone }}</p>
                     {% endif %}
+                    {% if user.id != student.id %}
+                    <a href="{% url 'messaging:new_message_to' student.id %}" class="inline-flex items-center gap-2 mt-3 bg-white text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-50 transition text-sm font-semibold">
+                        <i class="bi bi-chat-dots"></i> Message
+                    </a>
+                    {% endif %}
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
