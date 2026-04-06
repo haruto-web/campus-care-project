@@ -86,7 +86,7 @@
                 {% if request.user.is_messaging_suspended %}disabled{% endif %}
                 class="flex-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
-            <button type="button" onclick="sendMessage()"
+            <button id="sendBtn" type="button" onclick="sendMessage()"
                 {% if request.user.is_messaging_suspended %}disabled{% endif %}
                 class="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold text-sm self-end flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
                 <i class="bi bi-send"></i>
@@ -99,7 +99,9 @@
 const convId = {{ conv.id }};
 const csrfToken = '{{ csrf_token }}';
 const container = document.getElementById('msgContainer');
+const sendBtn = document.getElementById('sendBtn');
 let lastMsgId = {% if msgs %}{{ msgs.last.id|default:0 }}{% else %}0{% endif %};
+let isSendingMessage = false;
 
 function scrollBottom(force) {
     const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
@@ -185,9 +187,12 @@ setInterval(() => {
 
 // AJAX send
 function sendMessage() {
+    if (isSendingMessage) return;
     const body = document.getElementById('msgBody').value.trim();
     const file = document.getElementById('attachmentInput').files[0];
     if (!body && !file) return;
+    isSendingMessage = true;
+    if (sendBtn) sendBtn.disabled = true;
     const fd = new FormData(document.getElementById('msgForm'));
     fetch(`/messages/${convId}/`, {
         method: 'POST',
@@ -196,7 +201,12 @@ function sendMessage() {
     })
     .then(r => r.json())
     .then(msg => { appendMessages([msg]); document.getElementById('msgBody').value = ''; clearFile(); })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => {
+        isSendingMessage = false;
+        const textarea = document.getElementById('msgBody');
+        if (sendBtn && textarea && !textarea.disabled) sendBtn.disabled = false;
+    });
 }
 
 function showPreview(input) {
