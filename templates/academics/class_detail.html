@@ -106,8 +106,10 @@
                                 <h4 class="font-semibold text-gray-900 truncate">{{ assignment.title }}</h4>
                                 <p class="text-sm text-gray-500 mt-0.5 line-clamp-1">{{ assignment.description|truncatewords:15 }}</p>
                                 <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500">
-                                    <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i> Due {{ assignment.due_date|date:"M d, Y Â· g:i A" }}</span>
+                                    <span class="flex items-center gap-1"><i class="bi bi-unlock"></i> Available {% if assignment.available_at %}{{ assignment.available_at|date:"M d, Y · g:i A" }}{% else %}Now{% endif %}</span>
+                                    <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i> Due {{ assignment.due_date|date:"M d, Y · g:i A" }}</span>
                                     <span class="flex items-center gap-1"><i class="bi bi-trophy"></i> {{ assignment.total_points }} pts</span>
+                                    <span class="flex items-center gap-1"><i class="bi bi-arrow-repeat"></i> Attempts: {{ assignment.max_attempts }}</span>
                                     <span class="px-2 py-0.5 rounded-full text-xs font-medium {% if assignment.submission_type == 'text_entry' %}bg-green-100 text-green-700{% elif assignment.submission_type == 'both' %}bg-purple-100 text-purple-700{% else %}bg-blue-100 text-blue-700{% endif %}">
                                         {% if assignment.submission_type == 'text_entry' %}Text Entry{% elif assignment.submission_type == 'both' %}File or Text{% else %}File Upload{% endif %}
                                     </span>
@@ -134,17 +136,33 @@
                             </form>
                             {% elif user.role == 'student' %}
                             {% if assignment.has_submission %}
-                            <a href="{% url 'academics:submit_assignment' assignment.id %}"
-                                data-url="{% url 'academics:submit_assignment' assignment.id %}"
-                                data-title="{{ assignment.title }}"
-                                onclick="event.preventDefault(); confirmResubmit(this)"
-                                class="bg-amber-500 text-white px-3 py-2 rounded-lg hover:bg-amber-600 transition text-sm flex items-center gap-1.5">
-                                <i class="bi bi-arrow-repeat"></i> Re-submit
-                            </a>
+                                {% if assignment.submission_is_graded %}
+                                <span class="bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-2 rounded-lg text-sm font-medium">
+                                    Graded - Locked
+                                </span>
+                                {% elif assignment.can_resubmit %}
+                                <a href="{% url 'academics:submit_assignment' assignment.id %}"
+                                    data-url="{% url 'academics:submit_assignment' assignment.id %}"
+                                    data-title="{{ assignment.title }}"
+                                    onclick="event.preventDefault(); confirmResubmit(this)"
+                                    class="bg-amber-500 text-white px-3 py-2 rounded-lg hover:bg-amber-600 transition text-sm flex items-center gap-1.5">
+                                    <i class="bi bi-arrow-repeat"></i> Re-submit ({{ assignment.attempts_remaining }} left)
+                                </a>
+                                {% else %}
+                                <span class="bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-sm font-medium">
+                                    Attempt limit reached
+                                </span>
+                                {% endif %}
                             {% else %}
-                            <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition text-sm flex items-center gap-1.5">
-                                <i class="bi bi-upload"></i> Submit
-                            </a>
+                                {% if assignment.is_available %}
+                                <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition text-sm flex items-center gap-1.5">
+                                    <i class="bi bi-upload"></i> Submit
+                                </a>
+                                {% else %}
+                                <span class="bg-amber-100 text-amber-700 border border-amber-200 px-3 py-2 rounded-lg text-sm font-medium">
+                                    Locked until available
+                                </span>
+                                {% endif %}
                             {% endif %}
                             {% endif %}
                         </div>

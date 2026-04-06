@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load academics_extras %}
+{% load static %}
 
 {% block title %}Mark Attendance{% endblock %}
 
@@ -36,7 +37,23 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         {% for student in students %}
                         <tr class="hover:bg-gray-50" data-student-id="{{ student.id }}">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ student.get_full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    {% if student.profile_picture %}
+                                    <img src="{{ student.profile_picture.url }}"
+                                         alt="{{ student.get_full_name }}"
+                                         class="h-9 w-9 rounded-full object-cover border border-gray-200"
+                                         onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'">
+                                    {% else %}
+                                    <img src="{% static 'images/logo.png' %}"
+                                         alt="{{ student.get_full_name }}"
+                                         class="h-9 w-9 rounded-full object-contain bg-white p-1 border border-gray-200">
+                                    {% endif %}
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">{{ student.get_full_name }}</div>
+                                    </div>
+                                </div>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ student.email }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex gap-2 attendance-buttons">

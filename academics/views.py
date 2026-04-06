@@ -129,11 +129,26 @@ def class_detail(request, class_id):
     
     # For students, check submission status for each assignment
     if request.user.role == 'student':
+        now = timezone.now()
         for assignment in assignments:
-            assignment.has_submission = Submission.objects.filter(
+            submission = Submission.objects.filter(
                 assignment=assignment,
                 student=request.user
-            ).exists()
+            ).first()
+            assignment.has_submission = submission is not None
+            assignment.attempts_used = submission.attempts_count if submission else 0
+            assignment.attempts_remaining = max(assignment.max_attempts - assignment.attempts_used, 0)
+            assignment.is_available = not assignment.available_at or assignment.available_at <= now
+            assignment.submission_is_graded = bool(submission and (submission.score is not None or submission.graded_at))
+            is_overdue = assignment.due_date < now
+            due_locked = bool(is_overdue and not assignment.allow_late_submission)
+            assignment.can_resubmit = bool(
+                submission
+                and assignment.attempts_remaining > 0
+                and not assignment.submission_is_graded
+                and assignment.is_available
+                and not due_locked
+            )
     
     context = {
         'class': class_obj,
@@ -570,8 +585,24 @@ def create_assignment(request, class_id):
                     'academics/create_assignment.html',
                     {'form': form, 'class': class_obj, 'allow_late_submission_selected': allow_late_submission_selected},
                 )
+            if assignment.max_attempts < 1 or assignment.max_attempts > 10:
+                messages.error(request, 'Max attempts must be between 1 and 10.')
+                return render(
+                    request,
+                    'academics/create_assignment.html',
+                    {'form': form, 'class': class_obj, 'allow_late_submission_selected': allow_late_submission_selected},
+                )
+            if assignment.available_at and timezone.is_naive(assignment.available_at):
+                assignment.available_at = timezone.make_aware(assignment.available_at)
             if assignment.due_date and timezone.is_naive(assignment.due_date):
                 assignment.due_date = timezone.make_aware(assignment.due_date)
+            if assignment.available_at and assignment.available_at > assignment.due_date:
+                messages.error(request, 'Available date must be before due date.')
+                return render(
+                    request,
+                    'academics/create_assignment.html',
+                    {'form': form, 'class': class_obj, 'allow_late_submission_selected': allow_late_submission_selected},
+                )
             if assignment.due_date <= timezone.now():
                 messages.error(request, 'Due date must be in the future.')
                 return render(
@@ -624,8 +655,36 @@ def edit_assignment(request, class_id, assignment_id):
                         'allow_late_submission_selected': allow_late_submission_selected,
                     },
                 )
+            if updated_assignment.max_attempts < 1 or updated_assignment.max_attempts > 10:
+                messages.error(request, 'Max attempts must be between 1 and 10.')
+                return render(
+                    request,
+                    'academics/create_assignment.html',
+                    {
+                        'form': form,
+                        'class': class_obj,
+                        'assignment': assignment,
+                        'edit_mode': True,
+                        'allow_late_submission_selected': allow_late_submission_selected,
+                    },
+                )
+            if updated_assignment.available_at and timezone.is_naive(updated_assignment.available_at):
+                updated_assignment.available_at = timezone.make_aware(updated_assignment.available_at)
             if updated_assignment.due_date and timezone.is_naive(updated_assignment.due_date):
                 updated_assignment.due_date = timezone.make_aware(updated_assignment.due_date)
+            if updated_assignment.available_at and updated_assignment.available_at > updated_assignment.due_date:
+                messages.error(request, 'Available date must be before due date.')
+                return render(
+                    request,
+                    'academics/create_assignment.html',
+                    {
+                        'form': form,
+                        'class': class_obj,
+                        'assignment': assignment,
+                        'edit_mode': True,
+                        'allow_late_submission_selected': allow_late_submission_selected,
+                    },
+                )
             if updated_assignment.due_date <= timezone.now():
                 messages.error(request, 'Due date must be in the future.')
                 return render(
@@ -1373,6 +1432,18 @@ def student_assignments(request):
     for assignment in all_assignments:
         submission = Submission.objects.filter(assignment=assignment, student=request.user).first()
         assignment.submission = submission
+        assignment.percentage_score = (
+            round((submission.score / assignment.total_points) * 100)
+            if submission and submission.score is not None and assignment.total_points > 0
+            else None
+        )
+        assignment.attempts_used = submission.attempts_count if submission else 0
+        assignment.attempts_remaining = max(assignment.max_attempts - assignment.attempts_used, 0)
+        assignment.is_available = not assignment.available_at or assignment.available_at <= now
+        assignment.submission_is_graded = bool(submission and (submission.score is not None or submission.graded_at))
+        assignment.can_resubmit = bool(
+            submission and assignment.attempts_remaining > 0 and not assignment.submission_is_graded
+        )
         assignment.is_overdue = assignment.due_date < now
         assignment.overdue_label = _late_label(assignment.due_date, now) if assignment.is_overdue else ''
         assignment.submission_is_late = bool(
@@ -1455,8 +1526,9 @@ def student_assignments(request):
         event_date = timezone.localtime(assignment.due_date).date()
         submission = assignment.id in submitted_ids
         is_submitted = bool(submission)
+        is_available = not assignment.available_at or assignment.available_at <= now
         is_overdue = assignment.due_date < now and not is_submitted
-        is_locked = is_overdue and not assignment.allow_late_submission
+        is_locked = (not is_available) or (is_overdue and not assignment.allow_late_submission)
         filter_status = 'submitted' if is_submitted else ('overdue' if is_overdue else 'upcoming')
         status = 'submitted' if is_submitted else ('locked' if is_locked else ('overdue' if is_overdue else 'upcoming'))
         if calendar_filter != 'all' and filter_status != calendar_filter:
@@ -1465,6 +1537,7 @@ def student_assignments(request):
             'assignment': assignment,
             'status': status,
             'time_label': timezone.localtime(assignment.due_date).strftime('%I:%M %p').lstrip('0'),
+            'available_label': timezone.localtime(assignment.available_at).strftime('%b %d, %I:%M %p') if assignment.available_at else '',
             'can_submit': not is_locked,
         })
 
@@ -1521,7 +1594,12 @@ def submit_assignment(request, assignment_id):
     
     existing_submission = Submission.objects.filter(assignment=assignment, student=request.user).first()
     assignment.is_overdue = assignment.due_date < timezone.now()
+    assignment.is_available = not assignment.available_at or assignment.available_at <= timezone.now()
     assignment.submission_locked = bool(assignment.is_overdue and not assignment.allow_late_submission)
+    assignment.submission_is_graded = bool(existing_submission and (existing_submission.score is not None or existing_submission.graded_at))
+    assignment.attempts_used = existing_submission.attempts_count if existing_submission else 0
+    assignment.attempts_remaining = max(assignment.max_attempts - assignment.attempts_used, 0)
+    assignment.attempts_exhausted = assignment.attempts_remaining <= 0
     
     context = {
         'assignment': assignment,
@@ -1529,8 +1607,17 @@ def submit_assignment(request, assignment_id):
     }
     
     if request.method == 'POST':
+        if not assignment.is_available:
+            messages.error(request, 'This assignment is not yet available for submission.')
+            return redirect('academics:student_assignments')
         if assignment.submission_locked:
             messages.error(request, 'This assignment is locked because the due date has passed.')
+            return redirect('academics:student_assignments')
+        if assignment.submission_is_graded:
+            messages.error(request, 'This assignment is already graded and can no longer be resubmitted.')
+            return redirect('academics:student_assignments')
+        if assignment.attempts_exhausted:
+            messages.error(request, f'No attempts remaining. Maximum allowed attempts: {assignment.max_attempts}.')
             return redirect('academics:student_assignments')
         if hit_rate_limit(request, f'academics_submit_assignment_{assignment_id}', limit=10, window_seconds=600):
             messages.error(request, 'Too many submission attempts. Please wait before trying again.')
@@ -1561,6 +1648,7 @@ def submit_assignment(request, assignment_id):
                         existing_submission.file = file
                     if text_content:
                         existing_submission.text_content = text_content
+                    existing_submission.attempts_count = existing_submission.attempts_count + 1
                     existing_submission.score = None
                     existing_submission.feedback = ''
                     existing_submission.graded_at = None
@@ -1579,6 +1667,7 @@ def submit_assignment(request, assignment_id):
                         student=request.user,
                         file=file if file else None,
                         text_content=text_content,
+                        attempts_count=1,
                     )
                 except Exception:
                     messages.error(request, 'File upload failed. Please try again.')

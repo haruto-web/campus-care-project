@@ -125,13 +125,15 @@ class ClassForm(forms.ModelForm):
 class AssignmentForm(forms.ModelForm):
     class Meta:
         model = Assignment
-        fields = ['title', 'description', 'due_date', 'total_points', 'submission_type']
+        fields = ['title', 'description', 'available_at', 'due_date', 'total_points', 'submission_type', 'max_attempts']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'available_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
             'due_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
             'total_points': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '100'}),
             'submission_type': forms.Select(attrs={'class': 'form-control'}),
+            'max_attempts': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '10'}),
         }
 
 

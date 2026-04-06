@@ -39,7 +39,16 @@
                               required>{{ form.description.value|default:'' }}</textarea>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div>
+                        <label for="{{ form.available_at.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Available Date
+                        </label>
+                        <input type="datetime-local" name="available_at" id="{{ form.available_at.id_for_label }}"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                               value="{{ form.available_at.value|default:'' }}">
+                        <p class="text-xs text-gray-500 mt-1">When students can start submitting.</p>
+                    </div>
                     <div>
                         <label for="{{ form.due_date.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
                             Due Date <span class="text-red-500">*</span>
@@ -61,6 +70,17 @@
                                value="{{ form.total_points.value|default:'' }}" required>
                         <p class="text-xs text-gray-500 mt-1">Maximum: 100 points.</p>
                     </div>
+                </div>
+
+                <div class="mb-6">
+                    <label for="{{ form.max_attempts.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Submission Attempts <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" name="max_attempts" id="{{ form.max_attempts.id_for_label }}"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                           min="1" max="10"
+                           value="{{ form.max_attempts.value|default:'1' }}" required>
+                    <p class="text-xs text-gray-500 mt-1">Set how many total submissions a student is allowed (1-10).</p>
                 </div>
 
                 <!-- Submission Type -->
@@ -139,11 +159,14 @@
 </div>
 
 <script>
+    const availableDateInput = document.getElementById('{{ form.available_at.id_for_label }}');
     const dueDateInput = document.getElementById('{{ form.due_date.id_for_label }}');
-    if (dueDateInput) {
+    if (availableDateInput || dueDateInput) {
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        dueDateInput.min = now.toISOString().slice(0, 16);
+        const minValue = now.toISOString().slice(0, 16);
+        if (availableDateInput) availableDateInput.min = minValue;
+        if (dueDateInput) dueDateInput.min = minValue;
     }
 </script>
 {% endblock %}

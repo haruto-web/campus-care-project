@@ -505,7 +505,9 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
 
         /* === Notification Polling === */
         const NOTIF_KEY = 'notifItems_{{ user.id }}';
+        const NOTIF_DISMISS_KEY = 'notifDismissed_{{ user.id }}';
         let notifItems = JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]');
+        let dismissedCounts = JSON.parse(localStorage.getItem(NOTIF_DISMISS_KEY) || '{}');
         let prevCounts = {
             messages: {{ unread_messages_count }},
             announcements: 0,
@@ -517,8 +519,8 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             registrations: 0
         };
         let isFirstLoad = true;
-        let liveNotifTotal = 0;
         let hasPolledNotifications = false;
+        let currentCounts = { ...prevCounts };
 
         updateNotifList();
 
@@ -539,8 +541,9 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
         function updateTopNotifBadge() {
             const badge = document.getElementById('notifBadge');
             if (!badge) return;
-            if (liveNotifTotal > 0) {
-                badge.textContent = liveNotifTotal;
+            const visibleCount = Array.isArray(notifItems) ? notifItems.length : 0;
+            if (visibleCount > 0) {
+                badge.textContent = visibleCount;
                 badge.classList.remove('hidden');
             } else {
                 badge.textContent = '0';
@@ -548,17 +551,63 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             }
         }
 
+        function getActiveNotificationItems(data) {
+            const items = [];
+            const routes = {
+                messages: '{% url "messaging:inbox" %}',
+                announcements: '{% url "academics:my_classes" %}',
+                grades: '{% url "academics:student_grades" %}',
+                alerts: '{% url "wellness:alerts_list" %}',
+                interventions: '{% url "wellness:interventions_list" %}',
+                message_reports: '{% if user.role == "admin" %}{% url "messaging:admin_message_reports" %}{% else %}{% url "messaging:message_reports" %}{% endif %}',
+                registrations: '{% url "admin_upload_students" %}',
+                notifications: '{% url "wellness:wellness_checkin" %}'
+            };
+            const labels = {
+                messages: (count) => `<i class="bi bi-chat-dots mr-2 text-blue-500"></i> ${count} unread message(s)`,
+                announcements: (count) => `<i class="bi bi-megaphone mr-2 text-indigo-500"></i> ${count} unread announcement(s)`,
+                grades: (count) => `<i class="bi bi-trophy mr-2 text-purple-500"></i> ${count} grade update(s)`,
+                alerts: (count) => `<i class="bi bi-exclamation-triangle mr-2 text-red-500"></i> ${count} pending student alert(s)`,
+                interventions: (count) => `<i class="bi bi-journal-medical mr-2 text-emerald-500"></i> ${count} scheduled intervention(s)`,
+                message_reports: (count) => `<i class="bi bi-flag mr-2 text-amber-500"></i> ${count} pending message report(s)`,
+                registrations: (count) => `<i class="bi bi-person-plus mr-2 text-cyan-500"></i> ${count} pending registration(s)`,
+                notifications: (count) => `<i class="bi bi-bell mr-2 text-teal-500"></i> ${count} wellness notification(s)`
+            };
+            Object.keys(labels).forEach((key) => {
+                const count = Number(data[key] || 0);
+                const dismissed = Number(dismissedCounts[key] || 0);
+                if (count > dismissed) {
+                    items.push({
+                        key,
+                        count,
+                        url: routes[key],
+                        html: labels[key](count)
+                    });
+                }
+            });
+            return items;
+        }
+
         function updateNotifUI(data) {
-            liveNotifTotal = Number(data.total || 0);
+            currentCounts = {
+                messages: Number(data.messages || 0),
+                announcements: Number(data.announcements || 0),
+                grades: Number(data.grades || 0),
+                alerts: Number(data.alerts || 0),
+                notifications: Number(data.notifications || 0),
+                interventions: Number(data.interventions || 0),
+                message_reports: Number(data.message_reports || 0),
+                registrations: Number(data.registrations || 0)
+            };
+            notifItems = getActiveNotificationItems(currentCounts);
+            localStorage.setItem(NOTIF_KEY, JSON.stringify(notifItems));
+            updateNotifList();
             updateTopNotifBadge();
             setBadgeValue('sidebarMsgBadge', data.messages);
             setBadgeValue('sidebarAlertsBadge', data.alerts);
             setBadgeValue('sidebarInterventionsBadge', data.interventions);
             setBadgeValue('sidebarReportsBadge', data.message_reports);
             setBadgeValue('sidebarRegistrationsBadge', data.registrations);
-            if (notifItems.length === 0) {
-                updateNotifList();
-            }
 
             if (isFirstLoad) {
                 prevCounts = {
@@ -571,54 +620,33 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
                     message_reports: data.message_reports,
                     registrations: data.registrations
                 };
-                
-                // Populate the list on first load if it's empty but there are unread items
-                if (data.total > 0 && notifItems.length === 0) {
-                    if (data.messages > 0) addNotifItem(`<i class="bi bi-chat-dots mr-2 text-blue-500"></i> ${data.messages} unread message(s)`, '/messages/');
-                    if (data.announcements > 0) addNotifItem(`<i class="bi bi-megaphone mr-2 text-indigo-500"></i> ${data.announcements} unread announcement(s)`, '/class/my-classes/');
-                    if (data.grades > 0) addNotifItem('<i class="bi bi-trophy mr-2 text-purple-500"></i> Grade updates available', '/class/student/grades/');
-                    if (data.alerts > 0) addNotifItem(`<i class="bi bi-exclamation-triangle mr-2 text-red-500"></i> ${data.alerts} pending student alert(s)`, '/wellness/alerts/');
-                    if (data.interventions > 0) addNotifItem(`<i class="bi bi-journal-medical mr-2 text-emerald-500"></i> ${data.interventions} scheduled intervention(s)`, '{% url "wellness:interventions_list" %}');
-                    if (data.message_reports > 0) addNotifItem(`<i class="bi bi-flag mr-2 text-amber-500"></i> ${data.message_reports} pending message report(s)`, '{% if user.role == "admin" %}{% url "messaging:admin_message_reports" %}{% else %}{% url "messaging:message_reports" %}{% endif %}');
-                    if (data.registrations > 0) addNotifItem(`<i class="bi bi-person-plus mr-2 text-cyan-500"></i> ${data.registrations} pending registration(s)`, '{% url "admin_upload_students" %}');
-                    if (data.notifications > 0) addNotifItem('<i class="bi bi-bell mr-2 text-teal-500"></i> New wellness notification', '/wellness/checkin/');
-                }
-                
                 isFirstLoad = false;
                 return;
             }
 
             if (data.messages > prevCounts.messages) {
                 showToast('New message received', 'bg-blue-600');
-                addNotifItem('<i class="bi bi-chat-dots mr-2 text-blue-500"></i> New message', '/messages/');
             }
             if (data.announcements > prevCounts.announcements) {
                 showToast('New announcement posted', 'bg-indigo-600');
-                addNotifItem('<i class="bi bi-megaphone mr-2 text-indigo-500"></i> New announcement', '/class/my-classes/');
             }
             if (data.grades > prevCounts.grades) {
                 showToast('Assignment graded!', 'bg-purple-600');
-                addNotifItem('<i class="bi bi-trophy mr-2 text-purple-500"></i> Assignment graded', '/class/student/grades/');
             }
             if (data.alerts > prevCounts.alerts) {
                 showToast('New student alert', 'bg-red-600');
-                addNotifItem('<i class="bi bi-exclamation-triangle mr-2 text-red-500"></i> Student alert', '/wellness/alerts/');
             }
             if (data.interventions > prevCounts.interventions) {
                 showToast('A new intervention needs attention', 'bg-emerald-600');
-                addNotifItem('<i class="bi bi-journal-medical mr-2 text-emerald-500"></i> Intervention update', '{% url "wellness:interventions_list" %}');
             }
             if (data.message_reports > prevCounts.message_reports) {
                 showToast('New message report submitted', 'bg-amber-600');
-                addNotifItem('<i class="bi bi-flag mr-2 text-amber-500"></i> Message report', '{% if user.role == "admin" %}{% url "messaging:admin_message_reports" %}{% else %}{% url "messaging:message_reports" %}{% endif %}');
             }
             if (data.registrations > prevCounts.registrations) {
                 showToast('New registration request pending', 'bg-cyan-600');
-                addNotifItem('<i class="bi bi-person-plus mr-2 text-cyan-500"></i> Registration pending', '{% url "admin_upload_students" %}');
             }
             if (data.notifications > prevCounts.notifications) {
                 showToast('You have a new notification', 'bg-teal-600');
-                addNotifItem('<i class="bi bi-bell mr-2 text-teal-500"></i> New notification', '/wellness/checkin/');
                 fetch('/wellness/notifications/mark-read/', {method:'POST', headers:{'X-CSRFToken': '{{ csrf_token }}'}});
             }
 
@@ -634,15 +662,6 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             };
         }
 
-        function addNotifItem(html, url) {
-            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            notifItems.unshift({ html, url, time: timestamp });
-            if (notifItems.length > 20) notifItems.pop();
-            localStorage.setItem(NOTIF_KEY, JSON.stringify(notifItems));
-            updateNotifList();
-            updateTopNotifBadge();
-        }
-
         function updateNotifList() {
             const list = document.getElementById('notifList');
             if (!list) return;
@@ -655,12 +674,14 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
             list.innerHTML = notifItems.map(n =>
                 `<a href="${n.url}" onclick="closeNotifDropdown()" class="flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition block" style="color:var(--bt-text)">
                 <div class="flex items-center flex-1">${n.html}</div>
-                <span class="text-xs ml-2" style="color:var(--bt-text-muted)">${n.time}</span>
+                <span class="text-xs ml-2" style="color:var(--bt-text-muted)">${n.count}</span>
             </a>`
             ).join('');
         }
 
         function clearNotificationHistory() {
+            dismissedCounts = { ...currentCounts };
+            localStorage.setItem(NOTIF_DISMISS_KEY, JSON.stringify(dismissedCounts));
             notifItems = [];
             localStorage.removeItem(NOTIF_KEY);
             updateNotifList();
