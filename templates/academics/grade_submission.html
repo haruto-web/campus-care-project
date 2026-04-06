@@ -77,6 +77,13 @@
                                 </div>
                             </div>
                             <div class="flex gap-2">
+                                <button onclick="openFilePreview('{{ submission.file.url }}')" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    Preview
+                                </button>
                                 <a href="{{ submission.file.url }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
@@ -86,17 +93,19 @@
                             </div>
                         </div>
 
-                        <!-- File Preview Section -->
+                        <!-- Embedded Inline Preview (PDF/Images) -->
                         {% with file_url=submission.file.url|lower %}
                             {% if '.pdf' in file_url %}
                             <div class="mt-6 border-t border-blue-200 dark:border-blue-900/40 pt-6">
-                                <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">PDF Preview:</p>
-                                <iframe src="{{ submission.file.url }}" class="w-full h-[600px] rounded-lg border-2 border-blue-100 dark:border-blue-900/30 shadow-inner" frameborder="0"></iframe>
+                                <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Quick Preview (PDF):</p>
+                                <div class="bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-inner border dark:border-gray-700">
+                                    <iframe src="{{ submission.file.url }}#toolbar=0" class="w-full h-[600px]" frameborder="0"></iframe>
+                                </div>
                             </div>
                             {% elif '.jpg' in file_url or '.jpeg' in file_url or '.png' in file_url or '.gif' in file_url or '.webp' in file_url %}
                             <div class="mt-6 border-t border-blue-200 dark:border-blue-900/40 pt-6">
-                                <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Image Preview:</p>
-                                <div class="bg-white dark:bg-gray-900 p-2 rounded-lg border-2 border-blue-100 dark:border-blue-900/30">
+                                <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Quick Preview (Image):</p>
+                                <div class="bg-white dark:bg-gray-900 p-2 rounded-xl border border-blue-100 dark:border-gray-700 shadow-inner">
                                     <img src="{{ submission.file.url }}" class="max-w-full h-auto rounded shadow-sm mx-auto" alt="Submission preview">
                                 </div>
                             </div>
@@ -106,6 +115,30 @@
                     {% endif %}
                 </div>
             </div>
+        </div>
+
+        <!-- FILE PREVIEW MODAL -->
+        <div id="filePreviewModal" class="fixed inset-0 z-[10000] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4 sm:p-8">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl h-full flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-900/50">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <i class="bi bi-file-earmark-text text-blue-600"></i>
+                        File Preview
+                    </h3>
+                    <div class="flex items-center gap-3">
+                        <a id="modalDownloadBtn" href="#" target="_blank" class="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-semibold flex items-center gap-1">
+                            <i class="bi bi-download"></i> Download
+                        </a>
+                        <button onclick="closeFilePreview()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition">
+                            <i class="bi bi-x-lg text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="modalPreviewBody" class="flex-1 bg-gray-100 dark:bg-gray-950 overflow-auto flex items-center justify-center p-4">
+                    <!-- Loaded dynamically via JS -->
+                </div>
+            </div>
+        </div>
         </div>
 
         <!-- Right Column: Grading Form -->
@@ -119,7 +152,7 @@
                         Grade Assignment
                     </h3>
                 </div>
-                <form method="post" class="p-6 space-y-6">
+                <form method="post" class="p-6 space-y-6" onsubmit="return confirm('Are you sure you want to save this grade and feedback?');">
                     {% csrf_token %}
                     
                     <!-- Score Input -->
@@ -206,7 +239,10 @@
 {% block extra_js %}
 <script>
 function generateAIFeedback(submissionId) {
-    const button = event.target;
+    if (!confirm('Would you like to generate an AI feedback suggestion for this submission?')) {
+        return;
+    }
+    const button = event.currentTarget;
     const originalText = button.innerHTML;
     button.innerHTML = '<i class="bi bi-hourglass-split mr-1"></i>Generating...';
     button.disabled = true;
@@ -245,5 +281,50 @@ function useAIFeedback() {
     document.getElementById('feedback').value = aiContent;
     document.getElementById('ai-feedback-suggestions').classList.add('hidden');
 }
+
+/* === File Preview Modal === */
+function openFilePreview(url) {
+    const modal = document.getElementById('filePreviewModal');
+    const body = document.getElementById('modalPreviewBody');
+    const downloadBtn = document.getElementById('modalDownloadBtn');
+    
+    downloadBtn.href = url;
+    body.innerHTML = '<div class="text-blue-600 animate-pulse flex flex-col items-center gap-2"><i class="bi bi-hourglass-split text-4xl"></i><span>Preparing preview...</span></div>';
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    const ext = url.split('.').pop().toLowerCase().split('?')[0];
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    
+    setTimeout(() => {
+        if (ext === 'pdf') {
+            body.innerHTML = `<iframe src="${url}" class="w-full h-full rounded-lg" frameborder="0"></iframe>`;
+        } else if (imageExts.includes(ext)) {
+            body.innerHTML = `<img src="${url}" class="max-w-full max-h-full object-contain rounded shadow-lg">`;
+        } else {
+            body.innerHTML = `
+                <div class="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border dark:border-gray-700 max-w-sm">
+                    <i class="bi bi-file-earmark-binary text-5xl text-gray-400 mb-4 block"></i>
+                    <p class="text-gray-700 dark:text-gray-200 font-bold mb-2">Preview not available</p>
+                    <p class="text-xs text-gray-500 mb-6">This file type (.${ext}) cannot be previewed in the browser. Please download it to view the content.</p>
+                    <a href="${url}" target="_blank" class="inline-flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition">
+                        <i class="bi bi-download mr-2"></i> Download File
+                    </a>
+                </div>
+            `;
+        }
+    }, 300);
+}
+
+function closeFilePreview() {
+    const modal = document.getElementById('filePreviewModal');
+    document.getElementById('modalPreviewBody').innerHTML = '';
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeFilePreview();
+});
 </script>
 {% endblock %}
