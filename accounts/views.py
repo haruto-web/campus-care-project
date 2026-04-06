@@ -1702,6 +1702,27 @@ def student_profile_view(request, student_id):
     }
     return render(request, 'accounts/student_profile.html', context)
 
+
+@login_required
+def teacher_profile_view(request, teacher_id):
+    teacher = get_object_or_404(User, id=teacher_id, role='teacher')
+
+    # Students can only view teachers of classes they are enrolled in
+    if request.user.role == 'student':
+        if not Class.objects.filter(teacher=teacher, students=request.user).exists():
+            messages.error(request, 'Permission denied.')
+            return redirect('dashboard')
+    elif request.user.role not in ['teacher', 'counselor', 'admin']:
+        messages.error(request, 'Permission denied.')
+        return redirect('dashboard')
+
+    classes_taught = Class.objects.filter(teacher=teacher).order_by('code', 'name')
+    context = {
+        'teacher': teacher,
+        'classes_taught': classes_taught,
+    }
+    return render(request, 'accounts/teacher_profile.html', context)
+
 @login_required
 def students_list_view(request):
     # Only teachers can access this

@@ -29,7 +29,16 @@
             </div>
         </div>
         <div class="flex flex-wrap gap-4 mt-4 text-sm text-blue-100">
+            {% if user.role == 'student' %}
+            <a href="{% url 'teacher_profile' class.teacher.id %}" class="flex items-center gap-1 hover:text-white transition">
+                <i class="bi bi-person"></i> {{ class.teacher.get_full_name }}
+            </a>
+            <a href="{% url 'messaging:new_message_to' class.teacher.id %}" class="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-full transition">
+                <i class="bi bi-chat-dots"></i> Message
+            </a>
+            {% else %}
             <span class="flex items-center gap-1"><i class="bi bi-person"></i> {{ class.teacher.get_full_name }}</span>
+            {% endif %}
             <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i> {{ class.semester }}</span>
             {% if class.schedule %}<span class="flex items-center gap-1"><i class="bi bi-clock"></i> {{ class.schedule }}</span>{% endif %}
             {% if class.room %}<span class="flex items-center gap-1"><i class="bi bi-geo-alt"></i> Room {{ class.room }}</span>{% endif %}
@@ -89,9 +98,9 @@
             {% if assignments %}
             {% if user.role == 'student' %}
             <div class="mb-4 flex flex-wrap items-center gap-2" id="assignment-filter-headers">
-                <button type="button" onclick="filterClassAssignments('upcoming', this)" class="assignment-filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-blue-200 bg-blue-600 text-white">Upcoming</button>
-                <button type="button" onclick="filterClassAssignments('overdue', this)" class="assignment-filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-red-200 bg-white text-red-700 hover:bg-red-50">Overdue</button>
-                <button type="button" onclick="filterClassAssignments('completed', this)" class="assignment-filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-green-200 bg-white text-green-700 hover:bg-green-50">Completed</button>
+                <button type="button" onclick="filterClassAssignments('upcoming', this)" class="assignment-filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900">Upcoming</button>
+                <button type="button" onclick="filterClassAssignments('overdue', this)" class="assignment-filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">Overdue</button>
+                <button type="button" onclick="filterClassAssignments('completed', this)" class="assignment-filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">Completed</button>
             </div>
             {% endif %}
             <div class="space-y-3">
@@ -312,11 +321,16 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {% for student in class.students.all %}
                 <div class="border rounded-xl p-3 flex items-center gap-3 hover:shadow-md transition">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">{{ student.get_full_name|slice:":1"|upper }}</div>
-                    <div class="min-w-0">
-                        <p class="font-semibold text-gray-800 truncate">{{ student.get_full_name }}</p>
-                        <p class="text-xs text-gray-500 truncate">{{ student.email }}</p>
-                    </div>
+                    <a href="{% url 'student_profile' student.id %}" class="flex items-center gap-3 flex-1 min-w-0">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">{{ student.get_full_name|slice:":1"|upper }}</div>
+                        <div class="min-w-0">
+                            <p class="font-semibold text-gray-800 truncate hover:text-blue-700">{{ student.get_full_name }}</p>
+                            <p class="text-xs text-gray-500 truncate">{{ student.email }}</p>
+                        </div>
+                    </a>
+                    <a href="{% url 'messaging:new_message_to' student.id %}" class="shrink-0 bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-lg hover:bg-blue-100 transition text-xs font-semibold">
+                        <i class="bi bi-chat-dots"></i> Message
+                    </a>
                 </div>
                 {% endfor %}
             </div>
@@ -391,11 +405,11 @@ function filterClassAssignments(status, btn) {
         card.classList.toggle('hidden', cardStatus !== status);
     });
     document.querySelectorAll('#assignment-filter-headers .assignment-filter-btn').forEach((filterBtn) => {
-        filterBtn.classList.remove('bg-blue-600', 'text-white');
-        filterBtn.classList.add('bg-white');
+        filterBtn.classList.remove('border-slate-900', 'bg-slate-900', 'text-white', 'dark:border-white', 'dark:bg-white', 'dark:text-slate-900');
+        filterBtn.classList.add('border-gray-300', 'bg-white', 'text-gray-700', 'hover:bg-gray-50', 'dark:border-gray-600', 'dark:bg-gray-800', 'dark:text-gray-200', 'dark:hover:bg-gray-700');
     });
-    btn.classList.remove('bg-white');
-    btn.classList.add('bg-blue-600', 'text-white');
+    btn.classList.remove('border-gray-300', 'bg-white', 'text-gray-700', 'hover:bg-gray-50', 'dark:border-gray-600', 'dark:bg-gray-800', 'dark:text-gray-200', 'dark:hover:bg-gray-700');
+    btn.classList.add('border-slate-900', 'bg-slate-900', 'text-white', 'dark:border-white', 'dark:bg-white', 'dark:text-slate-900');
 }
 document.addEventListener('DOMContentLoaded', () => {
     const firstFilter = document.querySelector('#assignment-filter-headers .assignment-filter-btn');

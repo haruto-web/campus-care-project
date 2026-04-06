@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ teacher.get_full_name }} - Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 p-6">
+        <div class="flex flex-col md:flex-row gap-6 items-start">
+            <div class="flex-shrink-0">
+                {% if teacher.profile_picture %}
+                <img src="{{ teacher.profile_picture.url }}" alt="Profile" class="w-28 h-28 rounded-full object-cover border-4 border-indigo-100" onerror="this.onerror=null;this.src='{% static 'images/logo.png' %}'">
+                {% else %}
+                <img src="{% static 'images/logo.png' %}" alt="Profile" class="w-28 h-28 rounded-full object-cover border-4 border-indigo-100">
+                {% endif %}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                <div class="sm:col-span-2">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ teacher.get_full_name }}</h2>
+                    <p class="text-gray-500 dark:text-gray-400">Teacher</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Email</p>
+                    <p class="font-semibold text-gray-900 dark:text-white break-all">{{ teacher.email }}</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Phone</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ teacher.phone|default:"-" }}</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Subject</p>
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ teacher.subject|default:"-" }}</p>
+                </div>
+                <div class="flex items-end">
+                    <a href="{% url 'messaging:new_message_to' teacher.id %}" class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+                        <i class="bi bi-chat-dots"></i> Message
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Classes Teaching</h3>
+        </div>
+        <div class="p-6">
+            {% if classes_taught %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for cls in classes_taught %}
+                <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                    <p class="font-semibold text-gray-900 dark:text-white">{{ cls.code }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ cls.name }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 dark:text-gray-400">No classes assigned.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

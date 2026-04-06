@@ -12,6 +12,7 @@ urlpatterns = [
     path('forgot-password/', views.otp_forgot_password_view, name='otp_forgot_password'),
     path('reset-password/', views.otp_reset_password_view, name='otp_reset_password'),
     path('student/<int:student_id>/', views.student_profile_view, name='student_profile'),
+    path('teacher/<int:teacher_id>/', views.teacher_profile_view, name='teacher_profile'),
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('dashboard/stats/', views.dashboard_stats_view, name='dashboard_stats'),
