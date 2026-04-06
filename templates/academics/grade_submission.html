@@ -5,15 +5,19 @@
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
-        <div class="bg-gradient-to-r from-purple-600 to-indigo-700 px-6 py-6">
-            <div class="flex items-center space-x-3">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                </svg>
-                <div>
-                    <h1 class="text-3xl font-bold text-white">Grade Submission</h1>
-                    <p class="text-purple-100 mt-1">Review and provide feedback</p>
+    <div class="mb-8">
+        <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl shadow-xl overflow-hidden p-1">
+            <div class="bg-white/10 backdrop-blur-md rounded-xl px-8 py-6 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="p-3 bg-white/20 rounded-xl">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-extrabold text-white tracking-tight">Grade Submission</h1>
+                        <p class="text-indigo-100 font-medium opacity-90">Review student work and provide feedback</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -23,68 +27,77 @@
         <!-- Left Column: Submission Details -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Student Info Card -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-                    <div class="flex items-center space-x-4">
-                        <div class="flex-shrink-0 h-16 w-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                            {{ submission.student.get_full_name|slice:":1"|upper }}</div>
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ submission.student.get_full_name }}</h2>
-                            <p class="text-gray-600 dark:text-gray-400 flex items-center mt-1">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                {{ submission.assignment.title }}</p>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div class="p-8">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div class="flex items-center space-x-5">
+                            <div class="flex-shrink-0 h-20 w-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-lg transform -rotate-3">
+                                {{ submission.student.get_full_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{{ submission.student.get_full_name }}</h2>
+                                <div class="flex flex-wrap items-center gap-3 mt-2">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                                        <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        {{ submission.assignment.title }}
+                                    </span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                                        <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Submitted: {{ submission.submitted_at|date:"M d, Y h:i A" }}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/50">
-                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <svg class="w-5 h-5 mr-2 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span class="font-semibold">Submitted:</span>
-                        <span class="ml-2">{{ submission.submitted_at|date:"M d, Y h:i A" }}</span>
                     </div>
                 </div>
             </div>
 
             <!-- Submission Content Card -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div class="px-8 py-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                        <div class="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
                         Submission Content
                     </h3>
                 </div>
-                <div class="p-6">
+                <div class="p-8">
                     {% if submission.text_content %}
-                    <div class="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-900/30 border-2 border-gray-200 dark:border-gray-700 rounded-lg p-6 text-gray-700 dark:text-gray-300 leading-relaxed">
-                        {{ submission.text_content|linebreaks }}</div>
+                    <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-8 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 leading-relaxed text-lg mb-6">
+                        {{ submission.text_content|linebreaks }}
+                    </div>
                     {% endif %}
+                    
                     {% if submission.file %}
-                    <div class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-900/40 rounded-lg">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                </svg>
+                    <div class="group relative bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-2xl p-6 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300">
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div class="flex items-center space-x-5">
+                                <div class="p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                                    <svg class="w-10 h-10 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
                                 <div>
-                                    <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">Attached File</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Click to download</p>
+                                    <p class="text-lg font-bold text-gray-900 dark:text-white">Attached Document</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">View or download the student's submission</p>
                                 </div>
                             </div>
-                            <div class="flex gap-2">
-                                <button onclick="openFilePreview('{{ submission.file.url }}')" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="flex items-center gap-3">
+                                <button onclick="openFilePreview('{{ submission.file.url }}')" class="flex items-center px-5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                     Preview
                                 </button>
-                                <a href="{{ submission.file.url }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+                                <a href="{{ submission.file.url }}" target="_blank" class="flex items-center px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transform hover:-translate-y-px transition-all">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                     </svg>
@@ -96,17 +109,21 @@
                         <!-- Embedded Inline Preview (PDF/Images) -->
                         {% with file_url=submission.file.url|lower %}
                             {% if '.pdf' in file_url %}
-                            <div class="mt-6 border-t border-blue-200 dark:border-blue-900/40 pt-6">
-                                <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Quick Preview (PDF):</p>
-                                <div class="bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-inner border dark:border-gray-700">
+                            <div class="mt-8 pt-8 border-t border-gray-100 dark:border-gray-700">
+                                <div class="flex items-center justify-between mb-4">
+                                    <p class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Quick Preview (PDF)</p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-gray-950 rounded-2xl overflow-hidden shadow-inner border dark:border-gray-800">
                                     <iframe src="{{ submission.file.url }}#toolbar=0" class="w-full h-[600px]" frameborder="0"></iframe>
                                 </div>
                             </div>
                             {% elif '.jpg' in file_url or '.jpeg' in file_url or '.png' in file_url or '.gif' in file_url or '.webp' in file_url %}
-                            <div class="mt-6 border-t border-blue-200 dark:border-blue-900/40 pt-6">
-                                <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Quick Preview (Image):</p>
-                                <div class="bg-white dark:bg-gray-900 p-2 rounded-xl border border-blue-100 dark:border-gray-700 shadow-inner">
-                                    <img src="{{ submission.file.url }}" class="max-w-full h-auto rounded shadow-sm mx-auto" alt="Submission preview">
+                            <div class="mt-8 pt-8 border-t border-gray-100 dark:border-gray-700">
+                                <div class="flex items-center justify-between mb-4">
+                                    <p class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Quick Preview (Image)</p>
+                                </div>
+                                <div class="bg-white dark:bg-gray-950 p-2 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-inner">
+                                    <img src="{{ submission.file.url }}" class="max-w-full h-auto rounded-xl shadow-sm mx-auto" alt="Submission preview">
                                 </div>
                             </div>
                             {% endif %}
@@ -117,52 +134,35 @@
             </div>
         </div>
 
-        <!-- FILE PREVIEW MODAL -->
-        <div id="filePreviewModal" class="fixed inset-0 z-[10000] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4 sm:p-8">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl h-full flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
-                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-900/50">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <i class="bi bi-file-earmark-text text-blue-600"></i>
-                        File Preview
-                    </h3>
-                    <div class="flex items-center gap-3">
-                        <a id="modalDownloadBtn" href="#" target="_blank" class="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-semibold flex items-center gap-1">
-                            <i class="bi bi-download"></i> Download
-                        </a>
-                        <button onclick="closeFilePreview()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition">
-                            <i class="bi bi-x-lg text-xl"></i>
-                        </button>
-                    </div>
-                </div>
-                <div id="modalPreviewBody" class="flex-1 bg-gray-100 dark:bg-gray-950 overflow-auto flex items-center justify-center p-4">
-                    <!-- Loaded dynamically via JS -->
-                </div>
-            </div>
-        </div>
-        </div>
-
         <!-- Right Column: Grading Form -->
         <div class="lg:col-span-1">
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden sticky top-6">
-                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                        </svg>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden sticky top-6">
+                <div class="px-8 py-5 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                        <div class="p-2 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg">
+                            <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                            </svg>
+                        </div>
                         Grade Assignment
                     </h3>
                 </div>
-                <form method="post" class="p-6 space-y-6" onsubmit="return confirm('Are you sure you want to save this grade and feedback?');">
+                <form method="post" class="p-8 space-y-8" onsubmit="return confirm('Are you sure you want to save this grade and feedback?');">
                     {% csrf_token %}
                     
                     <!-- Score Input -->
                     <div>
-                        <label for="score" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                            Score
-                        </label>
-                        <div class="relative">
+                        <div class="flex items-center justify-between mb-3">
+                            <label for="score" class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                Award Score
+                            </label>
+                            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-md">
+                                Max Points: {{ submission.assignment.total_points }}
+                            </span>
+                        </div>
+                        <div class="relative group">
                             <input type="number" 
-                                   class="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 text-lg font-semibold" 
+                                   class="w-full pl-6 pr-20 py-4 bg-gray-50 dark:bg-gray-900/50 border-2 border-gray-200 dark:border-gray-700 dark:text-white rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all duration-300 text-3xl font-black" 
                                    id="score" 
                                    name="score" 
                                    min="0" 
@@ -170,66 +170,83 @@
                                    value="{{ submission.score|default:'' }}" 
                                    placeholder="0"
                                    required>
-                            <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 font-semibold">
-                                / {{ submission.assignment.total_points }}</div>
+                            <div class="absolute right-6 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                                <span class="text-2xl font-bold text-gray-400">/</span>
+                                <span class="text-2xl font-black text-gray-600 dark:text-gray-400">{{ submission.assignment.total_points }}</span>
+                            </div>
                         </div>
-                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Maximum: {{ submission.assignment.total_points }} points
-                        </p>
                     </div>
 
                     <!-- Feedback Textarea -->
                     <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <label for="feedback" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        <div class="flex items-center justify-between mb-3">
+                            <label for="feedback" class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                 Feedback
                             </label>
-                            <button type="button" onclick="generateAIFeedback({{ submission.id }})" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-all duration-200 text-xs font-semibold shadow-sm hover:shadow flex items-center gap-1.5">
-                                <i class="bi bi-robot"></i> AI Suggest
+                            <button type="button" onclick="generateAIFeedback(event, {{ submission.id }})" class="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-purple-200 dark:shadow-none transition-all duration-300 active:scale-95">
+                                <i class="bi bi-stars group-hover:animate-pulse"></i>
+                                AI Suggest
                             </button>
                         </div>
-                        <textarea class="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 resize-none" 
+                        <textarea class="w-full px-6 py-5 bg-gray-50 dark:bg-gray-900/50 border-2 border-gray-200 dark:border-gray-700 dark:text-white rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all duration-300 resize-none font-medium leading-relaxed" 
                                   id="feedback" 
                                   name="feedback" 
-                                  rows="6"
-                                  placeholder="Provide constructive feedback to help the student improve...">{{ submission.feedback }}</textarea>
-                        <div id="ai-feedback-suggestions" class="hidden mt-3 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg shadow-inner">
-                            <div class="text-sm font-bold text-purple-800 dark:text-purple-300 mb-2 flex items-center gap-2">
-                                <i class="bi bi-stars"></i> AI Suggestions:
+                                  rows="8"
+                                  placeholder="What did the student do well? How can they improve?">{{ submission.feedback }}</textarea>
+                        
+                        <div id="ai-feedback-suggestions" class="hidden mt-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div class="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border border-purple-200 dark:border-purple-800 rounded-2xl p-6 shadow-xl">
+                                <div class="flex items-center gap-2 text-purple-800 dark:text-purple-300 font-bold mb-3">
+                                    <div class="p-1.5 bg-purple-100 dark:bg-purple-800 rounded-lg">
+                                        <i class="bi bi-robot"></i>
+                                    </div>
+                                    AI Recommendation
+                                </div>
+                                <div id="ai-feedback-content" class="text-sm text-purple-700 dark:text-purple-200 leading-relaxed italic mb-4"></div>
+                                <button type="button" onclick="useAIFeedback()" class="w-full py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition shadow-lg shadow-purple-200 dark:shadow-none">
+                                    Apply this Feedback
+                                </button>
                             </div>
-                            <div id="ai-feedback-content" class="text-sm text-purple-700 dark:text-purple-200 leading-relaxed italic"></div>
-                            <button type="button" onclick="useAIFeedback()" class="mt-3 w-full bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-purple-700 transition shadow-md">
-                                Use This Feedback
-                            </button>
                         </div>
-                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
-                            </svg>
-                            Optional: Add comments for the student
-                        </p>
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="space-y-3 pt-4">
-                        <button type="submit" class="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex flex-col gap-4 pt-4">
+                        <button type="submit" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-200 dark:shadow-none hover:shadow-2xl hover:shadow-emerald-300 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            Save Grade
+                            Confirm Grade
                         </button>
                         <a href="{% url 'academics:view_submissions' submission.assignment.class_obj.id submission.assignment.id %}" 
-                           class="w-full inline-flex items-center justify-center px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
+                           class="w-full py-4 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all text-center">
                             Cancel
                         </a>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILE PREVIEW MODAL -->
+    <div id="filePreviewModal" class="fixed inset-0 z-[10000] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4 sm:p-8">
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl h-full flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-900/50">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="bi bi-file-earmark-text text-blue-600"></i>
+                    File Preview
+                </h3>
+                <div class="flex items-center gap-3">
+                    <a id="modalDownloadBtn" href="#" target="_blank" class="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-semibold flex items-center gap-1">
+                        <i class="bi bi-download"></i> Download
+                    </a>
+                    <button onclick="closeFilePreview()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition">
+                        <i class="bi bi-x-lg text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="modalPreviewBody" class="flex-1 bg-gray-100 dark:bg-gray-950 overflow-auto flex items-center justify-center p-4">
+                <!-- Loaded dynamically via JS -->
             </div>
         </div>
     </div>
@@ -238,7 +255,7 @@
 
 {% block extra_js %}
 <script>
-function generateAIFeedback(submissionId) {
+function generateAIFeedback(event, submissionId) {
     if (!confirm('Would you like to generate an AI feedback suggestion for this submission?')) {
         return;
     }
