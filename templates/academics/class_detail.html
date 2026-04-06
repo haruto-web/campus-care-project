@@ -87,10 +87,17 @@
         <!-- Assignments Tab -->
         <div id="panel-assignments" class="tab-panel p-5">
             {% if assignments %}
+            {% if user.role == 'student' %}
+            <div class="mb-4 flex flex-wrap items-center gap-2" id="assignment-filter-headers">
+                <button type="button" onclick="filterClassAssignments('upcoming', this)" class="assignment-filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-blue-200 bg-blue-600 text-white">Upcoming</button>
+                <button type="button" onclick="filterClassAssignments('overdue', this)" class="assignment-filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-red-200 bg-white text-red-700 hover:bg-red-50">Overdue</button>
+                <button type="button" onclick="filterClassAssignments('completed', this)" class="assignment-filter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-green-200 bg-white text-green-700 hover:bg-green-50">Completed</button>
+            </div>
+            {% endif %}
             <div class="space-y-3">
                 {% for assignment in assignments %}
                 {% with now=assignment.due_date %}
-                <div class="border rounded-xl p-4 hover:shadow-md transition group">
+                <div class="border rounded-xl p-4 hover:shadow-md transition group assignment-card {% if user.role == 'student' %}{% if assignment.has_submission %}assignment-card-completed{% elif assignment.is_overdue %}assignment-card-overdue{% else %}assignment-card-upcoming{% endif %}{% endif %}" {% if user.role == 'student' %}data-assignment-status="{% if assignment.has_submission %}completed{% elif assignment.is_overdue %}overdue{% else %}upcoming{% endif %}"{% endif %}>
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex items-start gap-3 flex-1 min-w-0">
                             <div class="mt-0.5 shrink-0">
@@ -136,6 +143,9 @@
                             </form>
                             {% elif user.role == 'student' %}
                             {% if assignment.has_submission %}
+                                <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-1.5">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
                                 {% if assignment.submission_is_graded %}
                                 <span class="bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-2 rounded-lg text-sm font-medium">
                                     Graded - Locked
@@ -375,6 +385,24 @@ function confirmResubmit(el) {
         onConfirm() { window.location.href = el.dataset.url; }
     });
 }
+function filterClassAssignments(status, btn) {
+    document.querySelectorAll('#panel-assignments .assignment-card').forEach((card) => {
+        const cardStatus = card.getAttribute('data-assignment-status');
+        card.classList.toggle('hidden', cardStatus !== status);
+    });
+    document.querySelectorAll('#assignment-filter-headers .assignment-filter-btn').forEach((filterBtn) => {
+        filterBtn.classList.remove('bg-blue-600', 'text-white');
+        filterBtn.classList.add('bg-white');
+    });
+    btn.classList.remove('bg-white');
+    btn.classList.add('bg-blue-600', 'text-white');
+}
+document.addEventListener('DOMContentLoaded', () => {
+    const firstFilter = document.querySelector('#assignment-filter-headers .assignment-filter-btn');
+    if (firstFilter) {
+        filterClassAssignments('upcoming', firstFilter);
+    }
+});
 </script>
 {% endblock %}
 
