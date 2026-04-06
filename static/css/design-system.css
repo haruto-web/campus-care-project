@@ -1341,7 +1341,7 @@ select::-ms-expand {
 .dark .text-gray-500, .dark .text-gray-400 { color: var(--bt-text-muted) !important; }
 .dark .border-gray-100, .dark .border-gray-200 { border-color: var(--bt-border) !important; }
 .dark .bg-gray-50, .dark .bg-gray-100 { background-color: var(--bt-bg) !important; }
-.dark .bg-blue-50, .dark .bg-indigo-50, .dark .bg-purple-50 { background-color: rgba(99, 102, 241, 0.1) !important; border-color: rgba(99, 102, 241, 0.2) !important; }
+.dark .bg-blue-50, .dark .bg-indigo-50, .dark .bg-purple-50, .dark .bg-green-50, .dark .bg-red-50 { background-color: rgba(99, 102, 241, 0.1) !important; border-color: rgba(99, 102, 241, 0.2) !important; }
 .dark .text-blue-900, .dark .text-indigo-900, .dark .text-purple-900 { color: var(--bt-text) !important; }
 .dark .text-blue-800, .dark .text-indigo-800, .dark .text-purple-800 { color: var(--bt-text-secondary) !important; }
 

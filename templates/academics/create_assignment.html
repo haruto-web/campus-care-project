@@ -69,29 +69,29 @@
                         Submission Type <span class="text-red-500">*</span>
                     </label>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-400 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-blue-400 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/30">
                             <input type="radio" name="submission_type" value="file_upload" class="mt-1" {% if form.submission_type.value == 'file_upload' or not form.submission_type.value %}checked{% endif %}>
                             <div>
                                 <div class="font-semibold text-gray-800 flex items-center gap-2">
-                                    <i class="bi bi-file-earmark-arrow-up text-blue-600"></i> File Upload
+                                    <i class="bi bi-file-earmark-arrow-up text-blue-600 dark:text-blue-400"></i> File Upload
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">Student uploads a file (PDF, Word, etc.)</p>
                             </div>
                         </label>
-                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-400 transition has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
+                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-green-400 transition has-[:checked]:border-green-500 has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/30">
                             <input type="radio" name="submission_type" value="text_entry" class="mt-1" {% if form.submission_type.value == 'text_entry' %}checked{% endif %}>
                             <div>
                                 <div class="font-semibold text-gray-800 flex items-center gap-2">
-                                    <i class="bi bi-pencil-square text-green-600"></i> Text Entry
+                                    <i class="bi bi-pencil-square text-green-600 dark:text-green-400"></i> Text Entry
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">Student types their answer directly</p>
                             </div>
                         </label>
-                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-400 transition has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50">
+                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-purple-400 transition has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50 dark:has-[:checked]:bg-purple-900/30">
                             <input type="radio" name="submission_type" value="both" class="mt-1" {% if form.submission_type.value == 'both' %}checked{% endif %}>
                             <div>
                                 <div class="font-semibold text-gray-800 flex items-center gap-2">
-                                    <i class="bi bi-layers text-purple-600"></i> File or Text
+                                    <i class="bi bi-layers text-purple-600 dark:text-purple-400"></i> File or Text
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">Student can upload a file or type an answer</p>
                             </div>
@@ -104,20 +104,20 @@
                         Late Submission Policy <span class="text-red-500">*</span>
                     </label>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <label class="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-400 transition has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
+                        <label class="flex items-start gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-green-400 transition has-[:checked]:border-green-500 has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/30">
                             <input type="radio" name="allow_late_submission" value="true" class="mt-1" {% if allow_late_submission_selected == 'true' %}checked{% endif %}>
                             <div>
                                 <div class="font-semibold text-gray-800 flex items-center gap-2">
-                                    <i class="bi bi-unlock text-green-600"></i> Allow Late
+                                    <i class="bi bi-unlock text-green-600 dark:text-green-400"></i> Allow Late
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">Students can still submit after due date and will be marked late.</p>
                             </div>
                         </label>
-                        <label class="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-red-400 transition has-[:checked]:border-red-500 has-[:checked]:bg-red-50">
+                        <label class="flex items-start gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-red-400 transition has-[:checked]:border-red-500 has-[:checked]:bg-red-50 dark:has-[:checked]:bg-red-900/30">
                             <input type="radio" name="allow_late_submission" value="false" class="mt-1" {% if allow_late_submission_selected == 'false' %}checked{% endif %}>
                             <div>
                                 <div class="font-semibold text-gray-800 flex items-center gap-2">
-                                    <i class="bi bi-lock text-red-600"></i> Lock at Due Date
+                                    <i class="bi bi-lock text-red-600 dark:text-red-400"></i> Lock at Due Date
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">Students cannot submit once the assignment is overdue.</p>
                             </div>

@@ -3,7 +3,7 @@
 {% block title %}{{ student.get_full_name }} - Profile{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 px-4">
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-8 px-4 text-gray-900 dark:text-gray-100">
     <div class="max-w-7xl mx-auto">
         <!-- Header with Profile Card -->
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl p-8 mb-6">
@@ -59,7 +59,7 @@
 
         <!-- AI Insights Section -->
         {% if ai_prediction %}
-        <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl shadow-lg mb-6 overflow-hidden border-2 border-purple-200">
+        <div class="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl shadow-lg mb-6 overflow-hidden border-2 border-purple-200 dark:border-purple-800">
             <div class="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4">
                 <h2 class="text-xl font-bold text-white flex items-center">
                     <span class="text-2xl mr-2">🤖</span> AI Risk Analysis
@@ -233,7 +233,7 @@
         {% endif %}
 
         <!-- Enrolled Classes -->
-        <div class="bg-white rounded-2xl shadow-lg mb-6 overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg mb-6 overflow-hidden">
             <div class="bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-4">
                 <h2 class="text-xl font-bold text-white"><i class="bi bi-book"></i> Enrolled Classes</h2>
             </div>
@@ -241,7 +241,7 @@
                 {% if enrolled_classes %}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {% for class in enrolled_classes %}
-                    <div class="border-2 border-gray-200 rounded-xl p-4 hover:border-blue-500 hover:shadow-md transition">
+                    <div class="border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:border-blue-500 hover:shadow-md transition bg-white dark:bg-gray-800">
                         <h3 class="font-bold text-lg text-gray-900">{{ class.code }}</h3>
                         <p class="text-gray-600">{{ class.name }}</p>
                         <p class="text-sm text-gray-500 mt-2"><i class="bi bi-person"></i> {{ class.teacher.get_full_name }}</p>
@@ -259,7 +259,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <!-- Recent Attendance -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
                 <div class="bg-gradient-to-r from-green-500 to-teal-500 px-6 py-4">
                     <h2 class="text-xl font-bold text-white"><i class="bi bi-calendar-check"></i> Recent Attendance</h2>
                 </div>
@@ -289,7 +289,7 @@
             </div>
 
             <!-- Wellness Check-ins -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
                 <div class="bg-gradient-to-r from-pink-500 to-rose-500 px-6 py-4">
                     <h2 class="text-xl font-bold text-white"><i class="bi bi-heart-pulse"></i> Recent Wellness Check-ins</h2>
                 </div>
@@ -328,7 +328,7 @@
         </div>
 
         <!-- Teacher Concerns -->
-        <div class="bg-white rounded-2xl shadow-lg mb-6 overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg mb-6 overflow-hidden">
             <div class="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4">
                 <h2 class="text-xl font-bold text-white"><i class="bi bi-exclamation-triangle"></i> Teacher Concerns</h2>
             </div>
@@ -336,7 +336,7 @@
                 {% if concerns %}
                 <div class="space-y-3">
                     {% for concern in concerns %}
-                    <div class="border-l-4 {% if concern.severity == 'high' %}border-red-500 bg-red-50{% elif concern.severity == 'medium' %}border-yellow-500 bg-yellow-50{% else %}border-gray-400 bg-gray-50{% endif %} p-4 rounded-r-lg">
+                    <div class="border-l-4 {% if concern.severity == 'high' %}border-red-500 bg-red-50 dark:bg-red-900/20{% elif concern.severity == 'medium' %}border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20{% else %}border-gray-400 bg-gray-50 dark:bg-gray-800{% endif %} p-4 rounded-r-lg">
                         <div class="flex justify-between items-start mb-2">
                             <div>
                                 <span class="px-2 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-700">{{ concern.get_concern_type_display }}</span>
@@ -356,7 +356,7 @@
         </div>
 
         <!-- Interventions -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
             <div class="bg-gradient-to-r from-purple-500 to-indigo-500 px-6 py-4">
                 <h2 class="text-xl font-bold text-white"><i class="bi bi-clipboard-check"></i> Interventions</h2>
             </div>
