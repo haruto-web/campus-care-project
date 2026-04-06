@@ -115,10 +115,16 @@
                                 </tr>
                                 {% if grade.feedback %}
                                 <tr class="bg-gray-50">
-                                    <td colspan="5" class="py-2 px-4">
+                                    <td colspan="5" class="py-5 px-6">
                                         <p class="text-sm text-gray-600">
                                             <i class="bi bi-chat-left-text mr-1"></i>
-                                            <span class="font-semibold">Feedback:</span> {{ grade.feedback }}</p>
+                                            Instructor Feedback
+                                            <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-1.5 before:content-['•'] before:text-gray-300 dark:before:text-gray-700 leading-none">
+                                                {{ class_data.class.teacher.get_full_name }}
+                                            </span>
+                                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 leading-relaxed italic mt-2">
+                                                "{{ grade.feedback }}"
+                                            </p>
                                     </td>
                                 </tr>
                                 {% endif %}
