@@ -1,6 +1,6 @@
 # BrightTrack LMS — Academic Presentation Guide
 
-**System Name:** BrightTrack Learning Management System
+**
 **Formerly Known As:** Campus Care
 **Live URL:** https://bright-track-project.onrender.com
 **Last Updated:** July 2026
