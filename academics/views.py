@@ -1605,21 +1605,22 @@ def submit_assignment(request, assignment_id):
     context = {
         'assignment': assignment,
         'existing_submission': existing_submission,
+        'show_submit_success': request.GET.get('submitted') == '1',
     }
     
     if request.method == 'POST':
         if not assignment.is_available:
             messages.error(request, 'This assignment is not yet available for submission.')
-            return redirect('academics:student_assignments')
+            return redirect('academics:submit_assignment', assignment_id=assignment_id)
         if assignment.submission_locked:
             messages.error(request, 'This assignment is locked because the due date has passed.')
-            return redirect('academics:student_assignments')
+            return redirect('academics:submit_assignment', assignment_id=assignment_id)
         if assignment.submission_is_graded:
             messages.error(request, 'This assignment is already graded and can no longer be resubmitted.')
-            return redirect('academics:student_assignments')
+            return redirect('academics:submit_assignment', assignment_id=assignment_id)
         if assignment.attempts_exhausted:
             messages.error(request, f'No attempts remaining. Maximum allowed attempts: {assignment.max_attempts}.')
-            return redirect('academics:student_assignments')
+            return redirect('academics:submit_assignment', assignment_id=assignment_id)
         if hit_rate_limit(request, f'academics_submit_assignment_{assignment_id}', limit=10, window_seconds=600):
             messages.error(request, 'Too many submission attempts. Please wait before trying again.')
             return redirect('academics:submit_assignment', assignment_id=assignment_id)
@@ -1677,7 +1678,7 @@ def submit_assignment(request, assignment_id):
                     messages.success(request, 'Assignment submitted successfully. Marked as late.')
                 else:
                     messages.success(request, 'Assignment submitted successfully!')
-            return redirect('academics:student_assignments')
+            return redirect(f"{reverse('academics:submit_assignment', args=[assignment_id])}?submitted=1")
     
     return render(request, 'academics/submit_assignment.html', context)
 
