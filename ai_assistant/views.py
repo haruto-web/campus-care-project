@@ -472,3 +472,70 @@ Write in a conversational, easy-to-read style:
     except Exception as e:
         logger.error(f'Admin chat error: {e}', exc_info=True)
         return _safe_json_error('An internal error occurred. Please try again.', status=500)
+
+@login_required
+@require_http_methods(["POST"])
+def generate_teacher_feedback(request, submission_id):
+    """AI Assistant for Teacher to generate submission feedback"""
+    if request.user.role not in ['teacher', 'admin']:
+        return _safe_json_error('Permission denied', status=403)
+        
+    from academics.models import Submission
+    try:
+        submission = Submission.objects.select_related('student', 'assignment', 'assignment__class_obj').get(id=submission_id)
+    except Submission.DoesNotExist:
+        return _safe_json_error('Submission not found', status=404)
+        
+    # Rate limit: 20 per 10 mins
+    if hit_rate_limit(request, 'ai_teacher_feedback', limit=20, window_seconds=600):
+        return JsonResponse({'error': 'Too many feedback requests. Please wait before trying again.'}, status=429)
+
+    try:
+        client = GeminiClient()
+        
+        # Prepare context for AI
+        # If it's a file, we can't read content here easily but if it's text we can.
+        context = {
+            'student_name': submission.student.get_full_name(),
+            'assignment_title': submission.assignment.title,
+            'assignment_description': submission.assignment.description,
+            'total_points': submission.assignment.total_points,
+            'student_text': submission.text_content or (f"Student submitted a file: {submission.file.name}" if submission.file else "No content submitted."),
+        }
+        
+        prompt = f"""Generate professional constructive feedback and a suggested grade for this student's submission.
+        
+Context:
+{json.dumps(context, indent=2)}
+
+Guidelines:
+1. Be constructive and encouraging.
+2. Identify strengths.
+3. Identify areas for improvement.
+4. Suggest a fair grade out of {context['total_points']}.
+5. Keep the feedback concise (2-3 sentences).
+6. Use plain text ONLY. No markdown, no bold (**), no bullet points, no special formatting.
+
+Return JSON only:
+{{
+  "feedback": "Your clean, plain-text constructive feedback here...",
+  "suggested_grade": integer_score
+}}"""
+        
+        # Call with 1 hr cache since teacher might re-request if they don't use it immediately
+        result = client._call_with_cache(prompt, cache_hours=1)
+        
+        log_action(request, 'AI_USED', 'Submission', submission.id, f'Feedback for {submission.student.get_full_name()}', extra_data={'action': 'generate_teacher_feedback'})
+        
+        return JsonResponse({
+            'success': True,
+            'feedback': result.get('feedback', ''),
+            'suggested_grade': result.get('suggested_grade', None)
+        })
+        
+    except Exception as e:
+        logger.error(f'Error in generate_teacher_feedback: {e}', exc_info=True)
+        return JsonResponse({
+            'success': False, 
+            'error': 'An internal error occurred while generating AI feedback. Please try again later.'
+        }, status=500)

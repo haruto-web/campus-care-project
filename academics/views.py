@@ -552,6 +552,8 @@ def create_assignment(request, class_id):
     if denied:
         return denied
     
+    allow_late_submission_selected = request.POST.get('allow_late_submission', 'true') if request.method == 'POST' else 'true'
+    
     if request.method == 'POST':
         if hit_rate_limit(request, f'academics_create_assignment_{class_id}', limit=15, window_seconds=600):
             messages.error(request, 'Too many assignment creation attempts. Please wait before trying again.')
@@ -568,6 +570,8 @@ def create_assignment(request, class_id):
                     'academics/create_assignment.html',
                     {'form': form, 'class': class_obj, 'allow_late_submission_selected': allow_late_submission_selected},
                 )
+            if assignment.due_date and timezone.is_naive(assignment.due_date):
+                assignment.due_date = timezone.make_aware(assignment.due_date)
             if assignment.due_date <= timezone.now():
                 messages.error(request, 'Due date must be in the future.')
                 return render(
@@ -620,6 +624,8 @@ def edit_assignment(request, class_id, assignment_id):
                         'allow_late_submission_selected': allow_late_submission_selected,
                     },
                 )
+            if updated_assignment.due_date and timezone.is_naive(updated_assignment.due_date):
+                updated_assignment.due_date = timezone.make_aware(updated_assignment.due_date)
             if updated_assignment.due_date <= timezone.now():
                 messages.error(request, 'Due date must be in the future.')
                 return render(

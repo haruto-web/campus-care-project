@@ -571,6 +571,19 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
                     message_reports: data.message_reports,
                     registrations: data.registrations
                 };
+                
+                // Populate the list on first load if it's empty but there are unread items
+                if (data.total > 0 && notifItems.length === 0) {
+                    if (data.messages > 0) addNotifItem(`<i class="bi bi-chat-dots mr-2 text-blue-500"></i> ${data.messages} unread message(s)`, '/messages/');
+                    if (data.announcements > 0) addNotifItem(`<i class="bi bi-megaphone mr-2 text-indigo-500"></i> ${data.announcements} unread announcement(s)`, '/class/my-classes/');
+                    if (data.grades > 0) addNotifItem('<i class="bi bi-trophy mr-2 text-purple-500"></i> Grade updates available', '/class/student/grades/');
+                    if (data.alerts > 0) addNotifItem(`<i class="bi bi-exclamation-triangle mr-2 text-red-500"></i> ${data.alerts} pending student alert(s)`, '/wellness/alerts/');
+                    if (data.interventions > 0) addNotifItem(`<i class="bi bi-journal-medical mr-2 text-emerald-500"></i> ${data.interventions} scheduled intervention(s)`, '{% url "wellness:interventions_list" %}');
+                    if (data.message_reports > 0) addNotifItem(`<i class="bi bi-flag mr-2 text-amber-500"></i> ${data.message_reports} pending message report(s)`, '{% if user.role == "admin" %}{% url "messaging:admin_message_reports" %}{% else %}{% url "messaging:message_reports" %}{% endif %}');
+                    if (data.registrations > 0) addNotifItem(`<i class="bi bi-person-plus mr-2 text-cyan-500"></i> ${data.registrations} pending registration(s)`, '{% url "admin_upload_students" %}');
+                    if (data.notifications > 0) addNotifItem('<i class="bi bi-bell mr-2 text-teal-500"></i> New wellness notification', '/wellness/checkin/');
+                }
+                
                 isFirstLoad = false;
                 return;
             }

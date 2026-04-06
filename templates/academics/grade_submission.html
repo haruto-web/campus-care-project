@@ -5,7 +5,7 @@
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
         <div class="bg-gradient-to-r from-purple-600 to-indigo-700 px-6 py-6">
             <div class="flex items-center space-x-3">
                 <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -23,14 +23,14 @@
         <!-- Left Column: Submission Details -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Student Info Card -->
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
                     <div class="flex items-center space-x-4">
                         <div class="flex-shrink-0 h-16 w-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
                             {{ submission.student.get_full_name|slice:":1"|upper }}</div>
                         <div>
-                            <h2 class="text-2xl font-bold text-gray-900">{{ submission.student.get_full_name }}</h2>
-                            <p class="text-gray-600 flex items-center mt-1">
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ submission.student.get_full_name }}</h2>
+                            <p class="text-gray-600 dark:text-gray-400 flex items-center mt-1">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
@@ -38,9 +38,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50">
-                    <div class="flex items-center text-sm text-gray-600">
-                        <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/50">
+                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <svg class="w-5 h-5 mr-2 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <span class="font-semibold">Submitted:</span>
@@ -50,10 +50,10 @@
             </div>
 
             <!-- Submission Content Card -->
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         Submission Content
@@ -61,28 +61,47 @@
                 </div>
                 <div class="p-6">
                     {% if submission.text_content %}
-                    <div class="bg-gradient-to-br from-gray-50 to-blue-50 border-2 border-gray-200 rounded-lg p-6 text-gray-700 leading-relaxed">
+                    <div class="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-900/30 border-2 border-gray-200 dark:border-gray-700 rounded-lg p-6 text-gray-700 dark:text-gray-300 leading-relaxed">
                         {{ submission.text_content|linebreaks }}</div>
                     {% endif %}
                     {% if submission.file %}
-                    <div class="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                    <div class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-900/40 rounded-lg">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
-                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                                 </svg>
                                 <div>
-                                    <p class="text-sm font-semibold text-gray-700">Attached File</p>
-                                    <p class="text-xs text-gray-500">Click to download</p>
+                                    <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">Attached File</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Click to download</p>
                                 </div>
                             </div>
-                            <a href="{{ submission.file.url }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                </svg>
-                                Download
-                            </a>
+                            <div class="flex gap-2">
+                                <a href="{{ submission.file.url }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                    Download
+                                </a>
+                            </div>
                         </div>
+
+                        <!-- File Preview Section -->
+                        {% with file_url=submission.file.url|lower %}
+                            {% if '.pdf' in file_url %}
+                            <div class="mt-6 border-t border-blue-200 dark:border-blue-900/40 pt-6">
+                                <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">PDF Preview:</p>
+                                <iframe src="{{ submission.file.url }}" class="w-full h-[600px] rounded-lg border-2 border-blue-100 dark:border-blue-900/30 shadow-inner" frameborder="0"></iframe>
+                            </div>
+                            {% elif '.jpg' in file_url or '.jpeg' in file_url or '.png' in file_url or '.gif' in file_url or '.webp' in file_url %}
+                            <div class="mt-6 border-t border-blue-200 dark:border-blue-900/40 pt-6">
+                                <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Image Preview:</p>
+                                <div class="bg-white dark:bg-gray-900 p-2 rounded-lg border-2 border-blue-100 dark:border-blue-900/30">
+                                    <img src="{{ submission.file.url }}" class="max-w-full h-auto rounded shadow-sm mx-auto" alt="Submission preview">
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endwith %}
                     </div>
                     {% endif %}
                 </div>
@@ -91,10 +110,10 @@
 
         <!-- Right Column: Grading Form -->
         <div class="lg:col-span-1">
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden sticky top-6">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
-                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden sticky top-6">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                         </svg>
                         Grade Assignment
@@ -105,12 +124,12 @@
                     
                     <!-- Score Input -->
                     <div>
-                        <label for="score" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <label for="score" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             Score
                         </label>
                         <div class="relative">
                             <input type="number" 
-                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 text-lg font-semibold" 
+                                   class="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 text-lg font-semibold" 
                                    id="score" 
                                    name="score" 
                                    min="0" 
@@ -118,10 +137,10 @@
                                    value="{{ submission.score|default:'' }}" 
                                    placeholder="0"
                                    required>
-                            <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold">
+                            <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 font-semibold">
                                 / {{ submission.assignment.total_points }}</div>
                         </div>
-                        <p class="mt-2 text-xs text-gray-500 flex items-center">
+                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
@@ -132,26 +151,28 @@
                     <!-- Feedback Textarea -->
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <label for="feedback" class="block text-sm font-semibold text-gray-700">
+                            <label for="feedback" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                                 Feedback
                             </label>
-                            <button type="button" onclick="generateAIFeedback({{ submission.id }})" class="bg-purple-600 text-white px-3 py-1 rounded-lg hover:bg-purple-700 transition text-xs font-medium">
-                                <i class="bi bi-robot mr-1"></i>AI Suggest
+                            <button type="button" onclick="generateAIFeedback({{ submission.id }})" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-all duration-200 text-xs font-semibold shadow-sm hover:shadow flex items-center gap-1.5">
+                                <i class="bi bi-robot"></i> AI Suggest
                             </button>
                         </div>
-                        <textarea class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 resize-none" 
+                        <textarea class="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 resize-none" 
                                   id="feedback" 
                                   name="feedback" 
                                   rows="6"
                                   placeholder="Provide constructive feedback to help the student improve...">{{ submission.feedback }}</textarea>
-                        <div id="ai-feedback-suggestions" class="hidden mt-2 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                            <div class="text-sm font-medium text-purple-800 mb-2">AI Suggestions:</div>
-                            <div id="ai-feedback-content" class="text-sm text-purple-700"></div>
-                            <button type="button" onclick="useAIFeedback()" class="mt-2 bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700">
+                        <div id="ai-feedback-suggestions" class="hidden mt-3 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg shadow-inner">
+                            <div class="text-sm font-bold text-purple-800 dark:text-purple-300 mb-2 flex items-center gap-2">
+                                <i class="bi bi-stars"></i> AI Suggestions:
+                            </div>
+                            <div id="ai-feedback-content" class="text-sm text-purple-700 dark:text-purple-200 leading-relaxed italic"></div>
+                            <button type="button" onclick="useAIFeedback()" class="mt-3 w-full bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-purple-700 transition shadow-md">
                                 Use This Feedback
                             </button>
                         </div>
-                        <p class="mt-2 text-xs text-gray-500 flex items-center">
+                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
                             </svg>

@@ -20,6 +20,7 @@ from django.conf import settings
 from accounts.views import protected_media_view
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from ai_assistant import views as ai_assistant_views
 
 
 @login_required
@@ -50,6 +51,7 @@ urlpatterns = [
     path('class/', include('academics.urls')),
     path('wellness/', include('wellness.urls')),
     path('ai/', include('ai_assistant.urls')),
+    path('ai-teacher/feedback/<int:submission_id>/', ai_assistant_views.generate_teacher_feedback, name='generate_teacher_feedback'),
     path('messages/', include('messaging.urls')),
     path('debug/cloudinary/', cloudinary_check_view, name='cloudinary_check'),
 ]
