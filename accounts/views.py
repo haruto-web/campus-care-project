@@ -26,6 +26,51 @@ from .otp_utils import send_otp_email, send_transactional_email
 from .utils import log_action, hit_rate_limit, record_security_spike, run_background_task, get_client_ip
 from .decorators import teacher_owns_class
 
+FORGOT_OTP_MAX_PER_HOUR = 3
+FORGOT_OTP_WINDOW_SECONDS = 3600
+
+
+def _forgot_otp_window_key(email):
+    return f'forgot_password_send_window_{email}'
+
+
+def _forgot_otp_window_state(email):
+    now_ts = timezone.now().timestamp()
+    key = _forgot_otp_window_key(email)
+    attempts = cache.get(key, [])
+    if not isinstance(attempts, list):
+        attempts = []
+    attempts = [float(ts) for ts in attempts if (now_ts - float(ts)) < FORGOT_OTP_WINDOW_SECONDS]
+    if attempts:
+        cache.set(key, attempts, FORGOT_OTP_WINDOW_SECONDS)
+    else:
+        cache.delete(key)
+    allowed = len(attempts) < FORGOT_OTP_MAX_PER_HOUR
+    wait_seconds = 0
+    if not allowed:
+        wait_seconds = max(1, int(FORGOT_OTP_WINDOW_SECONDS - (now_ts - attempts[0])))
+    return {
+        'attempts': attempts,
+        'allowed': allowed,
+        'wait_seconds': wait_seconds,
+        'remaining': max(0, FORGOT_OTP_MAX_PER_HOUR - len(attempts)),
+    }
+
+
+def _forgot_otp_register_attempt(email):
+    state = _forgot_otp_window_state(email)
+    if not state['allowed']:
+        return state
+    now_ts = timezone.now().timestamp()
+    attempts = list(state['attempts'])
+    attempts.append(now_ts)
+    cache.set(_forgot_otp_window_key(email), attempts, FORGOT_OTP_WINDOW_SECONDS)
+    state['attempts'] = attempts
+    state['allowed'] = len(attempts) < FORGOT_OTP_MAX_PER_HOUR
+    state['remaining'] = max(0, FORGOT_OTP_MAX_PER_HOUR - len(attempts))
+    state['wait_seconds'] = 0 if state['allowed'] else FORGOT_OTP_WINDOW_SECONDS
+    return state
+
 
 def _send_security_email(to_email, subject, lines):
     try:
@@ -558,6 +603,7 @@ def register_view(request):
                 'section': section,
                 'password_hash': make_password(password),
             }
+            messages.success(request, 'Registration details accepted. Verification code sent to your email.')
             return redirect('verify_otp')
     except Exception:
         import logging
@@ -666,6 +712,7 @@ def otp_login_password_view(request):
             for key in ['otp_email', 'otp_verified']:
                 request.session.pop(key, None)
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, 'Login successful.')
             return redirect('dashboard')
         else:
             messages.error(request, 'Incorrect password.')
@@ -681,11 +728,18 @@ def otp_forgot_password_view(request):
 
         if request.method == 'POST':
             email = request.POST.get('email', '').strip().lower()
-            rate_key = f'forgot_password_send_{email}'
-            send_count = cache.get(rate_key, 0)
-            if send_count >= 3:
-                messages.error(request, 'Too many reset requests. Please wait 15 minutes before trying again.')
+            if not email:
+                messages.error(request, 'Please enter your email address.')
                 return render(request, 'accounts/otp_forgot_password.html')
+
+            state = _forgot_otp_window_state(email)
+            if not state['allowed']:
+                wait_minutes = max(1, int((state['wait_seconds'] + 59) // 60))
+                messages.error(request, f'Too many reset requests. Please wait {wait_minutes} minute(s) before trying again.')
+                return render(request, 'accounts/otp_forgot_password.html')
+
+            # Count each request attempt in the same one-hour security window.
+            _forgot_otp_register_attempt(email)
 
             user = User.objects.filter(email=email).first()
             if not user:
@@ -701,21 +755,30 @@ def otp_forgot_password_view(request):
                 messages.error(request, 'Failed to send code. Please try again later.')
                 return render(request, 'accounts/otp_forgot_password.html')
 
-            cache.set(rate_key, send_count + 1, 900)
             _send_security_email(
                 email,
                 'BrightTrack Password Reset Requested',
                 _append_request_security_context([
                     f'Dear {user.get_full_name() or user.email},',
                     '',
-                    'A password reset code was requested for your BrightTrack account.',
+                    'We received a request to reset the password for your BrightTrack account.',
                     _email_datetime_line(),
-                    'If this was you, you can continue using the verification code that was just sent.',
-                    'If this was not you, please ignore this message and consider changing your password after logging in.',
+                    '',
+                    'If this was you:',
+                    '- Use the OTP code sent in a separate email.',
+                    '- The code expires in 3 minutes for your security.',
+                    '',
+                    'If this was not you:',
+                    '- Do not share any code.',
+                    '- Ignore this request.',
+                    '- If you can still access your account, change your password immediately.',
+                    '',
+                    'BrightTrack Security Notice: We never ask for your OTP by chat, call, or social media.',
                 ], request, include_location=True),
             )
             request.session['otp_email'] = email
             request.session['otp_purpose'] = 'reset'
+            messages.success(request, 'Reset code sent successfully. Please check your email.')
             return redirect('verify_otp')
     except Exception:
         import logging
@@ -770,7 +833,7 @@ def otp_reset_password_view(request):
         for key in ['otp_email', 'otp_verified', 'otp_purpose']:
             request.session.pop(key, None)
 
-        messages.success(request, 'Password reset successfully. Please log in.')
+        messages.success(request, 'Password changed successfully. Please log in.')
         return redirect('login')
 
     return render(request, 'accounts/otp_reset_password.html')
@@ -894,10 +957,17 @@ def verify_otp_view(request):
         return cache.get(attempt_key, 0) >= 5
 
     def _render_verify():
+        reset_state = _forgot_otp_window_state(email) if purpose == 'reset' else None
         return render(
             request,
             'accounts/verify_otp.html',
-            _otp_verify_context(email, purpose, otp_locked=_is_otp_locked()),
+            _otp_verify_context(
+                email,
+                purpose,
+                otp_locked=_is_otp_locked(),
+                otp_resend_blocked=(not reset_state['allowed']) if reset_state else False,
+                otp_resend_wait_seconds=(reset_state['wait_seconds'] if reset_state else 0),
+            ),
         )
 
     def _complete_login(user):
@@ -932,12 +1002,34 @@ def verify_otp_view(request):
                 'BrightTrack New Login Alert',
                 email_lines,
             )
+        messages.success(request, 'Login successful.')
         return redirect('dashboard')
 
     if request.method == 'POST':
         if request.POST.get('resend_otp') == '1':
             if _is_otp_locked():
                 messages.error(request, 'Too many failed attempts. Please wait 30 minutes.')
+                return _render_verify()
+            if purpose == 'reset':
+                reset_state = _forgot_otp_window_state(email)
+                if not reset_state['allowed']:
+                    wait_minutes = max(1, int((reset_state['wait_seconds'] + 59) // 60))
+                    messages.error(request, f'Too many reset code requests. Please wait {wait_minutes} minute(s) before trying again.')
+                    return _render_verify()
+                active_otp = OTPCode.objects.filter(contact_value=email, is_used=False).order_by('-created_at').first()
+                if active_otp and active_otp.is_valid():
+                    messages.info(request, 'Current code is still active. You can resend after it expires.')
+                    return _render_verify()
+                _forgot_otp_register_attempt(email)
+                try:
+                    otp = OTPCode.generate(email)
+                    send_otp_email(email, otp.code)
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).error('OTP resend failed')
+                    messages.error(request, 'Failed to resend code. Please try again.')
+                    return _render_verify()
+                messages.success(request, 'A new verification code has been sent.')
                 return _render_verify()
             resend_key = f'otp_resend_{purpose}_{email}'
             resend_count = cache.get(resend_key, 0)
