@@ -3,75 +3,101 @@
 {% block title %}My Assignments{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto space-y-6">
+<div class="max-w-7xl mx-auto space-y-8 px-4 py-6">
     <!-- Header Section -->
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white">
-        <h2 class="text-2xl sm:text-3xl font-bold mb-2">
-            <i class="bi bi-clipboard-check mr-2"></i>My Assignments
-        </h2>
-        <p class="text-blue-100">Track and manage all your assignments in one place</p>
-    </div>
-
-    <!-- Quick Stats -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-white rounded-lg shadow p-4 text-center">
-            <div class="text-2xl font-bold text-blue-600">{{ upcoming_count }}</div>
-            <p class="text-gray-600 text-sm">Upcoming</p>
-        </div>
-        <div class="bg-white rounded-lg shadow p-4 text-center">
-            <div class="text-2xl font-bold text-red-600">{{ overdue_count }}</div>
-            <p class="text-gray-600 text-sm">Overdue</p>
-        </div>
-        <div class="bg-white rounded-lg shadow p-4 text-center">
-            <div class="text-2xl font-bold text-green-600">{{ completed_count }}</div>
-            <p class="text-gray-600 text-sm">Completed</p>
+    <div class="bg-gradient-to-br from-blue-700 via-indigo-700 to-indigo-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
+        <!-- Decorative Elements -->
+        <div class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-48 h-48 bg-blue-400 opacity-10 rounded-full blur-2xl"></div>
+        
+        <div class="relative z-10">
+            <h2 class="text-3xl sm:text-4xl font-black mb-3 tracking-tight">
+                <i class="bi bi-clipboard-check-fill mr-3 opacity-90"></i> My Learning Tasks
+            </h2>
+            <p class="text-blue-100 text-lg opacity-80 max-w-xl font-medium">Elevate your academic performance by staying on top of your deadlines and tracking your progress in real-time.</p>
         </div>
     </div>
 
+    <!-- Premium Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 flex items-center gap-5 hover:shadow-md transition">
+            <div class="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+                <i class="bi bi-clock-history text-2xl"></i>
+            </div>
+            <div>
+                <div class="text-3xl font-black text-slate-800 dark:text-slate-100 tabular-nums">{{ upcoming_count }}</div>
+                <p class="text-slate-500 dark:text-slate-400 font-bold text-xs uppercase tracking-widest">Upcoming</p>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 flex items-center gap-5 hover:shadow-md transition">
+            <div class="w-14 h-14 bg-red-50 dark:bg-red-900/30 rounded-2xl flex items-center justify-center text-red-600 dark:text-red-400">
+                <i class="bi bi-exclamation-octagon text-2xl"></i>
+            </div>
+            <div>
+                <div class="text-3xl font-black text-slate-800 dark:text-slate-100 tabular-nums">{{ overdue_count }}</div>
+                <p class="text-slate-500 dark:text-slate-400 font-bold text-xs uppercase tracking-widest">Late / Overdue</p>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 flex items-center gap-5 hover:shadow-md transition">
+            <div class="w-14 h-14 bg-green-50 dark:bg-green-900/30 rounded-2xl flex items-center justify-center text-green-600 dark:text-green-400">
+                <i class="bi bi-check2-all text-2xl"></i>
+            </div>
+            <div>
+                <div class="text-3xl font-black text-slate-800 dark:text-slate-100 tabular-nums">{{ completed_count }}</div>
+                <p class="text-slate-500 dark:text-slate-400 font-bold text-xs uppercase tracking-widest">Finalized</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Alerts -->
     {% if due_soon_count > 0 %}
-    <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div class="text-amber-800 text-sm">
-            <i class="bi bi-bell-fill mr-1"></i>
-            Reminder: You have {{ due_soon_count }} assignment{{ due_soon_count|pluralize }} due within 24 hours.
+    <div class="bg-indigo-600 rounded-2xl px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-lg shadow-indigo-600/20">
+        <div class="text-white font-bold flex items-center gap-3">
+            <span class="flex h-3 w-3 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+            </span>
+            Critical: {{ due_soon_count }} task{{ due_soon_count|pluralize }} due within 24 hours!
         </div>
-        <a href="#content-upcoming" onclick="showTab('upcoming')" class="text-sm font-semibold text-amber-700 hover:text-amber-900">
-            View upcoming
+        <a href="#content-upcoming" onclick="showTab('upcoming')" class="bg-white/20 hover:bg-white text-white hover:text-indigo-600 px-5 py-2 rounded-xl transition font-black text-sm backdrop-blur-sm">
+            Focus Now
         </a>
     </div>
     {% endif %}
 
+    <!-- Recovery Plan (Only if overdue exists) -->
     {% if recovery_plan_count > 0 %}
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6 border border-red-100 dark:border-red-900/30">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 flex items-center">
-                <i class="bi bi-life-preserver text-red-500 mr-2"></i> Missed Work Recovery
-            </h3>
-            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">
-                {{ recovery_plan_count }} focus item{{ recovery_plan_count|pluralize }}
+    <div class="bg-slate-900 text-white rounded-3xl p-8 border border-slate-800 shadow-2xl">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h3 class="text-2xl font-black flex items-center gap-3">
+                   <i class="bi bi-lightning-charge-fill text-amber-400"></i> Catch-Up Roadmap
+                </h3>
+                <p class="text-slate-400 font-medium mt-1">Smart prioritization to get you back on schedule.</p>
+            </div>
+            <span class="bg-slate-800 text-slate-300 font-black px-4 py-2 rounded-xl text-sm border border-slate-700">
+                {{ recovery_plan_count }} Priority Item{{ recovery_plan_count|pluralize }}
             </span>
         </div>
-        <p class="text-sm text-gray-600 dark:text-slate-400 mb-4">Recommended order to catch up quickly and reduce overdue load.</p>
-        <div class="space-y-3">
+        
+        <div class="space-y-4">
             {% for item in recovery_plan %}
-            <div class="rounded-lg border {% if item.status == 'overdue' %}border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/10{% else %}border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/10{% endif %} px-4 py-3">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="min-w-0">
-                        <p class="font-semibold text-gray-800 dark:text-slate-200 truncate">{{ item.assignment.title }}</p>
-                        <p class="text-xs text-gray-600 dark:text-slate-400 mt-1">{{ item.assignment.class_obj.code }} - {{ item.assignment.class_obj.name }}</p>
-                        <div class="mt-2 flex flex-wrap gap-2 text-xs">
-                            <span class="px-2 py-0.5 rounded-full {% if item.status == 'overdue' %}bg-red-200 dark:bg-red-900/50 text-red-800 dark:text-red-200{% else %}bg-blue-200 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200{% endif %}">
-                                {{ item.priority_label }} Priority
-                            </span>
-                            <span class="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300">
-                                {{ item.urgency_text }}
-                            </span>
+            <div class="bg-slate-800/50 hover:bg-slate-800 transition-all border border-slate-700/50 p-6 rounded-2xl group">
+                <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center font-black text-blue-400 border border-slate-700 group-hover:scale-110 transition-transform">
+                            {{ item.assignment.class_obj.code|slice:":2"|upper }}
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-black text-slate-100 group-hover:text-white transition">{{ item.assignment.title }}</h4>
+                            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">{{ item.assignment.class_obj.code }} Â· {{ item.priority_label }} Prio</p>
                         </div>
                     </div>
                     {% if item.assignment.is_overdue and not item.assignment.allow_late_submission %}
-                    <span class="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 px-4 py-2 rounded-lg text-sm font-medium shrink-0">Locked</span>
+                    <div class="bg-slate-700 text-slate-400 px-6 py-3 rounded-xl text-sm font-black border border-slate-600 opacity-50">LOCKED</div>
                     {% else %}
-                    <a href="{% url 'academics:submit_assignment' item.assignment.id %}" class="{% if item.status == 'overdue' %}bg-red-600 hover:bg-red-700{% else %}bg-blue-600 hover:bg-blue-700{% endif %} text-white px-4 py-2 rounded-lg transition text-sm font-medium shrink-0">
-                        Start Now
+                    <a href="{% url 'academics:submit_assignment' item.assignment.id %}" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl transition font-black text-center shadow-lg shadow-blue-600/20">
+                        ATTEMPT NOW
                     </a>
                     {% endif %}
                 </div>
@@ -81,288 +107,164 @@
     </div>
     {% endif %}
 
-    <!-- Assignment Calendar -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                    <i class="bi bi-calendar3 text-indigo-600 mr-2"></i> Assignment Calendar
-                </h3>
-                <p class="text-sm text-gray-500">Monthly view of assignment due dates.</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <a href="?calendar_month={{ assignment_prev_calendar_month }}&calendar_filter={{ assignment_calendar_filter }}" class="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm">
-                    <i class="bi bi-chevron-left"></i>
-                </a>
-                <span class="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-semibold">
-                    {{ assignment_calendar_month|date:"F Y" }}
-                </span>
-                <a href="?calendar_month={{ assignment_next_calendar_month }}&calendar_filter={{ assignment_calendar_filter }}" class="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm">
-                    <i class="bi bi-chevron-right"></i>
-                </a>
-            </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 mb-4">
-            <a href="?calendar_month={{ assignment_calendar_month_param }}&calendar_filter=all" class="px-3 py-1.5 rounded-full text-xs font-semibold border {% if assignment_calendar_filter == 'all' %}bg-gray-800 text-white border-gray-800{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
-                All
-            </a>
-            <a href="?calendar_month={{ assignment_calendar_month_param }}&calendar_filter=upcoming" class="px-3 py-1.5 rounded-full text-xs font-semibold border {% if assignment_calendar_filter == 'upcoming' %}bg-blue-600 text-white border-blue-600{% else %}bg-white text-blue-700 border-blue-200 hover:bg-blue-50{% endif %}">
-                Upcoming
-            </a>
-            <a href="?calendar_month={{ assignment_calendar_month_param }}&calendar_filter=overdue" class="px-3 py-1.5 rounded-full text-xs font-semibold border {% if assignment_calendar_filter == 'overdue' %}bg-red-600 text-white border-red-600{% else %}bg-white text-red-700 border-red-200 hover:bg-red-50{% endif %}">
-                Overdue
-            </a>
-            <a href="?calendar_month={{ assignment_calendar_month_param }}&calendar_filter=submitted" class="px-3 py-1.5 rounded-full text-xs font-semibold border {% if assignment_calendar_filter == 'submitted' %}bg-green-600 text-white border-green-600{% else %}bg-white text-green-700 border-green-200 hover:bg-green-50{% endif %}">
-                Submitted
-            </a>
-        </div>
-
-        <div class="grid grid-cols-7 gap-2 mb-2">
-            {% for day_name in assignment_calendar_day_names %}
-            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 text-center py-1">{{ day_name }}</div>
-            {% endfor %}
-        </div>
-
-        <div class="space-y-2">
-            {% for week in assignment_calendar_weeks %}
-            <div class="grid grid-cols-7 gap-2">
-                {% for day in week %}
-                <div class="min-h-[110px] rounded-xl border {% if day.is_today %}border-indigo-400{% else %}border-gray-200{% endif %} {% if day.in_month %}bg-white{% else %}bg-gray-50{% endif %} p-2">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-semibold {% if day.in_month %}text-gray-700{% else %}text-gray-400{% endif %}">{{ day.date|date:"j" }}</span>
-                        {% if day.events %}
-                        <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-medium">{{ day.events|length }}</span>
-                        {% endif %}
-                    </div>
-
-                    <div class="space-y-1">
-                        {% for event in day.events %}
-                        {% if event.can_submit %}
-                        <a href="{% url 'academics:submit_assignment' event.assignment.id %}" class="block text-[11px] rounded-md px-2 py-1 leading-tight {% if event.status == 'submitted' %}bg-green-50 text-green-700 border border-green-200{% elif event.status == 'overdue' %}bg-red-50 text-red-700 border border-red-200{% elif event.status == 'locked' %}bg-rose-100 text-rose-800 border border-rose-300{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
-                            <div class="font-semibold truncate">{{ event.assignment.title }}</div>
-                            <div class="opacity-80">{{ event.time_label }}</div>
-                        </a>
-                        {% else %}
-                        <div class="block text-[11px] rounded-md px-2 py-1 leading-tight bg-rose-100 text-rose-800 border border-rose-300">
-                            <div class="font-semibold truncate">{{ event.assignment.title }}</div>
-                            <div class="opacity-80">{{ event.time_label }} · Locked</div>
-                        </div>
-                        {% endif %}
-                        {% endfor %}
-                        {% if day.extra_count > 0 %}
-                        <div class="text-[11px] text-gray-500 px-1">+{{ day.extra_count }} more</div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="flex flex-wrap items-center gap-3 mt-4 text-xs text-gray-600">
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>Upcoming</span>
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>Overdue</span>
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>Submitted</span>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="bg-white rounded-lg shadow-lg">
+    <!-- Main Navigation Bar -->
+    <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-800">
         <!-- Tabs -->
-        <div class="border-b border-gray-200">
-            <nav class="flex px-4 sm:px-6">
-                <button onclick="showTab('upcoming')" id="tab-upcoming" class="tab-button py-4 px-4 border-b-2 border-blue-600 font-semibold text-blue-600 flex items-center">
-                    <i class="bi bi-clock mr-2"></i> Upcoming ({{ upcoming_count }})
-                </button>
-                <button onclick="showTab('overdue')" id="tab-overdue" class="tab-button py-4 px-4 border-b-2 border-transparent font-semibold text-gray-500 hover:text-gray-700 hover:border-gray-300 flex items-center">
-                    <i class="bi bi-exclamation-triangle mr-2"></i> Overdue ({{ overdue_count }})
-                </button>
-                <button onclick="showTab('completed')" id="tab-completed" class="tab-button py-4 px-4 border-b-2 border-transparent font-semibold text-gray-500 hover:text-gray-700 hover:border-gray-300 flex items-center">
-                    <i class="bi bi-check-circle mr-2"></i> Completed ({{ completed_count }})
-                </button>
-            </nav>
+        <div class="flex flex-wrap p-2 gap-2 bg-slate-50 dark:bg-slate-950/50">
+            <button onclick="showTab('upcoming')" id="tab-upcoming" class="tab-button flex-1 py-3 px-6 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 bg-white dark:bg-slate-800 text-indigo-600 shadow-sm border border-slate-100 dark:border-slate-700">
+                <i class="bi bi-clock-fill"></i> UPCOMING <span class="bg-indigo-100 dark:bg-indigo-900 px-2 py-0.5 rounded-lg text-xs">{{ upcoming_count }}</span>
+            </button>
+            <button onclick="showTab('overdue')" id="tab-overdue" class="tab-button flex-1 py-3 px-6 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <i class="bi bi-exclamation-triangle-fill"></i> OVERDUE <span class="bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-lg text-xs">{{ overdue_count }}</span>
+            </button>
+            <button onclick="showTab('completed')" id="tab-completed" class="tab-button flex-1 py-3 px-6 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <i class="bi bi-check-circle-fill"></i> COMPLETED <span class="bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-lg text-xs">{{ completed_count }}</span>
+            </button>
         </div>
 
-        <!-- Upcoming Assignments -->
-        <div id="content-upcoming" class="tab-content">
-            <div class="p-6">
+        <!-- Tab Contents -->
+        <div class="p-4 sm:p-8">
+            <!-- Upcoming Tab -->
+            <div id="content-upcoming" class="tab-content space-y-6">
                 {% if upcoming_assignments %}
-                    <div class="mb-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
-                        <i class="bi bi-info-circle mr-1"></i> You have {{ upcoming_count }} upcoming assignment{{ upcoming_count|pluralize }}. Stay on track!
-                    </div>
-                    <div class="max-h-96 overflow-y-auto space-y-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {% for assignment in upcoming_assignments %}
-                        <div class="p-4 border rounded-lg hover:bg-gray-50 transition">
-                            <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center space-x-3 mb-2">
-                                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                                            {{ assignment.class_obj.code|slice:":2"|upper }}</div>
-                                        <div>
-                                            <h3 class="font-semibold text-gray-800">{{ assignment.title }}</h3>
-                                            <p class="text-sm text-gray-600">{{ assignment.class_obj.name }}</p>
-                                        </div>
-                                    </div>
-                                    <p class="text-gray-600 text-sm mb-3">{{ assignment.description|truncatewords:20 }}</p>
-                                    <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
-                                        <span><i class="bi bi-calendar mr-1"></i>Due: {{ assignment.due_date|date:"M d, Y" }}</span>
-                                        <span><i class="bi bi-trophy mr-1"></i>{{ assignment.total_points }} points</span>
-                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">{{ assignment.days_until_due }} days left</span>
-                                    </div>
+                    <div class="group bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all shadow-sm hover:shadow-xl">
+                        <div class="flex flex-col h-full">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-12 h-12 bg-slate-50 dark:bg-slate-900 rounded-2xl flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:bg-indigo-600 transition-colors">
+                                    <i class="bi bi-journal-text text-xl text-slate-400 group-hover:text-white"></i>
                                 </div>
-                                <div class="text-left sm:text-right sm:ml-4">
-                                    {% if assignment.submission %}
-                                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">✓ Submitted</span>
-                                        <p class="text-xs text-gray-500 mt-1">{{ assignment.submission.submitted_at|date:"M d" }}</p>
-                                    {% else %}
-                                        <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition inline-block text-sm font-medium">
-                                            <i class="bi bi-upload mr-1"></i> Submit
-                                        </a>
-                                    {% endif %}
+                                <div class="text-right">
+                                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Deadline</div>
+                                    <div class="text-sm font-black text-slate-800 dark:text-slate-100">{{ assignment.due_date|date:"M d" }} Â· {{ assignment.due_date|date:"g:i A" }}</div>
                                 </div>
                             </div>
+                            
+                            <h4 class="text-lg font-black text-slate-800 dark:text-slate-100 mb-2 line-clamp-1 group-hover:text-indigo-600 transition">{{ assignment.title }}</h4>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-6 flex-grow">{{ assignment.description }}</p>
+                            
+                            <div class="flex flex-wrap items-center gap-3 mb-6">
+                                <span class="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-black">
+                                    <i class="bi bi-trophy mr-1"></i> {{ assignment.total_points }} pts
+                                </span>
+                                <span class="px-3 py-1 bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-black tabular-nums border border-slate-100 dark:border-slate-700">
+                                    <i class="bi bi-arrow-repeat mr-1"></i> {% if assignment.submission %}{{ assignment.submission.attempts_count }}{% else %}0{% endif %} / {{ assignment.max_attempts }} Attempts
+                                </span>
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-50 dark:border-slate-700">
+                                {% if not assignment.is_available %}
+                                <div class="w-full bg-slate-50 dark:bg-slate-900/50 text-slate-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-sm cursor-not-allowed border-2 border-dashed border-slate-200 dark:border-slate-700">
+                                    <i class="bi bi-lock-fill"></i> Available on {{ assignment.available_at|date:"M d, g:i A" }}
+                                </div>
+                                {% elif assignment.submission %}
+                                <div class="flex gap-2">
+                                    <div class="flex-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-sm">
+                                        <i class="bi bi-check-circle-fill"></i> SUBMITTED
+                                    </div>
+                                    <a href="{% url 'academics:submit_assignment' assignment.id %}" class="w-14 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 py-3 rounded-2xl flex items-center justify-center hover:bg-indigo-600 hover:text-white transition group relative">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                        <span class="absolute bottom-full mb-2 bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Resubmit</span>
+                                    </a>
+                                </div>
+                                {% else %}
+                                <a href="{% url 'academics:submit_assignment' assignment.id %}" class="w-full bg-indigo-600 hover:bg-slate-900 text-white py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-sm transition-all shadow-lg shadow-indigo-600/20 hover:shadow-none">
+                                    <i class="bi bi-plus-circle"></i> START ASSIGNMENT
+                                </a>
+                                {% endif %}
+                            </div>
                         </div>
+                    </div>
                     {% endfor %}
-                    </div>
+                </div>
                 {% else %}
-                    <div class="text-center py-12 flex flex-col items-center justify-center gap-3">
-                        <i class="bi bi-check-circle text-6xl text-green-400"></i>
-                        <p class="text-gray-600 font-medium text-lg">All caught up!</p>
-                        <p class="text-gray-500">No upcoming assignments at the moment</p>
+                <div class="text-center py-24 flex flex-col items-center justify-center gap-4">
+                    <div class="w-24 h-24 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-2">
+                        <i class="bi bi-journal-check text-5xl text-slate-200"></i>
                     </div>
+                    <h5 class="text-xl font-black text-slate-800 dark:text-slate-100">All Clear!</h5>
+                    <p class="text-slate-500 max-w-xs mx-auto">You've reached the summit. No upcoming assignments on your horizon.</p>
+                </div>
                 {% endif %}
             </div>
-        </div>
 
-        <!-- Overdue Assignments -->
-        <div id="content-overdue" class="tab-content hidden">
-            <div class="p-6">
+            <!-- Overdue Tab -->
+            <div id="content-overdue" class="tab-content hidden space-y-6">
                 {% if overdue_assignments %}
-                    <div class="mb-4 p-3 bg-red-50 rounded-lg text-sm text-red-800">
-                        <i class="bi bi-exclamation-triangle mr-1"></i> You have {{ overdue_count }} overdue assignment{{ overdue_count|pluralize }}. Submit them as soon as possible!
-                    </div>
-                    <div class="max-h-96 overflow-y-auto space-y-4">
                     {% for assignment in overdue_assignments %}
-                        <div class="p-4 border border-red-300 bg-red-50 rounded-lg">
-                            <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center space-x-3 mb-2">
-                                        <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                                            {{ assignment.class_obj.code|slice:":2"|upper }}</div>
-                                        <div>
-                                            <h3 class="font-semibold text-gray-800">{{ assignment.title }}</h3>
-                                            <p class="text-sm text-gray-600">{{ assignment.class_obj.name }}</p>
-                                        </div>
-                                    </div>
-                                    <p class="text-gray-600 text-sm mb-3">{{ assignment.description|truncatewords:20 }}</p>
-                                    <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
-                                        <span class="text-red-600 font-semibold"><i class="bi bi-exclamation-triangle mr-1"></i>Overdue: {{ assignment.due_date|date:"M d, Y" }}</span>
-                                        <span><i class="bi bi-trophy mr-1"></i>{{ assignment.total_points }} points</span>
-                                        <span class="px-2 py-1 bg-red-600 text-white rounded text-xs font-medium">{{ assignment.overdue_label }}</span>
-                                    </div>
+                    <div class="bg-red-50/50 dark:bg-red-900/10 border-2 border-red-100 dark:border-red-900/30 rounded-3xl p-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center text-red-600">
+                                    <i class="bi bi-exclamation-square-fill text-2xl"></i>
                                 </div>
-                                <div class="text-left sm:text-right sm:ml-4">
-                                    {% if assignment.submission %}
-                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">Late Submission</span>
-                                        <p class="text-xs text-gray-500 mt-1">{{ assignment.submission.submitted_at|date:"M d" }}</p>
-                                    {% elif assignment.is_locked_overdue %}
-                                        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-semibold">Locked</span>
-                                        <p class="text-xs text-gray-500 mt-1">Late submit not allowed</p>
-                                    {% else %}
-                                        <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition inline-block text-sm font-medium">
-                                            <i class="bi bi-upload mr-1"></i> Submit Late
-                                        </a>
-                                    {% endif %}
+                                <div class="min-w-0">
+                                    <h4 class="text-lg font-black text-red-900 dark:text-red-400 truncate">{{ assignment.title }}</h4>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-xs font-black text-red-700/60 uppercase">Deadline Passed: {{ assignment.due_date|date:"F d, Y" }}</span>
+                                        <span class="w-1 h-1 rounded-full bg-red-200"></span>
+                                        <span class="text-xs font-bold text-red-600">{{ assignment.overdue_label }}</span>
+                                    </div>
                                 </div>
                             </div>
+                            {% if assignment.is_locked_overdue %}
+                            <div class="bg-slate-200 dark:bg-slate-800 text-slate-500 px-8 py-3 rounded-2xl font-black text-sm border border-slate-300 dark:border-slate-700 opacity-60">LOCKED</div>
+                            {% else %}
+                            <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-2xl transition font-black text-center shadow-lg shadow-red-600/20">
+                                SUBMIT LATE
+                            </a>
+                            {% endif %}
                         </div>
-                    {% endfor %}
                     </div>
+                    {% endfor %}
                 {% else %}
-                    <div class="text-center py-12 flex flex-col items-center justify-center gap-3">
-                        <i class="bi bi-check-circle text-6xl text-green-400"></i>
-                        <p class="text-gray-600 font-medium text-lg">Excellent work!</p>
-                        <p class="text-gray-500">No overdue assignments</p>
+                    <div class="text-center py-24 flex flex-col items-center justify-center gap-4">
+                        <i class="bi bi-shield-check text-6xl text-green-500 opacity-20"></i>
+                        <h5 class="text-xl font-black text-slate-800 dark:text-slate-100">Flawless Record</h5>
+                        <p class="text-slate-500">You're staying ahead of the curve. No overdue submissions found.</p>
                     </div>
                 {% endif %}
             </div>
-        </div>
 
-        <!-- Completed Assignments -->
-        <div id="content-completed" class="tab-content hidden">
-            <div class="p-6">
+            <!-- Completed Tab -->
+            <div id="content-completed" class="tab-content hidden space-y-6">
                 {% if completed_assignments %}
-                    <div class="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-800">
-                        <i class="bi bi-check-circle mr-1"></i> You have completed {{ completed_count }} assignment{{ completed_count|pluralize }}. Great job!
-                    </div>
-                    <div class="max-h-96 overflow-y-auto space-y-4">
-                    {% for assignment in completed_assignments %}
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center space-x-3 mb-2">
-                                        <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                                            {{ assignment.class_obj.code|slice:":2"|upper }}</div>
-                                        <div>
-                                            <h3 class="font-semibold text-gray-800">{{ assignment.title }}</h3>
-                                            <p class="text-sm text-gray-600">{{ assignment.class_obj.name }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-3">
-                                        <span><i class="bi bi-calendar mr-1"></i>Due: {{ assignment.due_date|date:"M d, Y" }}</span>
-                                        <span><i class="bi bi-trophy mr-1"></i>{{ assignment.total_points }} points</span>
-                                        <span><i class="bi bi-check-circle text-green-600 mr-1"></i>Submitted: {{ assignment.submission.submitted_at|date:"M d" }}</span>
-                                        {% if assignment.submission_is_late %}
-                                        <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">Late Submission</span>
-                                        {% endif %}
-                                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% for assignment in completed_assignments %}
+                        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-3xl p-6 border border-slate-100 dark:border-slate-700">
+                            <div class="flex items-center justify-between mb-6">
+                                <span class="px-3 py-1 bg-green-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Validated</span>
+                                <span class="text-xs font-bold text-slate-400">Finalized {{ assignment.submission.submitted_at|date:"M d" }}</span>
+                            </div>
+                            <h4 class="font-black text-slate-800 dark:text-slate-100 mb-4">{{ assignment.title }}</h4>
+                            
+                            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-500">Achieved Score</span>
                                     {% if assignment.submission.score is not None %}
-                                    <div class="{% if assignment.submission_is_late %}bg-red-50 border border-red-200{% else %}bg-gray-50{% endif %} p-3 rounded-lg">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-sm text-gray-600">Your Score:</span>
-                                            {% with percentage=assignment.submission.score|floatformat:0|add:'0' %}
-                                            {% if percentage >= 90 %}
-                                            <span class="text-lg font-bold text-green-600">
-                                            {% elif percentage >= 70 %}
-                                            <span class="text-lg font-bold text-yellow-600">
-                                            {% else %}
-                                            <span class="text-lg font-bold text-red-600">
-                                            {% endif %}
-                                                {{ assignment.submission.score }}/{{ assignment.total_points }} ({{ percentage }}%)
-                                            </span>
-                                            {% endwith %}
+                                        <div class="text-xl font-black text-indigo-600 dark:text-indigo-400">
+                                            {{ assignment.submission.score }} <span class="text-xs text-slate-400 font-medium">/ {{ assignment.total_points }}</span>
                                         </div>
-                                        {% if assignment.submission.feedback %}
-                                        <div class="mt-2 pt-2 border-t">
-                                            <p class="text-sm font-semibold text-gray-700 mb-1">Teacher Feedback:</p>
-                                            <p class="text-sm text-gray-600">{{ assignment.submission.feedback }}</p>
-                                        </div>
-                                        {% endif %}
-                                    </div>
                                     {% else %}
-                                    <div class="bg-yellow-50 p-3 rounded-lg">
-                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-                                            <i class="bi bi-clock mr-1"></i> Pending Grade
+                                        <span class="text-xs font-black text-amber-500 uppercase flex items-center gap-1">
+                                            <i class="bi bi-hourglass-split"></i> Awaiting Grade
                                         </span>
-                                        {% if assignment.submission.feedback %}
-                                        <div class="mt-2 pt-2 border-t border-yellow-200">
-                                            <p class="text-sm font-semibold text-gray-700 mb-1">Teacher Comment:</p>
-                                            <p class="text-sm text-gray-600">{{ assignment.submission.feedback }}</p>
-                                        </div>
-                                        {% endif %}
-                                    </div>
                                     {% endif %}
                                 </div>
+                                {% if assignment.submission.feedback %}
+                                <div class="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800">
+                                    <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Feedback</p>
+                                    <p class="text-xs italic text-slate-600 dark:text-slate-400">\"{{ assignment.submission.feedback|truncatechars:100 }}\"</p>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
-                    {% endfor %}
+                        {% endfor %}
                     </div>
                 {% else %}
-                    <div class="text-center py-12 flex flex-col items-center justify-center gap-3">
-                        <i class="bi bi-clipboard-x text-6xl text-gray-300"></i>
-                        <p class="text-gray-600 font-medium text-lg">No completed assignments yet</p>
-                        <p class="text-gray-500">Completed assignments will appear here</p>
+                    <div class="text-center py-24">
+                        <p class="text-slate-500 font-bold italic">No achievements unlocked yet. Keep working!</p>
                     </div>
                 {% endif %}
             </div>
@@ -372,24 +274,20 @@
 
 <script>
 function showTab(tabName) {
-    // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.add('hidden');
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('bg-white', 'dark:bg-slate-800', 'text-indigo-600', 'shadow-sm', 'border', 'dark:border-slate-700');
+        btn.classList.add('text-slate-500', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
     });
     
-    // Remove active styling from all tabs
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('border-blue-600', 'text-blue-600');
-        button.classList.add('border-transparent', 'text-gray-500');
-    });
-    
-    // Show selected tab content
     document.getElementById('content-' + tabName).classList.remove('hidden');
-    
-    // Add active styling to selected tab
     const activeTab = document.getElementById('tab-' + tabName);
-    activeTab.classList.remove('border-transparent', 'text-gray-500');
-    activeTab.classList.add('border-blue-600', 'text-blue-600');
+    activeTab.classList.add('bg-white', 'dark:bg-slate-800', 'text-indigo-600', 'shadow-sm', 'border', 'dark:border-slate-700');
+    activeTab.classList.remove('text-slate-500', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
 }
 </script>
+
+<style>
+    .tab-button { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+</style>
 {% endblock %}

@@ -3,133 +3,280 @@
 {% block title %}Submit Assignment{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    <div class="bg-white rounded-lg shadow-lg p-8">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">
-            <i class="bi bi-upload mr-2"></i>Submit Assignment
-        </h2>
-
-        <!-- Assignment Details -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-            <h3 class="text-xl font-semibold text-gray-800 mb-3">{{ assignment.title }}</h3>
-            <p class="text-gray-700 mb-4">{{ assignment.description }}</p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-slate-700">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6 text-white">
+            <div class="flex items-center justify-between">
                 <div>
-                    <span class="text-gray-600">Class:</span>
-                    <span class="font-semibold text-gray-800 ml-2">{{ assignment.class_obj.code }}</span>
+                    <h2 class="text-2xl font-bold flex items-center gap-2">
+                        <i class="bi bi-upload"></i> Submit Assignment
+                    </h2>
+                    <p class="text-blue-100 mt-1 opacity-90">{{ assignment.class_obj.code }} - {{ assignment.class_obj.name }}</p>
                 </div>
-                <div>
-                    <span class="text-gray-600">Due Date:</span>
-                    <span class="font-semibold {% if assignment.is_overdue %}text-red-600{% else %}text-gray-800{% endif %} ml-2">
-                        {{ assignment.due_date|date:"M d, Y - g:i A" }}</span>
-                </div>
-                <div>
-                    <span class="text-gray-600">Points:</span>
-                    <span class="font-semibold text-gray-800 ml-2">{{ assignment.total_points }}</span>
-                </div>
-            </div>
-            {% if assignment.is_overdue %}
-            <div class="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
-                <p class="text-red-800 text-sm">
-                    <i class="bi bi-exclamation-triangle mr-1"></i>
-                    {% if assignment.allow_late_submission %}
-                    This assignment is overdue. Late submissions are allowed and will be marked late.
-                    {% else %}
-                    This assignment is overdue and locked. Submission is no longer allowed.
-                    {% endif %}
-                </p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Submission Form -->
-        {% if assignment.submission_locked %}
-        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p class="text-sm text-red-700 font-medium">
-                <i class="bi bi-lock-fill mr-1"></i>
-                Submission locked: due date passed and late submission is disabled by your teacher.
-            </p>
-        </div>
-        {% endif %}
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            
-            {% if assignment.submission_type == 'file_upload' or assignment.submission_type == 'both' %}
-            <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    <i class="bi bi-file-earmark-arrow-up text-blue-600 mr-1"></i>
-                    Upload File {% if assignment.submission_type == 'file_upload' %}<span class="text-red-600">*</span>{% endif %}
-                </label>
-                <input type="file" name="file"
-                       {% if assignment.submission_type == 'file_upload' %}required{% endif %}
-                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <p class="text-xs text-gray-500 mt-1">Accepted: PDF, DOC, DOCX, TXT, ZIP (Max 10MB)</p>
-            </div>
-            {% endif %}
-
-            {% if assignment.submission_type == 'both' %}
-            <div class="flex items-center gap-3 mb-6">
-                <div class="flex-1 border-t border-gray-200"></div>
-                <span class="text-sm text-gray-500 font-medium">OR</span>
-                <div class="flex-1 border-t border-gray-200"></div>
-            </div>
-            {% endif %}
-
-            {% if assignment.submission_type == 'text_entry' or assignment.submission_type == 'both' %}
-            <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    <i class="bi bi-pencil-square text-green-600 mr-1"></i>
-                    Your Answer {% if assignment.submission_type == 'text_entry' %}<span class="text-red-600">*</span>{% endif %}
-                </label>
-                <textarea name="text_content" rows="8"
-                          {% if assignment.submission_type == 'text_entry' %}required{% endif %}
-                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                          placeholder="Type your answer here...">{{ existing_submission.text_content|default:'' }}</textarea>
-            </div>
-            {% endif %}
-
-            <div class="flex gap-4">
-                <button type="submit" {% if assignment.submission_locked %}disabled{% endif %} class="{% if assignment.submission_locked %}bg-gray-400 cursor-not-allowed{% else %}bg-blue-600 hover:bg-blue-700{% endif %} text-white px-8 py-3 rounded-lg transition font-semibold">
-                    <i class="bi bi-upload mr-2"></i>Submit Assignment
-                </button>
-                <a href="{% url 'academics:student_assignments' %}" class="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-300 transition font-semibold">
-                    Cancel
+                <a href="{% url 'academics:student_assignments' %}" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl transition backdrop-blur-sm text-sm font-medium">
+                    <i class="bi bi-arrow-left"></i> Back to List
                 </a>
             </div>
-        </form>
+        </div>
 
-        <!-- Previous Submission (if exists) -->
-        {% if existing_submission %}
-        <div class="mt-8 pt-8 border-t">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Previous Submission</h3>
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p class="text-sm text-gray-700 mb-2">
-                    <i class="bi bi-clock-history mr-1"></i>
-                    Submitted on: {{ existing_submission.submitted_at|date:"M d, Y - g:i A" }}</p>
-                {% if existing_submission.file %}
-                <p class="text-sm text-gray-700 mb-2">
-                    <i class="bi bi-file-earmark mr-1"></i>
-                    File: <a href="{{ existing_submission.file.url }}" class="text-blue-600 hover:underline" download>Download</a>
-                </p>
+        <div class="p-8">
+            <!-- Assignment Info Card -->
+            <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 mb-8 border border-slate-200 dark:border-slate-700">
+                <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">{{ assignment.title }}</h3>
+                {% if assignment.is_available %}
+                <p class="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">{{ assignment.description }}</p>
+                {% else %}
+                <p class="text-slate-400 dark:text-slate-500 mb-6 text-sm leading-relaxed italic">The description and resources for this assignment are currently locked until the availability window opens.</p>
                 {% endif %}
-                {% if existing_submission.text_content %}
-                <div class="mt-2 mb-2">
-                    <p class="text-sm font-medium text-gray-700 mb-1"><i class="bi bi-pencil-square mr-1"></i>Previous Answer:</p>
-                    <div class="bg-white border border-gray-200 rounded p-3 text-sm text-gray-700 whitespace-pre-wrap">{{ existing_submission.text_content }}</div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-1">Due Date</div>
+                        <div class="font-semibold text-slate-800 dark:text-slate-200 {% if assignment.is_overdue %}text-red-500{% endif %}">
+                            <i class="bi bi-calendar3 mr-1"></i> {{ assignment.due_date|date:"M d, g:i A" }}
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Points</div>
+                        <div class="font-semibold text-slate-800 dark:text-slate-200">
+                            <i class="bi bi-trophy mr-1 text-amber-500"></i> {{ assignment.total_points }} pts
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-1">Attempts Used</div>
+                        <div class="font-semibold text-slate-800 dark:text-slate-200">
+                            <i class="bi bi-arrow-repeat mr-1 text-blue-500"></i> 
+                            {% if existing_submission %}{{ existing_submission.attempts_count }}{% else %}0{% endif %} / {{ assignment.max_attempts }}
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-1">Status</div>
+                        <div class="font-semibold text-slate-800 dark:text-slate-200">
+                            {% if existing_submission.score is not None %}
+                                <span class="text-green-500"><i class="bi bi-check-circle-fill mr-1"></i> Graded</span>
+                            {% elif existing_submission %}
+                                <span class="text-blue-500"><i class="bi bi-clock-history mr-1"></i> Submitted</span>
+                            {% elif assignment.is_overdue and not assignment.allow_late_submission %}
+                                <span class="text-red-500"><i class="bi bi-lock-fill mr-1"></i> Missing</span>
+                            {% else %}
+                                <span class="text-slate-400"><i class="bi bi-circle mr-1"></i> Not Started</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Intelligent Status Banners -->
+            {% if not assignment.is_available %}
+            <div class="mb-8 p-8 bg-slate-100 dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl flex flex-col items-center text-center gap-4">
+                <div class="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex items-center justify-center">
+                    <i class="bi bi-lock-fill text-slate-400 text-3xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-slate-800 dark:text-slate-100 font-black text-xl mb-1">Coming Soon</h4>
+                    <p class="text-slate-500 dark:text-slate-400 max-w-md">
+                        This assignment will be released as scheduled. Come back once the availability window opens!
+                    </p>
+                    <div class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold text-sm">
+                        <i class="bi bi-clock-fill"></i> Available: {{ assignment.available_at|date:"F d, Y · g:i A" }}
+                    </div>
+                </div>
+            </div>
+            {% elif existing_submission.score is not None %}
+            <div class="mb-8 p-5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl flex items-start gap-4">
+                <div class="w-10 h-10 bg-green-100 dark:bg-green-800/40 rounded-full flex items-center justify-center shrink-0">
+                    <i class="bi bi-check-lg text-green-600 dark:text-green-400 text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-green-800 dark:text-green-300 font-bold">Submission Evaluated</h4>
+                    <p class="text-green-700 dark:text-green-400/80 text-sm mt-1">
+                        Your teacher has already graded this work ({{ existing_submission.score }}/{{ assignment.total_points }}). 
+                        Resubmission is disabled once grading is complete to maintain academic integrity.
+                    </p>
+                </div>
+            </div>
+            {% elif existing_submission and existing_submission.attempts_count >= assignment.max_attempts %}
+            <div class="mb-8 p-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl flex items-start gap-4">
+                <div class="w-10 h-10 bg-amber-100 dark:bg-amber-800/40 rounded-full flex items-center justify-center shrink-0">
+                    <i class="bi bi-exclamation-triangle text-amber-600 dark:text-amber-400 text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-amber-800 dark:text-amber-300 font-bold">Attempt Limit Reached</h4>
+                    <p class="text-amber-700 dark:text-amber-400/80 text-sm mt-1">
+                        You have used all {{ assignment.max_attempts }} allowed attempt(s) for this assignment. 
+                        Please contact your teacher if you believe there was an error.
+                    </p>
+                </div>
+            </div>
+            {% elif assignment.submission_locked %}
+            <div class="mb-8 p-5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl flex items-start gap-4">
+                <div class="w-10 h-10 bg-red-100 dark:bg-red-800/40 rounded-full flex items-center justify-center shrink-0">
+                    <i class="bi bi-lock-fill text-red-600 dark:text-red-400 text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-red-800 dark:text-red-300 font-bold">Submission Window Closed</h4>
+                    <p class="text-red-700 dark:text-red-400/80 text-sm mt-1">
+                        This assignment was due on {{ assignment.due_date|date:"F d, Y" }}. 
+                        Late submissions are not accepted for this task.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Submission Form (Only if available) -->
+            {% if assignment.is_available %}
+                {% if existing_submission.score is None and existing_submission.attempts_count < assignment.max_attempts and not assignment.submission_locked or not existing_submission and not assignment.submission_locked or not existing_submission and assignment.allow_late_submission %}
+                <form method="post" enctype="multipart/form-data" class="space-y-8">
+                {% csrf_token %}
+                
+                {% if assignment.submission_type == 'file_upload' or assignment.submission_type == 'both' %}
+                <div class="space-y-3">
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+                        <i class="bi bi-file-earmark-arrow-up text-blue-600 dark:text-blue-400 mr-1 text-lg"></i>
+                        Upload Submission {% if assignment.submission_type == 'file_upload' %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    <div class="relative group">
+                        <input type="file" name="file" id="file_input"
+                               {% if assignment.submission_type == 'file_upload' and not existing_submission %}required{% endif %}
+                               class="w-full px-6 py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-900/30 text-slate-500 hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 ml-1">
+                            <i class="bi bi-info-circle mr-1"></i> Accepted: PDF, DOC, DOCX, ZIP, PNG, JPG (Max 10MB)
+                        </p>
+                    </div>
                 </div>
                 {% endif %}
-                {% if existing_submission.score is not None %}
-                <p class="text-sm text-gray-700">
-                    <i class="bi bi-trophy mr-1"></i>
-                    Score: {{ existing_submission.score }}/{{ assignment.total_points }}</p>
+
+                {% if assignment.submission_type == 'both' %}
+                <div class="flex items-center gap-4 py-2">
+                    <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">OR</span>
+                    <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+                </div>
                 {% endif %}
-                <p class="text-sm text-yellow-800 mt-3">
-                    <i class="bi bi-info-circle mr-1"></i>
-                    Submitting again will replace your previous submission.
-                </p>
+
+                {% if assignment.submission_type == 'text_entry' or assignment.submission_type == 'both' %}
+                <div class="space-y-3">
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+                        <i class="bi bi-pencil-square text-green-600 dark:text-green-400 mr-1 text-lg"></i>
+                        Text Entry Submission {% if assignment.submission_type == 'text_entry' %}<span class="text-red-500">*</span>{% endif %}
+                    </label>
+                    <textarea name="text_content" rows="10"
+                              {% if assignment.submission_type == 'text_entry' and not existing_submission %}required{% endif %}
+                              class="w-full px-6 py-4 border border-slate-300 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all dark:text-slate-100"
+                              placeholder="Type or paste your response here...">{{ existing_submission.text_content|default:'' }}</textarea>
+                </div>
+                {% endif %}
+
+                <div class="flex flex-col sm:flex-row gap-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl transition shadow-lg shadow-blue-600/20 font-bold flex items-center justify-center gap-2 group">
+                        <i class="bi bi-send-fill group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></i>
+                        {% if existing_submission %}
+                            Resubmit (Attempt {{ existing_submission.attempts_count|add:1 }} / {{ assignment.max_attempts }})
+                        {% else %}
+                            Submit Assignment
+                        {% endif %}
+                    </button>
+                    <a href="{% url 'academics:student_assignments' %}" class="sm:w-32 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-8 py-4 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition font-bold text-center">
+                        Cancel
+                    </a>
+                </div>
+                </form>
+                {% else %}
+                <div class="pt-6">
+                    <a href="{% url 'academics:student_assignments' %}" class="w-full sm:w-auto inline-block bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-8 py-4 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition font-bold text-center">
+                        Return to Assignments
+                    </a>
+                </div>
+                {% endif %}
+            {% else %}
+                <!-- Locked Visual State -->
+                <div class="space-y-8 opacity-40 select-none pointer-events-none filter blur-[1px]">
+                    <div class="space-y-3">
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+                             Upload Submission
+                        </label>
+                        <div class="w-full px-6 py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-900/30">
+                             LOCKED
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Submission History (if any) -->
+            {% if existing_submission %}
+            <div class="mt-12 pt-8 border-t border-slate-100 dark:border-slate-700">
+                <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <i class="bi bi-clock-history"></i> Submission Details
+                </h4>
+                
+                <div class="bg-blue-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-blue-100 dark:border-slate-700 relative overflow-hidden">
+                    <!-- Subtle background decoration -->
+                    <i class="bi bi-file-earmark-check absolute -right-4 -bottom-6 text-8xl text-blue-200 dark:text-slate-800 opacity-30"></i>
+                    
+                    <div class="relative z-10 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                            <span class="text-sm text-slate-500 dark:text-slate-400">Timestamp:</span>
+                            <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ existing_submission.submitted_at|date:"F d, Y · g:i A" }}</span>
+                        </div>
+
+                        {% if existing_submission.file %}
+                        <div class="flex items-center gap-3">
+                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                            <span class="text-sm text-slate-500 dark:text-slate-400">Attached File:</span>
+                            <a href="{{ existing_submission.file.url }}" class="flex items-center gap-2 px-3 py-1 bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-lg text-sm font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 transition" download>
+                                <i class="bi bi-download"></i> View File
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        {% if existing_submission.text_content %}
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                <span class="text-sm text-slate-500 dark:text-slate-400">Text Response:</span>
+                            </div>
+                            <div class="bg-white/80 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-xl text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed shadow-sm">
+                                {{ existing_submission.text_content }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if existing_submission.score is not None %}
+                        <div class="mt-4 pt-4 border-t border-blue-200/50 dark:border-slate-700">
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-tight">Grade Applied:</span>
+                                <span class="px-4 py-1 bg-blue-600 text-white rounded-full font-black text-lg">
+                                    {{ existing_submission.score }} / {{ assignment.total_points }}
+                                </span>
+                            </div>
+                            {% if existing_submission.feedback %}
+                            <div class="mt-4 bg-white/60 dark:bg-slate-800/60 p-4 rounded-xl border border-blue-200/60 dark:border-slate-700">
+                                <div class="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1 uppercase tracking-widest">Feedback from Teacher:</div>
+                                <p class="text-sm italic text-slate-700 dark:text-slate-300">\"{{ existing_submission.feedback }}\"</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 </div>
+
+<!-- Extra Polishing Styles -->
+<style>
+    textarea:focus {
+        background: #fff !important;
+    }
+    .dark textarea:focus {
+        background: #0f172a !important;
+    }
+    input[type=\"file\"]::file-selector-button {
+        display: none;
+    }
+</style>
 {% endblock %}

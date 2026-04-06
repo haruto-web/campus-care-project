@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.conf import settings
 from datetime import datetime
 
@@ -131,10 +132,12 @@ class Assignment(models.Model):
     class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='assignments')
     title = models.CharField(max_length=200)
     description = models.TextField()
+    available_at = models.DateTimeField(null=True, blank=True, help_text='Date and time the assignment becomes available for submission.')
     due_date = models.DateTimeField()
     total_points = models.IntegerField()
     submission_type = models.CharField(max_length=20, choices=SUBMISSION_TYPE_CHOICES, default='file_upload')
     allow_late_submission = models.BooleanField(default=True)
+    max_attempts = models.PositiveIntegerField(default=1, help_text='Maximum number of times a student can submit this assignment.')
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -148,6 +151,7 @@ class Submission(models.Model):
     file = models.FileField(upload_to='submissions/', blank=True, null=True)
     score = models.IntegerField(null=True, blank=True)
     feedback = models.TextField(blank=True)
+    attempts_count = models.PositiveIntegerField(default=1)
     graded_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
