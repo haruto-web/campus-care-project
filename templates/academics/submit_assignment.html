@@ -4,22 +4,6 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    {% if show_submit_success %}
-    <div id="submit-success-banner" class="mb-4 overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-        <div class="flex items-center gap-3">
-            <div class="submit-success-orb inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-white">
-                <i class="bi bi-check-lg text-lg"></i>
-            </div>
-            <div>
-                <p class="text-sm font-semibold text-emerald-800">Submission received</p>
-                <p class="text-xs text-emerald-700">Your work was saved successfully.</p>
-            </div>
-        </div>
-        <div class="submit-success-sparkles" aria-hidden="true">
-            <span></span><span></span><span></span><span></span><span></span>
-        </div>
-    </div>
-    {% endif %}
     <div class="bg-white rounded-lg shadow-lg p-8">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">
             <i class="bi bi-upload mr-2"></i>Submit Assignment
@@ -211,53 +195,4 @@
         {% endif %}
     </div>
 </div>
-
-<style>
-@keyframes submit-pop {
-    0% { transform: scale(0.7); opacity: 0; }
-    60% { transform: scale(1.08); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
-}
-@keyframes submit-spark {
-    0% { transform: translateY(6px) scale(0.6); opacity: 0; }
-    25% { opacity: 0.95; }
-    100% { transform: translateY(-22px) scale(1); opacity: 0; }
-}
-@keyframes submit-fade {
-    0%, 80% { opacity: 1; }
-    100% { opacity: 0; transform: translateY(-4px); }
-}
-.submit-success-orb {
-    animation: submit-pop 420ms ease-out;
-}
-.submit-success-sparkles {
-    pointer-events: none;
-    position: relative;
-    height: 0;
-}
-.submit-success-sparkles span {
-    position: absolute;
-    top: -26px;
-    width: 8px;
-    height: 8px;
-    border-radius: 9999px;
-    background: #10b981;
-    animation: submit-spark 950ms ease-out forwards;
-}
-.submit-success-sparkles span:nth-child(1) { left: 18%; animation-delay: 40ms; }
-.submit-success-sparkles span:nth-child(2) { left: 32%; background: #22c55e; animation-delay: 90ms; }
-.submit-success-sparkles span:nth-child(3) { left: 50%; background: #34d399; animation-delay: 130ms; }
-.submit-success-sparkles span:nth-child(4) { left: 66%; background: #16a34a; animation-delay: 170ms; }
-.submit-success-sparkles span:nth-child(5) { left: 82%; background: #86efac; animation-delay: 210ms; }
-</style>
-
-{% if show_submit_success %}
-<script>
-    (function () {
-        const banner = document.getElementById('submit-success-banner');
-        if (!banner) return;
-        banner.style.animation = 'submit-fade 4.2s ease forwards';
-    })();
-</script>
-{% endif %}
 {% endblock %}
