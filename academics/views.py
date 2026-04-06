@@ -138,6 +138,7 @@ def class_detail(request, class_id):
             assignment.has_submission = submission is not None
             assignment.attempts_used = submission.attempts_count if submission else 0
             assignment.attempts_remaining = max(assignment.max_attempts - assignment.attempts_used, 0)
+            assignment.submission_score = submission.score if submission else None
             assignment.is_available = not assignment.available_at or assignment.available_at <= now
             assignment.submission_is_graded = bool(submission and (submission.score is not None or submission.graded_at))
             assignment.is_overdue = assignment.due_date < now

@@ -33,9 +33,6 @@
             <a href="{% url 'teacher_profile' class.teacher.id %}" class="flex items-center gap-1 hover:text-white transition">
                 <i class="bi bi-person"></i> {{ class.teacher.get_full_name }}
             </a>
-            <a href="{% url 'messaging:new_message_to' class.teacher.id %}" class="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-full transition">
-                <i class="bi bi-chat-dots"></i> Message
-            </a>
             {% else %}
             <span class="flex items-center gap-1"><i class="bi bi-person"></i> {{ class.teacher.get_full_name }}</span>
             {% endif %}
@@ -157,7 +154,11 @@
                                 </a>
                                 {% if assignment.submission_is_graded %}
                                 <span class="bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-2 rounded-lg text-sm font-medium">
+                                    {% if assignment.submission_score is not None %}
+                                    {{ assignment.submission_score|floatformat:"-2" }}/{{ assignment.total_points }}
+                                    {% else %}
                                     Graded - Locked
+                                    {% endif %}
                                 </span>
                                 {% elif assignment.can_resubmit %}
                                 <a href="{% url 'academics:submit_assignment' assignment.id %}"
@@ -185,7 +186,14 @@
                                 </span>
                                 {% endif %}
                             {% else %}
-                                {% if assignment.is_available %}
+                                {% if assignment.due_locked %}
+                                <span class="bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-sm font-medium">
+                                    Locked at due date
+                                </span>
+                                <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-1.5">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                                {% elif assignment.is_available %}
                                 <span class="bg-green-100 text-green-700 border border-green-200 px-3 py-2 rounded-lg text-sm font-medium">
                                     Available
                                 </span>
@@ -196,6 +204,9 @@
                                 <span class="bg-amber-100 text-amber-700 border border-amber-200 px-3 py-2 rounded-lg text-sm font-medium">
                                     Locked until available
                                 </span>
+                                <a href="{% url 'academics:submit_assignment' assignment.id %}" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-1.5">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
                                 {% endif %}
                             {% endif %}
                             {% endif %}
