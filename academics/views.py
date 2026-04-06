@@ -685,19 +685,6 @@ def edit_assignment(request, class_id, assignment_id):
                         'allow_late_submission_selected': allow_late_submission_selected,
                     },
                 )
-            if updated_assignment.due_date <= timezone.now():
-                messages.error(request, 'Due date must be in the future.')
-                return render(
-                    request,
-                    'academics/create_assignment.html',
-                    {
-                        'form': form,
-                        'class': class_obj,
-                        'assignment': assignment,
-                        'edit_mode': True,
-                        'allow_late_submission_selected': allow_late_submission_selected,
-                    },
-                )
             updated_assignment.save()
             log_action(
                 request,

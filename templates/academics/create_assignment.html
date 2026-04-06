@@ -161,7 +161,7 @@
 <script>
     const availableDateInput = document.getElementById('{{ form.available_at.id_for_label }}');
     const dueDateInput = document.getElementById('{{ form.due_date.id_for_label }}');
-    if (availableDateInput || dueDateInput) {
+    if ((availableDateInput || dueDateInput) && !({% if edit_mode %}true{% else %}false{% endif %})) {
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         const minValue = now.toISOString().slice(0, 16);

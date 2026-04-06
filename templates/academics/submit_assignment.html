@@ -97,14 +97,6 @@
         </div>
         {% endif %}
         {% if assignment.is_available and not assignment.submission_locked %}
-        {% if assignment.attempts_exhausted %}
-        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p class="text-sm text-red-700 font-medium">
-                <i class="bi bi-x-circle mr-1"></i>
-                No attempts remaining. You used {{ assignment.attempts_used }} out of {{ assignment.max_attempts }} attempts.
-            </p>
-        </div>
-        {% endif %}
         {% if assignment.submission_is_graded %}
         <div class="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
             <p class="text-sm text-indigo-700 font-medium">
