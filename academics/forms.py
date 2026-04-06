@@ -1,6 +1,7 @@
 import json
 
 from django import forms
+from django.utils import timezone
 
 from .models import Class, Announcement, Assignment, Material
 
@@ -123,14 +124,36 @@ class ClassForm(forms.ModelForm):
 
 
 class AssignmentForm(forms.ModelForm):
+    available_at = forms.DateTimeField(
+        required=False,
+        input_formats=['%Y-%m-%dT%H:%M', '%Y-%m-%dT%H:%M:%S'],
+        widget=forms.DateTimeInput(
+            attrs={'class': 'form-control', 'type': 'datetime-local'},
+            format='%Y-%m-%dT%H:%M',
+        ),
+    )
+    due_date = forms.DateTimeField(
+        input_formats=['%Y-%m-%dT%H:%M', '%Y-%m-%dT%H:%M:%S'],
+        widget=forms.DateTimeInput(
+            attrs={'class': 'form-control', 'type': 'datetime-local'},
+            format='%Y-%m-%dT%H:%M',
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            if self.instance.available_at:
+                self.initial['available_at'] = timezone.localtime(self.instance.available_at).strftime('%Y-%m-%dT%H:%M')
+            if self.instance.due_date:
+                self.initial['due_date'] = timezone.localtime(self.instance.due_date).strftime('%Y-%m-%dT%H:%M')
+
     class Meta:
         model = Assignment
         fields = ['title', 'description', 'available_at', 'due_date', 'total_points', 'submission_type', 'max_attempts']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'available_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-            'due_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
             'total_points': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '100'}),
             'submission_type': forms.Select(attrs={'class': 'form-control'}),
             'max_attempts': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '10'}),
