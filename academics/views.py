@@ -1549,6 +1549,7 @@ def student_assignments(request):
             'time_label': timezone.localtime(assignment.due_date).strftime('%I:%M %p').lstrip('0'),
             'available_label': timezone.localtime(assignment.available_at).strftime('%b %d, %I:%M %p') if assignment.available_at else '',
             'can_submit': not is_locked,
+            'is_unavailable': not is_available,
         })
 
     month_grid = []
