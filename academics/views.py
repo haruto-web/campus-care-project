@@ -1529,9 +1529,6 @@ def submit_assignment(request, assignment_id):
     }
     
     if request.method == 'POST':
-        if not assignment.is_available:
-            messages.error(request, 'This assignment is not yet available for submission.')
-            return redirect('academics:student_assignments')
         if assignment.submission_locked:
             messages.error(request, 'This assignment is locked because the due date has passed.')
             return redirect('academics:student_assignments')

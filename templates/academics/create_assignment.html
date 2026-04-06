@@ -1,55 +1,45 @@
 {% extends 'base.html' %}
 
-{% block title %}{% if edit_mode %}Edit{% else %}Create{% endif %} Assignment{% endblock %}
+{% block title %}{% if edit_mode %}Edit Assignment{% else %}Create Assignment{% endif %}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto py-8">
-    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6 text-white">
-            <h2 class="text-2xl font-bold flex items-center gap-3">
-                <i class="bi bi-journal-plus"></i> {% if edit_mode %}Edit{% else %}New{% endif %} Assignment
-            </h2>
-            <p class="text-blue-100 mt-1 opacity-90">{{ class.code }} - {{ class.name }}</p>
+<div class="max-w-4xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800">{% if edit_mode %}Edit Assignment{% else %}Create Assignment{% endif %}</h2>
+            <p class="text-gray-600 mt-1">{{ class.code }} - {{ class.name }}</p>
         </div>
+        <a href="{% url 'academics:class_detail' class.id %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
 
-        <form method="post" class="p-8">
-            {% csrf_token %}
-            
-            <div class="space-y-6">
-                <!-- Title & Description -->
-                <div>
+    <div class="bg-white rounded-lg shadow-lg">
+        <div class="p-8">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-6">
                     <label for="{{ form.title.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
-                        Title <span class="text-red-500">*</span>
+                        Assignment Title <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="title" id="{{ form.title.id_for_label }}" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                           placeholder="e.g., Midterm Project"
+                           placeholder="e.g., Chapter 5 Quiz or Final Project"
                            value="{{ form.title.value|default:'' }}" required>
                 </div>
 
-                <div>
+                <div class="mb-6">
                     <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
                         Description <span class="text-red-500">*</span>
                     </label>
                     <textarea name="description" id="{{ form.description.id_for_label }}" rows="5"
                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                              placeholder="Describe the assignment objectives and requirements..."
+                              placeholder="Describe the assignment requirements and instructions..."
                               required>{{ form.description.value|default:'' }}</textarea>
                 </div>
 
-                <!-- Three Column Grid: Available, Due, Points -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label for="{{ form.available_at.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
-                            Available From <i class="bi bi-info-circle text-gray-400 ml-1" title="Canvas Style: Scheduled release time."></i>
-                        </label>
-                        <input type="datetime-local" name="available_at" id="{{ form.available_at.id_for_label }}" 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                               value="{{ form.available_at.value|default:'' }}">
-                        <p class="text-xs text-gray-500 mt-1">When students can start.</p>
-                    </div>
-
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                         <label for="{{ form.due_date.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
                             Due Date <span class="text-red-500">*</span>
@@ -57,7 +47,7 @@
                         <input type="datetime-local" name="due_date" id="{{ form.due_date.id_for_label }}" 
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                value="{{ form.due_date.value|default:'' }}" required>
-                        <p class="text-xs text-gray-500 mt-1">Submission deadline.</p>
+                        <p class="text-xs text-gray-500 mt-1">Must be a future date and time.</p>
                     </div>
 
                     <div>
@@ -66,66 +56,94 @@
                         </label>
                         <input type="number" name="total_points" id="{{ form.total_points.id_for_label }}" 
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                               placeholder="e.g., 100"
+                               placeholder="e.g., 50"
                                min="1" max="100"
                                value="{{ form.total_points.value|default:'' }}" required>
-                        <p class="text-xs text-gray-500 mt-1">Maximum score allowed.</p>
+                        <p class="text-xs text-gray-500 mt-1">Maximum: 100 points.</p>
                     </div>
                 </div>
 
-                <!-- Submission Settings Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                    <!-- Submission Type -->
-                    <div class="bg-slate-50 rounded-xl p-5 border border-slate-100">
-                        <label class="block text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <i class="bi bi-file-earmark-arrow-up text-blue-600"></i> Submission Type
-                        </label>
-                        {% for value, label in form.fields.submission_type.choices %}
-                        <label class="flex items-center gap-3 mb-3 cursor-pointer group">
-                            <input type="radio" name="submission_type" value="{{ value }}" 
-                                   {% if form.submission_type.value == value or not form.submission_type.value and value == 'file_upload' %}checked{% endif %}
-                                   class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                            <span class="text-sm text-gray-700 group-hover:text-blue-600 transition">{{ label }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-
-                    <!-- Max Attempts -->
-                    <div class="bg-slate-50 rounded-xl p-5 border border-slate-100">
-                        <label for="{{ form.max_attempts.id_for_label }}" class="block text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <i class="bi bi-arrow-repeat text-indigo-600"></i> Submission Limit
-                        </label>
-                        <input type="number" name="max_attempts" id="{{ form.max_attempts.id_for_label }}" 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                               min="1" value="{{ form.max_attempts.value|default:'1' }}" required>
-                        <p class="text-xs text-gray-500 mt-2 italic">Students can resubmit up to this many times (if not yet graded).</p>
-                    </div>
-                </div>
-
-                <!-- Late Policy -->
-                <div class="bg-blue-50/50 rounded-xl p-6 border border-blue-100">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" name="allow_late_submission" id="id_allow_late_submission" 
-                               {% if form.allow_late_submission.value or not edit_mode %}checked{% endif %}
-                               class="w-5 h-5 text-blue-600 border-gray-300 rounded-lg focus:ring-blue-500">
-                        <div>
-                            <span class="block font-bold text-blue-900">Allow Late Submission</span>
-                            <span class="text-sm text-blue-700/70">Enable this to allow students to submit even after the due date (marked as late).</span>
-                        </div>
+                <!-- Submission Type -->
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">
+                        Submission Type <span class="text-red-500">*</span>
                     </label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-blue-400 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/30">
+                            <input type="radio" name="submission_type" value="file_upload" class="mt-1" {% if form.submission_type.value == 'file_upload' or not form.submission_type.value %}checked{% endif %}>
+                            <div>
+                                <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="bi bi-file-earmark-arrow-up text-blue-600 dark:text-blue-400"></i> File Upload
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Student uploads a file (PDF, Word, etc.)</p>
+                            </div>
+                        </label>
+                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-green-400 transition has-[:checked]:border-green-500 has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/30">
+                            <input type="radio" name="submission_type" value="text_entry" class="mt-1" {% if form.submission_type.value == 'text_entry' %}checked{% endif %}>
+                            <div>
+                                <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="bi bi-pencil-square text-green-600 dark:text-green-400"></i> Text Entry
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Student types their answer directly</p>
+                            </div>
+                        </label>
+                        <label class="submission-type-card flex items-start gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-purple-400 transition has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50 dark:has-[:checked]:bg-purple-900/30">
+                            <input type="radio" name="submission_type" value="both" class="mt-1" {% if form.submission_type.value == 'both' %}checked{% endif %}>
+                            <div>
+                                <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="bi bi-layers text-purple-600 dark:text-purple-400"></i> File or Text
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Student can upload a file or type an answer</p>
+                            </div>
+                        </label>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Action Buttons -->
-            <div class="mt-10 flex gap-4 pt-8 border-t border-gray-100">
-                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl transition shadow-lg shadow-blue-600/20 font-bold">
-                    {% if edit_mode %}Update{% else %}Create{% endif %} Assignment
-                </button>
-                <a href="{% url 'academics:class_detail' class.id %}" class="px-8 py-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition font-bold">
-                    Cancel
-                </a>
-            </div>
-        </form>
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">
+                        Late Submission Policy <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <label class="flex items-start gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-green-400 transition has-[:checked]:border-green-500 has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/30">
+                            <input type="radio" name="allow_late_submission" value="true" class="mt-1" {% if allow_late_submission_selected == 'true' %}checked{% endif %}>
+                            <div>
+                                <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="bi bi-unlock text-green-600 dark:text-green-400"></i> Allow Late
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Students can still submit after due date and will be marked late.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-red-400 transition has-[:checked]:border-red-500 has-[:checked]:bg-red-50 dark:has-[:checked]:bg-red-900/30">
+                            <input type="radio" name="allow_late_submission" value="false" class="mt-1" {% if allow_late_submission_selected == 'false' %}checked{% endif %}>
+                            <div>
+                                <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="bi bi-lock text-red-600 dark:text-red-400"></i> Lock at Due Date
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Students cannot submit once the assignment is overdue.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                        <i class="bi bi-check-circle"></i> {% if edit_mode %}Save Changes{% else %}Create Assignment{% endif %}
+                    </button>
+                    <a href="{% url 'academics:class_detail' class.id %}" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold text-center">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<script>
+    const dueDateInput = document.getElementById('{{ form.due_date.id_for_label }}');
+    if (dueDateInput) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        dueDateInput.min = now.toISOString().slice(0, 16);
+    }
+</script>
 {% endblock %}
