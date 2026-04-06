@@ -11,8 +11,27 @@
 
         <!-- Assignment Details -->
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-            <h3 class="text-xl font-semibold text-gray-800 mb-3">{{ assignment.title }}</h3>
-            {% if assignment.is_available and not assignment.submission_locked %}
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                <h3 class="text-xl font-semibold text-gray-800">{{ assignment.title }}</h3>
+                {% if existing_submission and existing_submission.submitted_at %}
+                <div class="text-left sm:text-right shrink-0">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Submitted
+                    </span>
+                    {% if assignment.submission_is_late %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold ml-1">
+                        <i class="bi bi-clock-history"></i>
+                        Late
+                    </span>
+                    {% endif %}
+                    <p class="text-xs text-gray-600 mt-1">
+                        {{ existing_submission.submitted_at|date:"M d, Y - g:i A" }}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            {% if assignment.is_available %}
             <p class="text-gray-700 mb-4">{{ assignment.description }}</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
@@ -58,24 +77,25 @@
                 </p>
             </div>
             {% endif %}
-            {% elif not assignment.is_available %}
+            {% else %}
             <div class="mt-4 p-3 bg-amber-100 border border-amber-300 rounded-lg">
                 <p class="text-amber-800 text-sm">
                     <i class="bi bi-lock mr-1"></i>
                     This assignment is locked until {{ assignment.available_at|date:"M d, Y - g:i A" }}.
                 </p>
             </div>
-            {% else %}
-            <div class="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
-                <p class="text-red-800 text-sm">
-                    <i class="bi bi-lock-fill mr-1"></i>
-                    This assignment is locked. Submission is no longer allowed.
-                </p>
-            </div>
             {% endif %}
         </div>
 
         <!-- Submission Form -->
+        {% if assignment.is_available and assignment.submission_locked %}
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p class="text-sm text-red-700 font-medium">
+                <i class="bi bi-lock-fill mr-1"></i>
+                Submission locked: due date passed and late submission is disabled by your teacher.
+            </p>
+        </div>
+        {% endif %}
         {% if assignment.is_available and not assignment.submission_locked %}
         {% if assignment.attempts_exhausted %}
         <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -150,7 +170,7 @@
         {% endif %}
 
         <!-- Previous Submission (if exists) -->
-        {% if existing_submission and assignment.is_available and not assignment.submission_locked %}
+        {% if existing_submission and assignment.is_available %}
         <div class="mt-8 pt-8 border-t">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Previous Submission</h3>
             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

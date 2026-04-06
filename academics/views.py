@@ -1608,6 +1608,9 @@ def submit_assignment(request, assignment_id):
     assignment.is_available = not assignment.available_at or assignment.available_at <= timezone.now()
     assignment.submission_locked = bool(assignment.is_overdue and not assignment.allow_late_submission)
     assignment.submission_is_graded = bool(existing_submission and (existing_submission.score is not None or existing_submission.graded_at))
+    assignment.submission_is_late = bool(
+        existing_submission and existing_submission.submitted_at and existing_submission.submitted_at > assignment.due_date
+    )
     assignment.attempts_used = existing_submission.attempts_count if existing_submission else 0
     assignment.attempts_remaining = max(assignment.max_attempts - assignment.attempts_used, 0)
     assignment.attempts_exhausted = assignment.attempts_remaining <= 0
