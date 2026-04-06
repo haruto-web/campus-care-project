@@ -1627,6 +1627,7 @@ def student_profile_view(request, student_id):
     elif request.user.role not in ['teacher', 'counselor', 'admin']:
         messages.error(request, 'Permission denied.')
         return redirect('dashboard')
+    can_view_sensitive_profile = not (request.user.role == 'student' and request.user.id != student.id)
     log_action(
         request,
         'STUDENT_PROFILE_VIEWED',
@@ -1694,6 +1695,7 @@ def student_profile_view(request, student_id):
     
     context = {
         'student': student,
+        'can_view_sensitive_profile': can_view_sensitive_profile,
         'enrolled_classes': enrolled_classes,
         'risk_assessment': risk_assessment,
         'ai_prediction': ai_prediction,

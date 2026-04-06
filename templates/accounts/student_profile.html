@@ -16,7 +16,7 @@
                     {% else %}
                     <img src="{% static 'images/logo.png' %}" class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover" alt="Profile">
                     {% endif %}
-                    {% if risk_assessment %}
+                    {% if can_view_sensitive_profile and risk_assessment %}
                     <div class="absolute -bottom-2 -right-2">
                         {% if risk_assessment.risk_level == 'high' %}
                         <span class="px-3 py-1 text-xs font-bold rounded-full bg-red-600 text-white shadow-lg animate-pulse">HIGH RISK</span>
@@ -30,8 +30,10 @@
                 </div>
                 <div class="text-white text-center md:text-left flex-1">
                     <h1 class="text-4xl font-bold mb-2">{{ student.get_full_name }}</h1>
+                    {% if can_view_sensitive_profile %}
                     <p class="text-blue-100 text-lg mb-1"><i class="bi bi-envelope"></i> {{ student.email }}</p>
-                    {% if student.phone %}
+                    {% endif %}
+                    {% if can_view_sensitive_profile and student.phone %}
                     <p class="text-blue-100"><i class="bi bi-telephone"></i> {{ student.phone }}</p>
                     {% endif %}
                     {% if user.id != student.id %}
@@ -41,6 +43,7 @@
                     {% endif %}
                 </div>
                 <div class="grid grid-cols-2 gap-4">
+                    {% if can_view_sensitive_profile %}
                     <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
                         <p class="text-3xl font-bold text-white">{{ risk_assessment.gpa|default:"N/A" }}</p>
                         <p class="text-blue-100 text-sm">GPA</p>
@@ -53,6 +56,7 @@
                         <p class="text-3xl font-bold text-white">{{ risk_assessment.missing_assignments|default:0 }}</p>
                         <p class="text-blue-100 text-sm">Missing</p>
                     </div>
+                    {% endif %}
                     <div class="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center">
                         <p class="text-3xl font-bold text-white">{{ enrolled_classes.count }}</p>
                         <p class="text-blue-100 text-sm">Classes</p>
@@ -63,7 +67,7 @@
         </div>
 
         <!-- AI Insights Section -->
-        {% if ai_prediction %}
+        {% if can_view_sensitive_profile and ai_prediction %}
         <div class="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl shadow-lg mb-6 overflow-hidden border-2 border-purple-200 dark:border-purple-800">
             <div class="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4">
                 <h2 class="text-xl font-bold text-white flex items-center">
@@ -151,7 +155,7 @@
         {% endif %}
 
         <!-- Academic Pattern Analysis -->
-        {% if academic_pattern and user.role == 'counselor' %}
+        {% if can_view_sensitive_profile and academic_pattern and user.role == 'counselor' %}
         <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl shadow-lg mb-6 overflow-hidden border-2 border-indigo-200">
             <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
                 <h2 class="text-xl font-bold text-white flex items-center">
@@ -262,6 +266,7 @@
             </div>
         </div>
 
+        {% if can_view_sensitive_profile %}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <!-- Recent Attendance -->
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
@@ -400,6 +405,7 @@
                 {% endif %}
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
