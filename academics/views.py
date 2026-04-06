@@ -127,11 +127,10 @@ def class_detail(request, class_id):
     materials = class_obj.materials.all()
     assignments = class_obj.assignments.all().order_by('-due_date')
     
-    now = timezone.now()
-    # Status check for each assignment
-    for assignment in assignments:
-        assignment.is_overdue = assignment.due_date < now
-        if request.user.role == 'student':
+    # For students, check submission status for each assignment
+    if request.user.role == 'student':
+        now = timezone.now()
+        for assignment in assignments:
             submission = Submission.objects.filter(
                 assignment=assignment,
                 student=request.user
@@ -141,6 +140,7 @@ def class_detail(request, class_id):
             assignment.attempts_remaining = max(assignment.max_attempts - assignment.attempts_used, 0)
             assignment.is_available = not assignment.available_at or assignment.available_at <= now
             assignment.submission_is_graded = bool(submission and (submission.score is not None or submission.graded_at))
+            assignment.is_overdue = assignment.due_date < now
             assignment.due_locked = bool(assignment.is_overdue and not assignment.allow_late_submission)
             assignment.can_resubmit = bool(
                 submission
