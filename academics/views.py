@@ -1457,7 +1457,7 @@ def student_assignments(request):
     # Missed work recovery plan (prioritized, student-focused)
     recovery_plan = []
     overdue_sorted = sorted(
-        overdue_assignments,
+        [assignment for assignment in overdue_assignments if assignment.allow_late_submission],
         key=lambda assignment: assignment.due_date
     )
     for assignment in overdue_sorted:
@@ -1465,8 +1465,8 @@ def student_assignments(request):
         recovery_plan.append({
             'assignment': assignment,
             'status': 'overdue',
-            'priority_label': 'High' if assignment.allow_late_submission else 'Locked',
-            'urgency_text': late_label if assignment.allow_late_submission else 'Locked at due date',
+            'priority_label': 'High',
+            'urgency_text': late_label,
         })
 
     upcoming_sorted = sorted(
