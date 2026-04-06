@@ -103,6 +103,7 @@
                 </label>
                 <input type="file" name="file"
                        {% if assignment.submission_type == 'file_upload' %}required{% endif %}
+                       {% if assignment.submission_locked or assignment.attempts_exhausted or assignment.submission_is_graded or not assignment.is_available %}disabled{% endif %}
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <p class="text-xs text-gray-500 mt-1">Accepted: PDF, DOC, DOCX, TXT, ZIP (Max 10MB)</p>
             </div>
@@ -124,6 +125,7 @@
                 </label>
                 <textarea name="text_content" rows="8"
                           {% if assignment.submission_type == 'text_entry' %}required{% endif %}
+                          {% if assignment.submission_locked or assignment.attempts_exhausted or assignment.submission_is_graded or not assignment.is_available %}disabled{% endif %}
                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           placeholder="Type your answer here...">{{ existing_submission.text_content|default:'' }}</textarea>
             </div>

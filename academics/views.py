@@ -140,14 +140,14 @@ def class_detail(request, class_id):
             assignment.attempts_remaining = max(assignment.max_attempts - assignment.attempts_used, 0)
             assignment.is_available = not assignment.available_at or assignment.available_at <= now
             assignment.submission_is_graded = bool(submission and (submission.score is not None or submission.graded_at))
-            is_overdue = assignment.due_date < now
-            due_locked = bool(is_overdue and not assignment.allow_late_submission)
+            assignment.is_overdue = assignment.due_date < now
+            assignment.due_locked = bool(assignment.is_overdue and not assignment.allow_late_submission)
             assignment.can_resubmit = bool(
                 submission
                 and assignment.attempts_remaining > 0
                 and not assignment.submission_is_graded
                 and assignment.is_available
-                and not due_locked
+                and not assignment.due_locked
             )
     
     context = {
@@ -732,7 +732,7 @@ def mark_attendance(request, class_id):
     if denied:
         return denied
     
-    students = class_obj.students.all()
+    students = class_obj.students.all().order_by('last_name', 'first_name', 'username')
     today = date.today()
     
     if request.method == 'POST':
@@ -1486,12 +1486,22 @@ def student_assignments(request):
         key=lambda assignment: assignment.due_date
     )
     for assignment in upcoming_sorted[:3]:
-        hours_left = max(int((assignment.due_date - now).total_seconds() // 3600), 0)
+        seconds_left = int((assignment.due_date - now).total_seconds())
+        if seconds_left <= 0:
+            urgency_text = 'Due now'
+        elif seconds_left < 3600:
+            mins_left = max((seconds_left + 59) // 60, 1)
+            urgency_text = f'Due in {mins_left}m'
+        elif seconds_left < 172800:
+            hours_left = max((seconds_left + 3599) // 3600, 1)
+            urgency_text = f'Due in {hours_left}h'
+        else:
+            urgency_text = f'Due on {assignment.due_date.strftime("%b %d, %I:%M %p")}'
         recovery_plan.append({
             'assignment': assignment,
             'status': 'upcoming',
             'priority_label': 'Medium',
-            'urgency_text': f'Due in {hours_left}h' if hours_left < 48 else f'Due on {assignment.due_date.strftime("%b %d, %I:%M %p")}',
+            'urgency_text': urgency_text,
         })
 
     recovery_plan = recovery_plan[:6]
