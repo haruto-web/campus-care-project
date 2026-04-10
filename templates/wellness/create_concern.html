@@ -113,4 +113,12 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const concernDateInput = document.getElementById('{{ form.date_observed.id_for_label }}');
+    if (concernDateInput) {
+        concernDateInput.removeAttribute('min');
+    }
+});
+</script>
 {% endblock %}
