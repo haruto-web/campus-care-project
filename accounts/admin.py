@@ -12,7 +12,7 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(OTPCode)
 class OTPCodeAdmin(admin.ModelAdmin):
-    list_display = ['contact_value', 'code', 'created_at', 'is_used']
+    list_display = ['contact_value', 'created_at', 'is_used', 'code_hash']
     list_filter = ['is_used']
 
 

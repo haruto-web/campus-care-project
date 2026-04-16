@@ -53,10 +53,10 @@ urlpatterns = [
     path('ai/', include('ai_assistant.urls')),
     path('ai-teacher/feedback/<int:submission_id>/', ai_assistant_views.generate_teacher_feedback, name='generate_teacher_feedback'),
     path('messages/', include('messaging.urls')),
-    path('debug/cloudinary/', cloudinary_check_view, name='cloudinary_check'),
 ]
 
 if settings.DEBUG:
     urlpatterns += [
+        path('debug/cloudinary/', cloudinary_check_view, name='cloudinary_check'),
         re_path(r'^media/(?P<path>.*)$', protected_media_view),
     ]

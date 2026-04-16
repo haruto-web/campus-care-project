@@ -1,9 +1,13 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-import random
+import hashlib
+import hmac
+import secrets
 from django.utils import timezone
 from datetime import timedelta
+from django.conf import settings
 from campus_care.encrypted_fields import EncryptedTextField
+
 
 class User(AbstractUser):
     ROLE_CHOICES = [
@@ -61,7 +65,7 @@ class User(AbstractUser):
     def get_full_name(self):
         full_name = super().get_full_name().strip()
         return full_name.title()
-    
+
     def get_age(self):
         if self.date_of_birth:
             from datetime import date
@@ -72,21 +76,46 @@ class User(AbstractUser):
 
 class OTPCode(models.Model):
     contact_value = models.CharField(max_length=255)  # email
-    code = models.CharField(max_length=6)
+    code = models.CharField(max_length=6, blank=True, default='')
+    code_hash = models.CharField(max_length=64, blank=True, default='', db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_used = models.BooleanField(default=False)
+
+    @staticmethod
+    def _signing_secret():
+        return str(getattr(settings, 'OTP_SIGNING_KEY', settings.SECRET_KEY)).encode('utf-8')
+
+    @classmethod
+    def hash_code(cls, code):
+        value = str(code or '').strip()
+        if not value:
+            return ''
+        return hmac.new(cls._signing_secret(), value.encode('utf-8'), hashlib.sha256).hexdigest()
 
     @classmethod
     def generate(cls, email):
         cls.objects.filter(contact_value=email, is_used=False).update(is_used=True)
-        code = str(random.randint(100000, 999999))
-        return cls.objects.create(contact_value=email, code=code)
+        raw_code = f"{secrets.randbelow(1000000):06d}"
+        otp = cls.objects.create(contact_value=email, code='', code_hash=cls.hash_code(raw_code))
+        otp.raw_code = raw_code
+        return otp
+
+    def matches_code(self, code):
+        submitted = str(code or '').strip()
+        if not submitted:
+            return False
+        if self.code_hash:
+            return hmac.compare_digest(self.code_hash, self.hash_code(submitted))
+        # Legacy fallback for rows created before hash-based OTP storage.
+        if self.code:
+            return hmac.compare_digest(self.code, submitted)
+        return False
 
     def is_valid(self):
         return not self.is_used and timezone.now() < self.created_at + timedelta(minutes=3)
 
     def __str__(self):
-        return f"{self.contact_value} → {self.code}"
+        return f"{self.contact_value} -> [redacted]"
 
 
 class ApprovedStudent(models.Model):
@@ -104,7 +133,7 @@ class ApprovedStudent(models.Model):
         ordering = ['last_name', 'first_name']
 
     def __str__(self):
-        return f"{self.student_number} — {self.last_name}, {self.first_name}"
+        return f"{self.student_number} - {self.last_name}, {self.first_name}"
 
 
 class RegistrationRequest(models.Model):
@@ -216,7 +245,7 @@ class AuditLog(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.actor} — {self.action} @ {self.timestamp:%Y-%m-%d %H:%M}"
+        return f"{self.actor} - {self.action} @ {self.timestamp:%Y-%m-%d %H:%M}"
 
     def delete(self, using=None, keep_parents=False):
         raise PermissionError('Audit log entries cannot be deleted through normal application flows.')

@@ -9,6 +9,8 @@ from django.db import transaction
 from django.core.cache import cache
 
 logger = logging.getLogger('brighttrack.audit')
+AUDIT_SIGNATURE_V1 = 'hmac-sha256-v1'
+AUDIT_SIGNATURE_V2 = 'hmac-sha256-v2'
 
 
 def calculate_attendance_rate(student, class_obj=None):
@@ -74,7 +76,25 @@ def _serialize_extra_data(extra_data):
         return json.dumps({'value': str(extra_data)}, sort_keys=True, separators=(',', ':'))
 
 
-def build_audit_entry_hash(*, actor_id, action, target_type, target_id, target_label, extra_data, ip_address, timestamp, previous_hash):
+def _audit_secret_for_version(signature_version):
+    if signature_version == AUDIT_SIGNATURE_V2:
+        return str(getattr(settings, 'AUDIT_LOG_SIGNING_KEY', settings.SECRET_KEY)).encode('utf-8')
+    return str(settings.SECRET_KEY).encode('utf-8')
+
+
+def build_audit_entry_hash(
+    *,
+    actor_id,
+    action,
+    target_type,
+    target_id,
+    target_label,
+    extra_data,
+    ip_address,
+    timestamp,
+    previous_hash,
+    signature_version=AUDIT_SIGNATURE_V2,
+):
     payload = '||'.join([
         str(actor_id or ''),
         str(action or ''),
@@ -86,7 +106,7 @@ def build_audit_entry_hash(*, actor_id, action, target_type, target_id, target_l
         str(timestamp.isoformat() if timestamp else ''),
         str(previous_hash or ''),
     ])
-    secret = str(settings.SECRET_KEY).encode('utf-8')
+    secret = _audit_secret_for_version(signature_version)
     return hmac.new(secret, payload.encode('utf-8'), hashlib.sha256).hexdigest()
 
 
@@ -95,6 +115,7 @@ def verify_audit_entry(log):
     entry_hash = getattr(log, 'entry_hash', '') or ''
     if not entry_hash:
         return None
+    signature_version = getattr(log, 'signature_version', '') or AUDIT_SIGNATURE_V1
     expected_hash = build_audit_entry_hash(
         actor_id=getattr(log, 'actor_id', None),
         action=log.action,
@@ -105,7 +126,23 @@ def verify_audit_entry(log):
         ip_address=log.ip_address,
         timestamp=log.timestamp,
         previous_hash=previous_hash,
+        signature_version=signature_version,
     )
+    # Backward-compatible verification for pre-versioned or migrated rows.
+    if not hmac.compare_digest(entry_hash, expected_hash) and signature_version != AUDIT_SIGNATURE_V1:
+        legacy_expected = build_audit_entry_hash(
+            actor_id=getattr(log, 'actor_id', None),
+            action=log.action,
+            target_type=log.target_type,
+            target_id=log.target_id,
+            target_label=log.target_label,
+            extra_data=log.extra_data,
+            ip_address=log.ip_address,
+            timestamp=log.timestamp,
+            previous_hash=previous_hash,
+            signature_version=AUDIT_SIGNATURE_V1,
+        )
+        return hmac.compare_digest(entry_hash, legacy_expected)
     return hmac.compare_digest(entry_hash, expected_hash)
 
 
@@ -127,6 +164,7 @@ def log_action(request_or_user, action, target_type='', target_id=None, target_l
         with transaction.atomic():
             previous_log = AuditLog.objects.select_for_update().order_by('-id').first()
             previous_hash = previous_log.entry_hash if previous_log and previous_log.entry_hash else ''
+            signature_version = getattr(settings, 'AUDIT_LOG_SIGNATURE_VERSION', AUDIT_SIGNATURE_V2)
             log = AuditLog.objects.create(
                 actor=actor,
                 action=action,
@@ -136,6 +174,7 @@ def log_action(request_or_user, action, target_type='', target_id=None, target_l
                 extra_data=extra_data or {},
                 ip_address=ip_address,
                 previous_hash=previous_hash,
+                signature_version=signature_version,
                 entry_hash='',
             )
             log.entry_hash = build_audit_entry_hash(
@@ -148,6 +187,7 @@ def log_action(request_or_user, action, target_type='', target_id=None, target_l
                 ip_address=log.ip_address,
                 timestamp=log.timestamp,
                 previous_hash=log.previous_hash,
+                signature_version=signature_version,
             )
             log.save(update_fields=['entry_hash'])
     except Exception:
